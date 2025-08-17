@@ -14,7 +14,7 @@ static Vector2i currentChunkPos;
 
 void chunk_manager_init() {
     chunks = (Chunk*)malloc(sizeof(Chunk) * CHUNK_COUNT);
-    blocksAtlas = LoadTexture(RESOURCES_PATH "blocks.png");
+    blocksAtlas = LoadTexture(ASSETS_PATH "blocks.png");
 
     int startChunkX = -CHUNK_VIEW_WIDTH / 2;
 	int startChunkY = -CHUNK_VIEW_HEIGHT / 2;

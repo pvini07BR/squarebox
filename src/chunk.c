@@ -127,9 +127,9 @@ void chunk_draw(Chunk* chunk, Texture2D* blocksAtlas) {
         };
 
         Color blockTint = {  
-            .r = (unsigned char)(((float)chunk->light[j] / 16.0f) * 255.0f),
-            .g = (unsigned char)(((float)chunk->light[j] / 16.0f) * 255.0f),
-            .b = (unsigned char)(((float)chunk->light[j] / 16.0f) * 255.0f),
+            .r = (unsigned char)(((float)chunk->light[j] / 15.0f) * 255.0f),
+            .g = (unsigned char)(((float)chunk->light[j] / 15.0f) * 255.0f),
+            .b = (unsigned char)(((float)chunk->light[j] / 15.0f) * 255.0f),
             .a = 255
         };
 

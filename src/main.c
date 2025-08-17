@@ -94,7 +94,7 @@ int main() {
 		}
 
 		BeginDrawing();
-		ClearBackground(BLACK);
+		ClearBackground((Color){ 122, 122, 170 });
 		BeginMode2D(camera);
 		
 		chunk_manager_draw();

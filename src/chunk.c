@@ -33,11 +33,19 @@ uint8_t chunk_get_light(Chunk* chunk, Vector2u position) {
     return chunk->light[position.x + (position.y * CHUNK_WIDTH)];
 }
 
+void chunk_set_light(Chunk* chunk, Vector2u position, uint8_t value) {
+    if (!chunk) return;
+    if (position.x > CHUNK_WIDTH || position.y > CHUNK_WIDTH) return;
+
+    chunk->light[position.x + (position.y * CHUNK_WIDTH)] = value;
+    chunk_update_lightmap(chunk);
+}
+
 void chunk_regenerate(Chunk* chunk) {
     if (!chunk) return;
 
-    unsigned int seed = (unsigned int)(chunk->position.x * 73856093 ^ chunk->position.y * 19349663);
-    srand(seed);
+    chunk->seed = (unsigned int)(chunk->position.x * 73856093 ^ chunk->position.y * 19349663);
+    srand(chunk->seed);
     for (int i = 0; i < CHUNK_AREA; i++) {
         // World generation
         Vector2i globalBlockPos = {
@@ -57,49 +65,27 @@ void chunk_regenerate(Chunk* chunk) {
         chunk->walls[i] = 0;
         chunk->light[i] = 15;
     }
+    chunk_update_lightmap(chunk);
 }
 
-void chunk_calculate_lighting(Chunk* chunk) {
-    if (!chunk) return;
-
-    for (int i = 0; i < CHUNK_AREA; i++) {
-        chunk->light[i] = 15;
-    }
-
-    /*
-    for (int i = 0; i < CHUNK_AREA; i++) {
-        if (chunk->blocks[i] == 0 && chunk->walls[i] == 0) {
-            chunk->light[i] = 255;
-        } else {
-            chunk->light[i] = 0;
+void chunk_update_lightmap(Chunk* chunk) {
+    Image img = GenImageColor(CHUNK_WIDTH, CHUNK_WIDTH, (Color) { 0, 0, 0, 0 });
+    for (int y = 0; y < img.height; y++) {
+        for (int x = 0; x < img.width; x++) {
+            int index = x + (y * CHUNK_WIDTH);
+            unsigned char value = (unsigned char)(((float)chunk->light[index] / 15.0f) * 255.0f);
+            Color pixelColor = {
+                .r = 0,
+                .g = 0,
+                .b = 0,
+                .a = 255 - value
+            };
+            ImageDrawPixel(&img, x, y, pixelColor);
         }
     }
-
-    for (int i = 0; i < CHUNK_AREA; i++) {
-        if (chunk->blocks[i] == 0 && chunk->walls[i] == 0) {
-            chunk->light[i] = 255;
-        } else {
-            Vector2i globalBlockPos = {
-                chunk->position.x * CHUNK_WIDTH + (i % CHUNK_WIDTH),
-                chunk->position.y * CHUNK_WIDTH + (i / CHUNK_WIDTH)
-            };
-
-            uint8_t neighborLightValues[4] = {
-                chunk_manager_get_light((Vector2i){ globalBlockPos.x + 1, globalBlockPos.y + 0 }),
-                chunk_manager_get_light((Vector2i){ globalBlockPos.x - 1, globalBlockPos.y + 0 }),
-                chunk_manager_get_light((Vector2i){ globalBlockPos.x + 0, globalBlockPos.y + 1 }),
-                chunk_manager_get_light((Vector2i){ globalBlockPos.x + 0, globalBlockPos.y - 1 }),
-            };
-
-            uint8_t maxLightValue = fmax(
-                fmax(neighborLightValues[0], neighborLightValues[1]),
-                fmax(neighborLightValues[2], neighborLightValues[3])
-            );
-
-            if (maxLightValue > 0 && chunk->light[i] > 0) chunk->light[i]--;
-        }
-    }
-    */
+    UnloadTexture(chunk->lightMap);
+    chunk->lightMap = LoadTextureFromImage(img);
+    SetTextureFilter(chunk->lightMap, TEXTURE_FILTER_BILINEAR);
 }
 
 void chunk_draw(Chunk* chunk, Texture2D* blocksAtlas) {
@@ -126,28 +112,15 @@ void chunk_draw(Chunk* chunk, Texture2D* blocksAtlas) {
             .height = (float)TILE_SIZE
         };
 
-        Color blockTint = {  
-            .r = (unsigned char)(((float)chunk->light[j] / 15.0f) * 255.0f),
-            .g = (unsigned char)(((float)chunk->light[j] / 15.0f) * 255.0f),
-            .b = (unsigned char)(((float)chunk->light[j] / 15.0f) * 255.0f),
-            .a = 255
-        };
-
         if (chunk->walls[j] > 0) {
             textureRect.x = (float)(chunk->walls[j] - 1) * TILE_SIZE;
-            Color wallTint = {
-                blockTint.r / 2,
-                blockTint.g / 2,
-                blockTint.b / 2,
-                blockTint.a
-            };
 
             if (blocksAtlas) {
                 DrawTextureRec(
                     *blocksAtlas,
                     textureRect,
                     pos,
-                    wallTint
+                    GRAY
                 );
             } else {
                 DrawRectangle(
@@ -155,7 +128,7 @@ void chunk_draw(Chunk* chunk, Texture2D* blocksAtlas) {
                     y,
                     TILE_SIZE,
                     TILE_SIZE,
-                    wallTint
+                    GRAY
                 );
             }
         }
@@ -166,7 +139,7 @@ void chunk_draw(Chunk* chunk, Texture2D* blocksAtlas) {
                     *blocksAtlas,
                     textureRect,
                     pos,
-                    blockTint
+                    WHITE
                 );
             } else {
                 DrawRectangle(
@@ -174,11 +147,19 @@ void chunk_draw(Chunk* chunk, Texture2D* blocksAtlas) {
                     y,
                     TILE_SIZE,
                     TILE_SIZE,
-                    blockTint
+                    WHITE
                 );
             }
         }
     }
+
+    DrawTextureEx(
+        chunk->lightMap,
+        Vector2Zero(),
+        0.0f,
+        TILE_SIZE,
+        WHITE
+    );
 
     DrawRectangleLines(
         0,

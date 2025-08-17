@@ -1,4 +1,4 @@
-#include "chunk_manager.h"
+﻿#include "chunk_manager.h"
 #include "chunk.h"
 
 #include <stdint.h>
@@ -27,6 +27,8 @@ void chunk_manager_init() {
 			chunk_regenerate(&chunks[i]);
 		}
 	}
+
+    chunk_manager_calculate_ligthing();
 }
 
 void chunk_manager_draw() {
@@ -36,6 +38,7 @@ void chunk_manager_draw() {
 }
 
 void chunk_manager_free() {
+    UnloadTexture(blocksAtlas);
     if (chunks) {
         free(chunks);
         chunks = NULL;
@@ -75,11 +78,11 @@ void chunk_manager_relocate(Vector2i newCenter) {
         chunks[i] = tempChunks[i];
     }
     
-    //for (int j = 0; j < 16; j++) {
-    //for (int i = 0; i < CHUNK_COUNT; i++) {
-    //    chunk_calculate_lighting(&chunks[i]);
-    //}
-    //}
+    chunk_manager_calculate_ligthing();
+}
+
+void chunk_manager_calculate_ligthing() {
+    
 }
 
 void chunk_manager_set_block(Vector2i position, int blockValue, bool isWall) {
@@ -105,6 +108,7 @@ void chunk_manager_set_block(Vector2i position, int blockValue, bool isWall) {
             blockValue,
             isWall
         );
+        chunk_manager_calculate_ligthing();
 	}
 }
 
@@ -157,6 +161,31 @@ uint8_t chunk_manager_get_light(Vector2i position) {
         );
 	}
 	return 0;
+}
+
+void chunk_manager_set_light(Vector2i position, uint8_t value) {
+    Vector2i chunkPos = {
+        (int)floorf((float)position.x / (float)CHUNK_WIDTH),
+        (int)floorf((float)position.y / (float)CHUNK_WIDTH)
+    };
+
+    Vector2i localChunkPos = {
+        chunkPos.x - (currentChunkPos.x - CHUNK_VIEW_WIDTH / 2),
+        chunkPos.y - (currentChunkPos.y - CHUNK_VIEW_HEIGHT / 2)
+    };
+
+    if (localChunkPos.x >= 0 && localChunkPos.x < CHUNK_VIEW_WIDTH && localChunkPos.y >= 0 && localChunkPos.y < CHUNK_VIEW_HEIGHT) {
+        int chunkIndex = localChunkPos.y * CHUNK_VIEW_WIDTH + localChunkPos.x;
+
+        chunk_set_light(
+            &chunks[chunkIndex],
+            (Vector2u) {
+                .x = ((position.x % CHUNK_WIDTH) + CHUNK_WIDTH) % CHUNK_WIDTH,
+                .y = ((position.y % CHUNK_WIDTH) + CHUNK_WIDTH) % CHUNK_WIDTH
+            },
+            value
+        );
+    }
 }
 
 /*

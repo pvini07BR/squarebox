@@ -25,11 +25,9 @@ typedef struct {
 	int blocks[CHUNK_AREA];
 	int walls[CHUNK_AREA];
     uint8_t light[CHUNK_AREA];
-	Texture2D lightMap;
 } Chunk;
 
 void chunk_regenerate(Chunk* chunk);
-void chunk_update_lightmap(Chunk* chunk);
 void chunk_draw(Chunk* chunk, Texture2D* blocksAtlas);
 // Position is relative to the chunk origin
 void chunk_set_block(Chunk* chunk, Vector2u position, int blockValue, bool isWall);

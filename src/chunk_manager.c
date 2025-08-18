@@ -10,6 +10,7 @@
 
 static Chunk* chunks = NULL;
 static Texture2D blocksAtlas;
+static Texture2D lightMap;
 static Vector2i currentChunkPos;
 
 void chunk_manager_init() {
@@ -35,10 +36,22 @@ void chunk_manager_draw() {
     for (int i = 0; i < CHUNK_COUNT; i++) {
         chunk_draw(&chunks[i], &blocksAtlas);
     }
+
+    DrawTextureEx(
+        lightMap,
+        (Vector2) {
+            (currentChunkPos.x - (CHUNK_VIEW_WIDTH / 2)) * CHUNK_WIDTH * TILE_SIZE,
+            (currentChunkPos.y - (CHUNK_VIEW_HEIGHT / 2)) * CHUNK_WIDTH * TILE_SIZE
+        },
+        0.0f,
+        TILE_SIZE,
+        WHITE
+    );
 }
 
 void chunk_manager_free() {
     UnloadTexture(blocksAtlas);
+    UnloadTexture(lightMap);
     if (chunks) {
         free(chunks);
         chunks = NULL;
@@ -82,7 +95,63 @@ void chunk_manager_relocate(Vector2i newCenter) {
 }
 
 void chunk_manager_calculate_ligthing() {
-    
+    int baseX = (currentChunkPos.x - (CHUNK_VIEW_WIDTH / 2)) * CHUNK_WIDTH;
+    int baseY = (currentChunkPos.y - (CHUNK_VIEW_HEIGHT / 2)) * CHUNK_WIDTH;
+
+    for (int x = 0; x < CHUNK_VIEW_WIDTH * CHUNK_WIDTH; x++) {
+        uint8_t curLightVal = 15;
+
+        for (int y = 0; y < CHUNK_VIEW_WIDTH * CHUNK_WIDTH; y++) {
+            int block = chunk_manager_get_block((Vector2i) { baseX + x, baseY + y }, false);
+            int wall = chunk_manager_get_block((Vector2i) { baseX + x, baseY + y }, true);
+
+            if ((block != 0 || wall != 0) && curLightVal > 0) curLightVal--;
+            chunk_manager_set_light((Vector2i) { baseX + x, baseY + y }, curLightVal);
+        }
+    }
+
+    // Generate lightmap
+    Image img = GenImageColor(CHUNK_WIDTH * CHUNK_VIEW_WIDTH, CHUNK_WIDTH * CHUNK_VIEW_HEIGHT, (Color) { 0, 0, 0, 0 });
+
+    for (int c = 0; c < CHUNK_COUNT; c++) {
+        Chunk* chunk = &chunks[c];
+        int cx = c % CHUNK_VIEW_WIDTH;
+        int cy = c / CHUNK_VIEW_WIDTH;
+
+        for (int y = 0; y < img.height; y++) {
+            for (int x = 0; x < img.width; x++) {
+                int index = x + (y * CHUNK_WIDTH);
+                unsigned char value = (unsigned char)(((float)chunk->light[index] / 15.0f) * 255.0f);
+                Color pixelColor = {
+                    .r = 0,
+                    .g = 0,
+                    .b = 0,
+                    .a = 255 - value
+                };
+                ImageDrawPixel(&img, (cx * CHUNK_WIDTH) + x, (cy * CHUNK_WIDTH) + y, pixelColor);
+            }
+        }
+    }
+
+    UnloadTexture(lightMap);
+    lightMap = LoadTextureFromImage(img);
+    UnloadImage(img);
+    SetTextureFilter(lightMap, TEXTURE_FILTER_BILINEAR);
+}
+
+Chunk* chunk_manager_get_chunk(Vector2i position) {
+    Vector2i localChunkPos = {
+        position.x - (currentChunkPos.x - (CHUNK_VIEW_WIDTH / 2)),
+        position.y - (currentChunkPos.y - (CHUNK_VIEW_HEIGHT / 2))
+    };
+
+    if (localChunkPos.x >= 0 && localChunkPos.x < CHUNK_VIEW_WIDTH && localChunkPos.y >= 0 && localChunkPos.y < CHUNK_VIEW_HEIGHT) {
+        int chunkIndex = localChunkPos.y * CHUNK_VIEW_WIDTH + localChunkPos.x;
+        return &chunks[chunkIndex];
+    }
+    else {
+        return NULL;
+    }
 }
 
 void chunk_manager_set_block(Vector2i position, int blockValue, bool isWall) {

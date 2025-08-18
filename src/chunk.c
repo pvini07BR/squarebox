@@ -38,7 +38,6 @@ void chunk_set_light(Chunk* chunk, Vector2u position, uint8_t value) {
     if (position.x > CHUNK_WIDTH || position.y > CHUNK_WIDTH) return;
 
     chunk->light[position.x + (position.y * CHUNK_WIDTH)] = value;
-    chunk_update_lightmap(chunk);
 }
 
 void chunk_regenerate(Chunk* chunk) {
@@ -57,17 +56,20 @@ void chunk_regenerate(Chunk* chunk) {
 
         if (globalBlockPos.y == sin) {
             chunk->blocks[i] = 1;
-        } else if (globalBlockPos.y > sin) {
+        } else if (globalBlockPos.y > sin && globalBlockPos.y <= 50) {
             chunk->blocks[i] = 2;
-        } else {
+        } else if (globalBlockPos.y > 50) {
+            chunk->blocks[i] = 3;
+        }
+        else {
             chunk->blocks[i] = 0;
         }
         chunk->walls[i] = 0;
-        chunk->light[i] = 15;
+        chunk->light[i] = 0;
     }
-    chunk_update_lightmap(chunk);
 }
 
+/*
 void chunk_update_lightmap(Chunk* chunk) {
     Image img = GenImageColor(CHUNK_WIDTH, CHUNK_WIDTH, (Color) { 0, 0, 0, 0 });
     for (int y = 0; y < img.height; y++) {
@@ -87,6 +89,7 @@ void chunk_update_lightmap(Chunk* chunk) {
     chunk->lightMap = LoadTextureFromImage(img);
     SetTextureFilter(chunk->lightMap, TEXTURE_FILTER_BILINEAR);
 }
+*/
 
 void chunk_draw(Chunk* chunk, Texture2D* blocksAtlas) {
     if (!chunk) return;
@@ -152,14 +155,6 @@ void chunk_draw(Chunk* chunk, Texture2D* blocksAtlas) {
             }
         }
     }
-
-    DrawTextureEx(
-        chunk->lightMap,
-        Vector2Zero(),
-        0.0f,
-        TILE_SIZE,
-        WHITE
-    );
 
     DrawRectangleLines(
         0,

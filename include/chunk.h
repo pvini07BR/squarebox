@@ -22,17 +22,17 @@ typedef struct {
 typedef struct {
 	unsigned int seed;
 	Vector2i position;
-	int blocks[CHUNK_AREA];
-	int walls[CHUNK_AREA];
+	uint8_t blocks[CHUNK_AREA];
+	uint8_t walls[CHUNK_AREA];
     uint8_t light[CHUNK_AREA];
 } Chunk;
 
 void chunk_regenerate(Chunk* chunk);
-void chunk_draw(Chunk* chunk, Texture2D* blocksAtlas);
+void chunk_draw(Chunk* chunk);
 // Position is relative to the chunk origin
-void chunk_set_block(Chunk* chunk, Vector2u position, int blockValue, bool isWall);
+void chunk_set_block(Chunk* chunk, Vector2u position, uint8_t blockValue, bool isWall);
 // Position is relative to the chunk origin
-int chunk_get_block(Chunk* chunk, Vector2u position, bool isWall);
+uint8_t chunk_get_block(Chunk* chunk, Vector2u position, bool isWall);
 // Position is relative to the chunk origin
 void chunk_set_light(Chunk* chunk, Vector2u position, uint8_t value);
 // Position is relative to the chunk origin

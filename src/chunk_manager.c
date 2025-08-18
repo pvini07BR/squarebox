@@ -1,5 +1,6 @@
 ﻿#include "chunk_manager.h"
 #include "chunk.h"
+#include "block_registry.h"
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -9,20 +10,18 @@
 #include <raymath.h>
 
 static Chunk* chunks = NULL;
-static Texture2D blocksAtlas;
 static Texture2D lightMap;
 static Vector2i currentChunkPos;
 
 void chunk_manager_init() {
     chunks = (Chunk*)malloc(sizeof(Chunk) * CHUNK_COUNT);
-    blocksAtlas = LoadTexture(ASSETS_PATH "blocks.png");
 
     chunk_manager_relocate((Vector2i) { 0, 0 });
 }
 
 void chunk_manager_draw() {
     for (int i = 0; i < CHUNK_COUNT; i++) {
-        chunk_draw(&chunks[i], &blocksAtlas);
+        chunk_draw(&chunks[i]);
     }
 
     DrawTextureEx(
@@ -57,7 +56,6 @@ void chunk_manager_draw() {
 }
 
 void chunk_manager_free() {
-    UnloadTexture(blocksAtlas);
     UnloadTexture(lightMap);
     if (chunks) {
         free(chunks);
@@ -112,7 +110,10 @@ void chunk_manager_calculate_ligthing() {
             int block = chunk_manager_get_block((Vector2i) { baseX + x, baseY + y }, false);
             int wall = chunk_manager_get_block((Vector2i) { baseX + x, baseY + y }, true);
 
-            if ((block != 0 || wall != 0) && curLightVal > 0) curLightVal--;
+            BlockRegistry* block_reg = block_registry_get_block_registry(block);
+            BlockRegistry* wall_reg = block_registry_get_block_registry(wall);
+
+            if ((!block_reg->transparent || !wall_reg->transparent) && curLightVal > 0) curLightVal--;
             chunk_manager_set_light((Vector2i) { baseX + x, baseY + y }, curLightVal);
         }
     }
@@ -163,17 +164,17 @@ Chunk* chunk_manager_get_chunk(Vector2i position) {
 }
 
 void chunk_manager_set_block(Vector2i position, int blockValue, bool isWall) {
-	Vector2i chunkPos = {
-		(int)floorf((float)position.x / (float)CHUNK_WIDTH),
-		(int)floorf((float)position.y / (float)CHUNK_WIDTH)
-	};
+    Vector2i chunkPos = {
+        (int)floorf((float)position.x / (float)CHUNK_WIDTH),
+        (int)floorf((float)position.y / (float)CHUNK_WIDTH)
+    };
 
-	Vector2i localChunkPos = {
-		chunkPos.x - (currentChunkPos.x - CHUNK_VIEW_WIDTH / 2),
-		chunkPos.y - (currentChunkPos.y - CHUNK_VIEW_HEIGHT / 2)
-	};
+    Vector2i localChunkPos = {
+        chunkPos.x - (currentChunkPos.x - CHUNK_VIEW_WIDTH / 2),
+        chunkPos.y - (currentChunkPos.y - CHUNK_VIEW_HEIGHT / 2)
+    };
 
-	if (localChunkPos.x >= 0 && localChunkPos.x < CHUNK_VIEW_WIDTH && localChunkPos.y >= 0 && localChunkPos.y < CHUNK_VIEW_HEIGHT) {
+    if (localChunkPos.x >= 0 && localChunkPos.x < CHUNK_VIEW_WIDTH && localChunkPos.y >= 0 && localChunkPos.y < CHUNK_VIEW_HEIGHT) {
         int chunkIndex = localChunkPos.y * CHUNK_VIEW_WIDTH + localChunkPos.x;
 
         chunk_set_block(
@@ -186,21 +187,21 @@ void chunk_manager_set_block(Vector2i position, int blockValue, bool isWall) {
             isWall
         );
         chunk_manager_calculate_ligthing();
-	}
+    }
 }
 
 int chunk_manager_get_block(Vector2i position, bool isWall) {
-	Vector2i chunkPos = {
-		(int)floorf((float)position.x / (float)CHUNK_WIDTH),
-		(int)floorf((float)position.y / (float)CHUNK_WIDTH)
-	};
+    Vector2i chunkPos = {
+        (int)floorf((float)position.x / (float)CHUNK_WIDTH),
+        (int)floorf((float)position.y / (float)CHUNK_WIDTH)
+    };
 
-	Vector2i localChunkPos = {
-		chunkPos.x - (currentChunkPos.x - CHUNK_VIEW_WIDTH / 2),
-		chunkPos.y - (currentChunkPos.y - CHUNK_VIEW_HEIGHT / 2)
-	};
+    Vector2i localChunkPos = {
+        chunkPos.x - (currentChunkPos.x - CHUNK_VIEW_WIDTH / 2),
+        chunkPos.y - (currentChunkPos.y - CHUNK_VIEW_HEIGHT / 2)
+    };
 
-	if (localChunkPos.x >= 0 && localChunkPos.x < CHUNK_VIEW_WIDTH && localChunkPos.y >= 0 && localChunkPos.y < CHUNK_VIEW_HEIGHT) {
+    if (localChunkPos.x >= 0 && localChunkPos.x < CHUNK_VIEW_WIDTH && localChunkPos.y >= 0 && localChunkPos.y < CHUNK_VIEW_HEIGHT) {
         int chunkIndex = localChunkPos.y * CHUNK_VIEW_WIDTH + localChunkPos.x;
 
         return chunk_get_block(
@@ -211,22 +212,22 @@ int chunk_manager_get_block(Vector2i position, bool isWall) {
             },
             isWall
         );
-	}
-	return 0;
+    }
+    return 0;
 }
 
 uint8_t chunk_manager_get_light(Vector2i position) {
-	Vector2i chunkPos = {
-		(int)floorf((float)position.x / (float)CHUNK_WIDTH),
-		(int)floorf((float)position.y / (float)CHUNK_WIDTH)
-	};
+    Vector2i chunkPos = {
+        (int)floorf((float)position.x / (float)CHUNK_WIDTH),
+        (int)floorf((float)position.y / (float)CHUNK_WIDTH)
+    };
 
-	Vector2i localChunkPos = {
-		chunkPos.x - (currentChunkPos.x - CHUNK_VIEW_WIDTH / 2),
-		chunkPos.y - (currentChunkPos.y - CHUNK_VIEW_HEIGHT / 2)
-	};
+    Vector2i localChunkPos = {
+        chunkPos.x - (currentChunkPos.x - CHUNK_VIEW_WIDTH / 2),
+        chunkPos.y - (currentChunkPos.y - CHUNK_VIEW_HEIGHT / 2)
+    };
 
-	if (localChunkPos.x >= 0 && localChunkPos.x < CHUNK_VIEW_WIDTH && localChunkPos.y >= 0 && localChunkPos.y < CHUNK_VIEW_HEIGHT) {
+    if (localChunkPos.x >= 0 && localChunkPos.x < CHUNK_VIEW_WIDTH && localChunkPos.y >= 0 && localChunkPos.y < CHUNK_VIEW_HEIGHT) {
         int chunkIndex = localChunkPos.y * CHUNK_VIEW_WIDTH + localChunkPos.x;
 
         return chunk_get_light(
@@ -236,8 +237,8 @@ uint8_t chunk_manager_get_light(Vector2i position) {
                 .y = ((position.y % CHUNK_WIDTH) + CHUNK_WIDTH) % CHUNK_WIDTH
             }
         );
-	}
-	return 0;
+    }
+    return 0;
 }
 
 void chunk_manager_set_light(Vector2i position, uint8_t value) {

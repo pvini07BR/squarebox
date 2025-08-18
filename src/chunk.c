@@ -1,5 +1,6 @@
 #include "chunk.h"
 #include "chunk_manager.h"
+#include "block_registry.h"
 #include <math.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -8,7 +9,7 @@
 #include <raymath.h>
 #include <rlgl.h>
 
-void chunk_set_block(Chunk* chunk, Vector2u position, int blockValue, bool isWall) {
+void chunk_set_block(Chunk* chunk, Vector2u position, uint8_t blockValue, bool isWall) {
     if (!chunk) return;
     if (position.x > CHUNK_WIDTH || position.y > CHUNK_WIDTH) return;
 
@@ -18,7 +19,7 @@ void chunk_set_block(Chunk* chunk, Vector2u position, int blockValue, bool isWal
         chunk->walls[position.x + (position.y * CHUNK_WIDTH)] = blockValue;
 }
 
-int chunk_get_block(Chunk* chunk, Vector2u position, bool isWall) {
+uint8_t chunk_get_block(Chunk* chunk, Vector2u position, bool isWall) {
 	if (!chunk) return 0;
     if (position.x > CHUNK_WIDTH || position.y > CHUNK_WIDTH) return 0;
     if (!isWall)
@@ -91,7 +92,7 @@ void chunk_update_lightmap(Chunk* chunk) {
 }
 */
 
-void chunk_draw(Chunk* chunk, Texture2D* blocksAtlas) {
+void chunk_draw(Chunk* chunk) {
     if (!chunk) return;
 
     rlPushMatrix();
@@ -106,53 +107,22 @@ void chunk_draw(Chunk* chunk, Texture2D* blocksAtlas) {
         int x = j % CHUNK_WIDTH * TILE_SIZE;
         int y = (j / CHUNK_WIDTH) % CHUNK_WIDTH * TILE_SIZE;
 
-        Vector2 pos = { (float)x, (float)y };
-
-        Rectangle textureRect = {
-            .x = (float)(chunk->blocks[j] - 1) * TILE_SIZE,
-            .y = 0.0f,
-            .width = (float)TILE_SIZE,
-            .height = (float)TILE_SIZE
-        };
-
         if (chunk->walls[j] > 0) {
-            textureRect.x = (float)(chunk->walls[j] - 1) * TILE_SIZE;
-
-            if (blocksAtlas) {
-                DrawTextureRec(
-                    *blocksAtlas,
-                    textureRect,
-                    pos,
-                    GRAY
-                );
-            } else {
-                DrawRectangle(
-                    x,
-                    y,
-                    TILE_SIZE,
-                    TILE_SIZE,
-                    GRAY
-                );
-            }
+            DrawTextureRec(
+                *block_registry_get_block_atlas(),
+                block_registry_get_block_texture_rect(chunk->walls[j]),
+                (Vector2){ (float)x, (float)y },
+                GRAY
+            );
         }
 
         if (chunk->blocks[j] > 0) {
-            if (blocksAtlas) {
-                DrawTextureRec(
-                    *blocksAtlas,
-                    textureRect,
-                    pos,
-                    WHITE
-                );
-            } else {
-                DrawRectangle(
-                    x,
-                    y,
-                    TILE_SIZE,
-                    TILE_SIZE,
-                    WHITE
-                );
-            }
+            DrawTextureRec(
+                *block_registry_get_block_atlas(),
+                block_registry_get_block_texture_rect(chunk->blocks[j]),
+                (Vector2) { (float)x, (float)y },
+                WHITE
+            );
         }
     }
 

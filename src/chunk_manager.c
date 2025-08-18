@@ -17,19 +17,7 @@ void chunk_manager_init() {
     chunks = (Chunk*)malloc(sizeof(Chunk) * CHUNK_COUNT);
     blocksAtlas = LoadTexture(ASSETS_PATH "blocks.png");
 
-    int startChunkX = -CHUNK_VIEW_WIDTH / 2;
-	int startChunkY = -CHUNK_VIEW_HEIGHT / 2;
-
-    for (int y = 0; y < CHUNK_VIEW_HEIGHT; y++) {
-		for (int x = 0; x < CHUNK_VIEW_WIDTH; x++) {
-			int i = y * CHUNK_VIEW_WIDTH + x;
-			chunks[i].position.x = startChunkX + x;
-			chunks[i].position.y = startChunkY + y;
-			chunk_regenerate(&chunks[i]);
-		}
-	}
-
-    chunk_manager_calculate_ligthing();
+    chunk_manager_relocate((Vector2i) { 0, 0 });
 }
 
 void chunk_manager_draw() {
@@ -47,6 +35,25 @@ void chunk_manager_draw() {
         TILE_SIZE,
         WHITE
     );
+
+    for (int i = 0; i < CHUNK_COUNT; i++) {
+        rlPushMatrix();
+        rlTranslatef(
+            chunks[i].position.x * CHUNK_WIDTH * TILE_SIZE,
+            chunks[i].position.y * CHUNK_WIDTH * TILE_SIZE,
+            0.0f
+        );
+
+        DrawRectangleLines(
+            0,
+            0,
+            CHUNK_WIDTH * TILE_SIZE,
+            CHUNK_WIDTH * TILE_SIZE,
+            WHITE
+        );
+
+        rlPopMatrix();
+    }
 }
 
 void chunk_manager_free() {
@@ -137,6 +144,7 @@ void chunk_manager_calculate_ligthing() {
     lightMap = LoadTextureFromImage(img);
     UnloadImage(img);
     SetTextureFilter(lightMap, TEXTURE_FILTER_BILINEAR);
+    SetTextureWrap(lightMap, TEXTURE_WRAP_CLAMP);
 }
 
 Chunk* chunk_manager_get_chunk(Vector2i position) {

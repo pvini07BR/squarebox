@@ -4,8 +4,8 @@
 #include "chunk.h"
 #include <stdint.h>
 
-#define CHUNK_VIEW_WIDTH 16
-#define CHUNK_VIEW_HEIGHT 8
+#define CHUNK_VIEW_WIDTH 5
+#define CHUNK_VIEW_HEIGHT 3
 
 #define CHUNK_COUNT CHUNK_VIEW_WIDTH*CHUNK_VIEW_HEIGHT
 

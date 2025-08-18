@@ -156,13 +156,5 @@ void chunk_draw(Chunk* chunk, Texture2D* blocksAtlas) {
         }
     }
 
-    DrawRectangleLines(
-        0,
-        0,
-        CHUNK_WIDTH * TILE_SIZE,
-        CHUNK_WIDTH * TILE_SIZE,
-        WHITE
-    );
-
     rlPopMatrix();
 }

@@ -1,6 +1,8 @@
 #include "chunk.h"
 #include "chunk_manager.h"
 #include "block_registry.h"
+#include "light_queue.h"
+
 #include <math.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -33,40 +35,6 @@ uint8_t chunk_get_block(Chunk* chunk, Vector2u position, bool isWall) {
         return chunk->walls[position.x + (position.y * CHUNK_WIDTH)];
 }
 
-uint8_t chunk_get_block_extrapolating(Chunk* chunk, Vector2i position, bool isWall) {
-    if (!chunk) return 0;
-
-    if (position.x >= 0 && position.y >= 0 && position.x < CHUNK_WIDTH && position.y < CHUNK_WIDTH) {
-        if (!isWall)
-            return chunk->blocks[position.x + (position.y * CHUNK_WIDTH)];
-        else
-            return chunk->walls[position.x + (position.y * CHUNK_WIDTH)];
-    }
-    else {
-        Chunk* neighbor = NULL;
-
-        if (position.x < 0 && position.y < 0) neighbor = (Chunk*)chunk->neighbors.upLeft;
-        else if (position.x >= CHUNK_WIDTH && position.y < 0) neighbor = (Chunk*)chunk->neighbors.upRight;
-        else if (position.x < 0 && position.y >= CHUNK_WIDTH) neighbor = (Chunk*)chunk->neighbors.downLeft;
-        else if (position.x >= CHUNK_WIDTH && position.y >= CHUNK_WIDTH) neighbor = (Chunk*)chunk->neighbors.downRight;
-        else if (position.x < 0) neighbor = (Chunk*)chunk->neighbors.left;
-        else if (position.x >= CHUNK_WIDTH) neighbor = (Chunk*)chunk->neighbors.right;
-        else if (position.y < 0) neighbor = (Chunk*)chunk->neighbors.up;
-        else if (position.y >= CHUNK_WIDTH) neighbor = (Chunk*)chunk->neighbors.down;
-
-        if (neighbor == NULL) return 0;
-
-        Vector2u relPos = {
-            .x = posmod(position.x, CHUNK_WIDTH),
-            .y = posmod(position.y, CHUNK_WIDTH)
-        };
-
-        if (!isWall)
-            return neighbor->blocks[relPos.x + (relPos.y * CHUNK_WIDTH)];
-        else
-            return neighbor->walls[relPos.x + (relPos.y * CHUNK_WIDTH)];
-    }
-}
 
 uint8_t chunk_get_light(Chunk* chunk, Vector2u position) {
     if (!chunk) return 0;
@@ -224,4 +192,158 @@ void chunk_draw(Chunk* chunk) {
     }
 
     rlPopMatrix();
+}
+
+uint8_t chunk_get_block_extrapolating(Chunk* chunk, Vector2i position, bool isWall) {
+    if (!chunk) return 0;
+
+    if (position.x >= 0 && position.y >= 0 && position.x < CHUNK_WIDTH && position.y < CHUNK_WIDTH) {
+        if (!isWall)
+            return chunk->blocks[position.x + (position.y * CHUNK_WIDTH)];
+        else
+            return chunk->walls[position.x + (position.y * CHUNK_WIDTH)];
+    }
+    else {
+        Chunk* neighbor = NULL;
+
+        if (position.x < 0 && position.y < 0) neighbor = (Chunk*)chunk->neighbors.upLeft;
+        else if (position.x >= CHUNK_WIDTH && position.y < 0) neighbor = (Chunk*)chunk->neighbors.upRight;
+        else if (position.x < 0 && position.y >= CHUNK_WIDTH) neighbor = (Chunk*)chunk->neighbors.downLeft;
+        else if (position.x >= CHUNK_WIDTH && position.y >= CHUNK_WIDTH) neighbor = (Chunk*)chunk->neighbors.downRight;
+        else if (position.x < 0) neighbor = (Chunk*)chunk->neighbors.left;
+        else if (position.x >= CHUNK_WIDTH) neighbor = (Chunk*)chunk->neighbors.right;
+        else if (position.y < 0) neighbor = (Chunk*)chunk->neighbors.up;
+        else if (position.y >= CHUNK_WIDTH) neighbor = (Chunk*)chunk->neighbors.down;
+
+        if (neighbor == NULL) return 0;
+
+        Vector2u relPos = {
+            .x = posmod(position.x, CHUNK_WIDTH),
+            .y = posmod(position.y, CHUNK_WIDTH)
+        };
+
+        if (!isWall)
+            return neighbor->blocks[relPos.x + (relPos.y * CHUNK_WIDTH)];
+        else
+            return neighbor->walls[relPos.x + (relPos.y * CHUNK_WIDTH)];
+    }
+}
+
+uint8_t chunk_get_light_extrapolating(Chunk* chunk, Vector2i position) {
+    if (!chunk) return 0;
+
+    if (position.x >= 0 && position.y >= 0 && position.x < CHUNK_WIDTH && position.y < CHUNK_WIDTH) {
+        return chunk->light[position.x + (position.y * CHUNK_WIDTH)];
+    }
+    else {
+        Chunk* neighbor = NULL;
+
+        if (position.x < 0 && position.y < 0) neighbor = (Chunk*)chunk->neighbors.upLeft;
+        else if (position.x >= CHUNK_WIDTH && position.y < 0) neighbor = (Chunk*)chunk->neighbors.upRight;
+        else if (position.x < 0 && position.y >= CHUNK_WIDTH) neighbor = (Chunk*)chunk->neighbors.downLeft;
+        else if (position.x >= CHUNK_WIDTH && position.y >= CHUNK_WIDTH) neighbor = (Chunk*)chunk->neighbors.downRight;
+        else if (position.x < 0) neighbor = (Chunk*)chunk->neighbors.left;
+        else if (position.x >= CHUNK_WIDTH) neighbor = (Chunk*)chunk->neighbors.right;
+        else if (position.y < 0) neighbor = (Chunk*)chunk->neighbors.up;
+        else if (position.y >= CHUNK_WIDTH) neighbor = (Chunk*)chunk->neighbors.down;
+
+        if (neighbor == NULL) return 0;
+
+        Vector2u relPos = {
+            .x = posmod(position.x, CHUNK_WIDTH),
+            .y = posmod(position.y, CHUNK_WIDTH)
+        };
+
+        return neighbor->light[relPos.x + (relPos.y * CHUNK_WIDTH)];
+    }
+}
+
+void chunk_set_light_extrapolating(Chunk* chunk, Vector2i position, uint8_t lightValue,
+    Chunk** affectedChunk, Vector2i* affectedPos) {
+    if (!chunk) return;
+
+    if (position.x >= 0 && position.y >= 0 && position.x < CHUNK_WIDTH && position.y < CHUNK_WIDTH) {
+        chunk->light[position.x + (position.y * CHUNK_WIDTH)] = lightValue;
+        *affectedChunk = chunk;
+        *affectedPos = position;
+    }
+    else {
+        Chunk* neighbor = NULL;
+
+        if (position.x < 0 && position.y < 0) neighbor = (Chunk*)chunk->neighbors.upLeft;
+        else if (position.x >= CHUNK_WIDTH && position.y < 0) neighbor = (Chunk*)chunk->neighbors.upRight;
+        else if (position.x < 0 && position.y >= CHUNK_WIDTH) neighbor = (Chunk*)chunk->neighbors.downLeft;
+        else if (position.x >= CHUNK_WIDTH && position.y >= CHUNK_WIDTH) neighbor = (Chunk*)chunk->neighbors.downRight;
+        else if (position.x < 0) neighbor = (Chunk*)chunk->neighbors.left;
+        else if (position.x >= CHUNK_WIDTH) neighbor = (Chunk*)chunk->neighbors.right;
+        else if (position.y < 0) neighbor = (Chunk*)chunk->neighbors.up;
+        else if (position.y >= CHUNK_WIDTH) neighbor = (Chunk*)chunk->neighbors.down;
+
+        if (neighbor == NULL) {
+            *affectedChunk = NULL;
+            return;
+        }
+
+        Vector2i relPos = {
+            .x = posmod(position.x, CHUNK_WIDTH),
+            .y = posmod(position.y, CHUNK_WIDTH)
+        };
+
+        neighbor->light[relPos.x + (relPos.y * CHUNK_WIDTH)] = lightValue;
+        *affectedChunk = neighbor;
+        *affectedPos = relPos;
+    }
+}
+
+bool chunk_is_transparent_extrapolating(Chunk* chunk, Vector2i position) {
+    uint8_t block = chunk_get_block_extrapolating(chunk, position, false);
+    uint8_t wall = chunk_get_block_extrapolating(chunk, position, true);
+
+    BlockRegistry* block_reg = block_registry_get_block_registry(block);
+    BlockRegistry* wall_reg = block_registry_get_block_registry(wall);
+
+    return (block_reg->transparent && wall_reg->transparent);
+}
+
+void chunk_propagate_light_flood_fill(Chunk* startChunk, Vector2i startPos, uint8_t startLight) {
+    if (!startChunk) return;
+    if (!get_light_queue()) return;
+
+    light_queue_push(startChunk, startPos, startLight);
+
+    Vector2i directions[4] = {
+        {-1, 0}, {1, 0}, {0, -1}, {0, 1}
+    };
+
+    while (get_light_queue()->size > 0) {
+        LightNode current;
+        if (!light_queue_pop(&current)) break;
+
+        for (int i = 0; i < 4; i++) {
+            Vector2i neighborPos = {
+                current.localPosition.x + directions[i].x,
+                current.localPosition.y + directions[i].y
+            };
+
+            if (!chunk_is_transparent_extrapolating(current.chunk, neighborPos)) {
+                continue;
+            }
+
+            uint8_t newLightLevel = (current.lightLevel > 1) ? current.lightLevel - 1 : 0;
+            if (newLightLevel == 0) continue;
+
+            uint8_t existingLight = chunk_get_light_extrapolating(current.chunk, neighborPos);
+
+            if (newLightLevel > existingLight) {
+                Chunk* affectedChunk = NULL;
+                Vector2i affectedPos;
+                chunk_set_light_extrapolating(current.chunk, neighborPos, newLightLevel,
+                    &affectedChunk, &affectedPos);
+
+                if (affectedChunk) {
+                    light_queue_push(affectedChunk, affectedPos, newLightLevel);
+                }
+            }
+        }
+    }
 }

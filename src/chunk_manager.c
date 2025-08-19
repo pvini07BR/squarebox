@@ -1,6 +1,7 @@
 ﻿#include "chunk_manager.h"
 #include "chunk.h"
 #include "block_registry.h"
+#include "light_queue.h"
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -154,22 +155,47 @@ void chunk_manager_relocate(Vector2i newCenter) {
 }
 
 void chunk_manager_calculate_ligthing() {
-    int baseX = (currentChunkPos.x - (CHUNK_VIEW_WIDTH / 2)) * CHUNK_WIDTH;
-    int baseY = (currentChunkPos.y - (CHUNK_VIEW_HEIGHT / 2)) * CHUNK_WIDTH;
+    int totalCapacity = CHUNK_COUNT * CHUNK_AREA * 2;
+    light_queue_init(totalCapacity);
 
-    for (int x = 0; x < CHUNK_VIEW_WIDTH * CHUNK_WIDTH; x++) {
-        uint8_t curLightVal = 15;
-
-        for (int y = 0; y < CHUNK_VIEW_WIDTH * CHUNK_WIDTH; y++) {
-            int block = chunk_manager_get_block((Vector2i) { baseX + x, baseY + y }, false);
-            int wall = chunk_manager_get_block((Vector2i) { baseX + x, baseY + y }, true);
-
-            BlockRegistry* block_reg = block_registry_get_block_registry(block);
-            BlockRegistry* wall_reg = block_registry_get_block_registry(wall);
-
-            if ((!block_reg->transparent || !wall_reg->transparent) && curLightVal > 0) curLightVal--;
-            chunk_manager_set_light((Vector2i) { baseX + x, baseY + y }, curLightVal);
+    for (int i = 0; i < CHUNK_COUNT; i++) {
+        Chunk* chunk = &chunks[i];
+        for (int j = 0; j < CHUNK_AREA; j++) {
+            chunk->light[j] = 0;
         }
+    }
+
+    // Skylight
+    for (int c = 0; c < CHUNK_COUNT; c++) {
+        Chunk* chunk = &chunks[c];
+
+        for (int x = 0; x < CHUNK_WIDTH; x++) {
+            uint8_t skyLight = 15;
+
+            if (chunk->neighbors.up) {
+                Vector2i upPos = { x, -1 };
+                skyLight = chunk_get_light_extrapolating(chunk, upPos);
+            }
+
+            for (int y = 0; y < CHUNK_WIDTH; y++) {
+                Vector2i localPos = { x, y };
+
+                if (!chunk_is_transparent_extrapolating(chunk, localPos) && skyLight > 0) {
+                    skyLight--;
+                }
+
+                chunk->light[x + (y * CHUNK_WIDTH)] = skyLight;
+
+                if (skyLight > 1) {
+                    light_queue_push(chunk, localPos, skyLight);
+                }
+            }
+        }
+    }
+
+    LightNode current;
+    while (light_queue_pop(&current)) {
+        chunk_propagate_light_flood_fill(current.chunk, current.localPosition, current.lightLevel);
     }
 
     // Generate lightmap
@@ -200,6 +226,8 @@ void chunk_manager_calculate_ligthing() {
     UnloadImage(img);
     SetTextureFilter(lightMap, TEXTURE_FILTER_BILINEAR);
     SetTextureWrap(lightMap, TEXTURE_WRAP_CLAMP);
+
+    light_queue_free();
 }
 
 Chunk* chunk_manager_get_chunk(Vector2i position) {

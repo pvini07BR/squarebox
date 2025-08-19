@@ -1,56 +1,32 @@
 #include "light_queue.h"
 
-#include "stdlib.h"
-#include <stdio.h>
-
-LightQueue* lightQueue = NULL;
-
-LightQueue* get_light_queue() {
-    return lightQueue;
+void light_queue_init(LightQueue* q) {
+    q->front = 0;
+    q->rear = -1;
+    q->size = 0;
 }
 
-void light_queue_init(int capacity) {
-    if (capacity <= 0) {
-        fprintf(stderr, "light_queue_init: capacidade inválida (%d)\n", capacity);
-        return;
-    }
-
-    if (lightQueue) {
-        free(lightQueue->nodes);
-        free(lightQueue);
-    }
-
-    lightQueue = (LightQueue*)malloc(sizeof(LightQueue));
-    lightQueue->nodes = (LightNode*)malloc(sizeof(LightNode) * capacity);
-    lightQueue->front = 0;
-    lightQueue->rear = 0;
-    lightQueue->size = 0;
-    lightQueue->capacity = capacity;
+bool light_queue_is_empty(LightQueue* q) {
+    return q->size == 0;
 }
 
-void light_queue_free() {
-    if (lightQueue) {
-        free(lightQueue->nodes);
-        free(lightQueue);
-        lightQueue = NULL;
-    }
+bool light_queue_is_full(LightQueue* q) {
+    return q->size == QUEUE_CAPACITY;
 }
 
-void light_queue_push(Chunk* chunk, Vector2i localPos, uint8_t lightLevel) {
-    if (lightQueue->size >= lightQueue->capacity) return;
-
-    lightQueue->nodes[lightQueue->rear].chunk = chunk;
-    lightQueue->nodes[lightQueue->rear].localPosition = localPos;
-    lightQueue->nodes[lightQueue->rear].lightLevel = lightLevel;
-    lightQueue->rear = (lightQueue->rear + 1) % lightQueue->capacity;
-    lightQueue->size++;
+void light_queue_add(LightQueue* q, Vector2u position, uint8_t light) {
+    if (light_queue_is_full(q)) return;
+    q->rear = (q->rear + 1) % QUEUE_CAPACITY;
+    q->data[q->rear] = (LightNode){ position, light };
+    q->size++;
 }
 
-bool light_queue_pop(LightNode* node) {
-    if (lightQueue->size == 0) return false;
+LightNode light_queue_remove(LightQueue* q) {
+    LightNode empty = { .position = { 255, 255 }, .light = 255 };
+    if (light_queue_is_empty(q)) return empty;
 
-    *node = lightQueue->nodes[lightQueue->front];
-    lightQueue->front = (lightQueue->front + 1) % lightQueue->capacity;
-    lightQueue->size--;
-    return true;
+    LightNode n = q->data[q->front];
+    q->front = (q->front + 1) % QUEUE_CAPACITY;
+    q->size--;
+    return n;
 }

@@ -58,13 +58,5 @@ uint8_t chunk_get_light(Chunk* chunk, Vector2u position);
 // negative values so that it is used to get the block from the neighboring
 // chunk.
 uint8_t chunk_get_block_extrapolating(Chunk* chunk, Vector2i position, bool isWall);
-// Position is relative to the chunk origin, but it accepts
-// negative values so that it is used to get the block from the neighboring
-// chunk.
-uint8_t chunk_get_light_extrapolating(Chunk* chunk, Vector2i position);
-void chunk_set_light_extrapolating(Chunk* chunk, Vector2i position, uint8_t lightValue, Chunk** affectedChunk, Vector2i* affectedPos);
-bool chunk_is_transparent_extrapolating(Chunk* chunk, Vector2i position);
-
-void chunk_propagate_light_flood_fill(Chunk* startChunk, Vector2i startPos, uint8_t startLight);
 
 #endif

@@ -13,7 +13,6 @@ void chunk_manager_init();
 void chunk_manager_draw();
 void chunk_manager_free();
 void chunk_manager_relocate(Vector2i newCenter);
-void chunk_manager_calculate_ligthing();
 
 Chunk* chunk_manager_get_chunk(Vector2i position);
 // Position is in global block coordinates

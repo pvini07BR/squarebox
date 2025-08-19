@@ -3,24 +3,24 @@
 
 #include "chunk.h"
 
+#define QUEUE_CAPACITY CHUNK_AREA
+
 typedef struct {
-    Chunk* chunk;
-    Vector2i localPosition;
-    uint8_t lightLevel;
+    Vector2u position;
+    uint8_t light;
 } LightNode;
 
 typedef struct {
-    LightNode* nodes;
+    LightNode data[QUEUE_CAPACITY];
     int front;
     int rear;
     int size;
-    int capacity;
 } LightQueue;
 
-LightQueue* get_light_queue();
-void light_queue_init(int capacity);
-void light_queue_free();
-void light_queue_push(Chunk* chunk, Vector2i localPos, uint8_t lightLevel);
-bool light_queue_pop(LightNode* node);
+void light_queue_init(LightQueue* q);
+bool light_queue_is_empty(LightQueue* q);
+bool light_queue_is_full(LightQueue* q);
+void light_queue_add(LightQueue* q, Vector2u position, uint8_t light);
+LightNode light_queue_remove(LightQueue* q);
 
 #endif

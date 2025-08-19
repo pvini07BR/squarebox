@@ -149,85 +149,7 @@ void chunk_manager_relocate(Vector2i newCenter) {
             int downRightIndex = (y + 1) * CHUNK_VIEW_WIDTH + (x + 1);
             chunks[i].neighbors.downRight = &chunks[downRightIndex];
         }
-    }
-    
-    chunk_manager_calculate_ligthing();
-}
-
-void chunk_manager_calculate_ligthing() {
-    int totalCapacity = CHUNK_COUNT * CHUNK_AREA * 2;
-    light_queue_init(totalCapacity);
-
-    for (int i = 0; i < CHUNK_COUNT; i++) {
-        Chunk* chunk = &chunks[i];
-        for (int j = 0; j < CHUNK_AREA; j++) {
-            chunk->light[j] = 0;
-        }
-    }
-
-    // Skylight
-    for (int c = 0; c < CHUNK_COUNT; c++) {
-        Chunk* chunk = &chunks[c];
-
-        for (int x = 0; x < CHUNK_WIDTH; x++) {
-            uint8_t skyLight = 15;
-
-            if (chunk->neighbors.up) {
-                Vector2i upPos = { x, -1 };
-                skyLight = chunk_get_light_extrapolating(chunk, upPos);
-            }
-
-            for (int y = 0; y < CHUNK_WIDTH; y++) {
-                Vector2i localPos = { x, y };
-
-                if (!chunk_is_transparent_extrapolating(chunk, localPos) && skyLight > 0) {
-                    skyLight--;
-                }
-
-                chunk->light[x + (y * CHUNK_WIDTH)] = skyLight;
-
-                if (skyLight > 1) {
-                    light_queue_push(chunk, localPos, skyLight);
-                }
-            }
-        }
-    }
-
-    LightNode current;
-    while (light_queue_pop(&current)) {
-        chunk_propagate_light_flood_fill(current.chunk, current.localPosition, current.lightLevel);
-    }
-
-    // Generate lightmap
-    Image img = GenImageColor(CHUNK_WIDTH * CHUNK_VIEW_WIDTH, CHUNK_WIDTH * CHUNK_VIEW_HEIGHT, (Color) { 0, 0, 0, 0 });
-
-    for (int c = 0; c < CHUNK_COUNT; c++) {
-        Chunk* chunk = &chunks[c];
-        int cx = c % CHUNK_VIEW_WIDTH;
-        int cy = c / CHUNK_VIEW_WIDTH;
-
-        for (int y = 0; y < img.height; y++) {
-            for (int x = 0; x < img.width; x++) {
-                int index = x + (y * CHUNK_WIDTH);
-                unsigned char value = (unsigned char)(((float)chunk->light[index] / 15.0f) * 255.0f);
-                Color pixelColor = {
-                    .r = 0,
-                    .g = 0,
-                    .b = 0,
-                    .a = 255 - value
-                };
-                ImageDrawPixel(&img, (cx * CHUNK_WIDTH) + x, (cy * CHUNK_WIDTH) + y, pixelColor);
-            }
-        }
-    }
-
-    UnloadTexture(lightMap);
-    lightMap = LoadTextureFromImage(img);
-    UnloadImage(img);
-    SetTextureFilter(lightMap, TEXTURE_FILTER_BILINEAR);
-    SetTextureWrap(lightMap, TEXTURE_WRAP_CLAMP);
-
-    light_queue_free();
+    }    
 }
 
 Chunk* chunk_manager_get_chunk(Vector2i position) {
@@ -268,7 +190,6 @@ void chunk_manager_set_block(Vector2i position, int blockValue, bool isWall) {
             blockValue,
             isWall
         );
-        chunk_manager_calculate_ligthing();
     }
 }
 

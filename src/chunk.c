@@ -34,6 +34,15 @@ uint8_t chunk_get_light(Chunk* chunk, Vector2u position) {
     return chunk->light[position.x + (position.y * CHUNK_WIDTH)];
 }
 
+unsigned int chunk_get_block_seed(Chunk* chunk, Vector2u position, bool isWall) {
+    unsigned int h = chunk->seed;
+    h ^= position.x * 374761393u;
+    h ^= position.y * 668265263u;
+    h ^= (unsigned int)isWall * 1442695040888963407ull;
+    h = (h ^ (h >> 13)) * 1274126177u;
+    return h;
+}
+
 void chunk_set_light(Chunk* chunk, Vector2u position, uint8_t value) {
     if (!chunk) return;
     if (position.x > CHUNK_WIDTH || position.y > CHUNK_WIDTH) return;
@@ -70,28 +79,6 @@ void chunk_regenerate(Chunk* chunk) {
     }
 }
 
-/*
-void chunk_update_lightmap(Chunk* chunk) {
-    Image img = GenImageColor(CHUNK_WIDTH, CHUNK_WIDTH, (Color) { 0, 0, 0, 0 });
-    for (int y = 0; y < img.height; y++) {
-        for (int x = 0; x < img.width; x++) {
-            int index = x + (y * CHUNK_WIDTH);
-            unsigned char value = (unsigned char)(((float)chunk->light[index] / 15.0f) * 255.0f);
-            Color pixelColor = {
-                .r = 0,
-                .g = 0,
-                .b = 0,
-                .a = 255 - value
-            };
-            ImageDrawPixel(&img, x, y, pixelColor);
-        }
-    }
-    UnloadTexture(chunk->lightMap);
-    chunk->lightMap = LoadTextureFromImage(img);
-    SetTextureFilter(chunk->lightMap, TEXTURE_FILTER_BILINEAR);
-}
-*/
-
 void chunk_draw(Chunk* chunk) {
     if (!chunk) return;
 
@@ -107,20 +94,51 @@ void chunk_draw(Chunk* chunk) {
         int x = j % CHUNK_WIDTH * TILE_SIZE;
         int y = (j / CHUNK_WIDTH) % CHUNK_WIDTH * TILE_SIZE;
 
+        Rectangle blockRect = {
+            .x = x,
+            .y = y,
+            .width = TILE_SIZE,
+            .height = TILE_SIZE
+        };
+
         if (chunk->walls[j] > 0) {
-            DrawTextureRec(
+            unsigned int seed = chunk_get_block_seed(chunk, (Vector2u) { x, y }, true);
+            BlockRegistry* brg = block_registry_get_block_registry(chunk->walls[j]);
+            Rectangle blockTextRect = block_registry_get_block_texture_rect(chunk->walls[j]);
+
+            float flipH = brg->flipH ? (seed & 1) ? 1.0f : -1.0f : 1.0f;
+            float flipV = brg->flipV ? (seed & 2) ? 1.0f : -1.0f : 1.0f;
+
+            blockTextRect.width *= flipH;
+            blockTextRect.height *= flipV;
+
+            DrawTexturePro(
                 *block_registry_get_block_atlas(),
-                block_registry_get_block_texture_rect(chunk->walls[j]),
-                (Vector2){ (float)x, (float)y },
+                blockTextRect,
+                blockRect,
+                Vector2Zero(),
+                0.0f,
                 GRAY
             );
         }
 
         if (chunk->blocks[j] > 0) {
-            DrawTextureRec(
+            unsigned int seed = chunk_get_block_seed(chunk, (Vector2u) { x, y }, false);
+            BlockRegistry* brg = block_registry_get_block_registry(chunk->blocks[j]);
+            Rectangle blockTextRect = block_registry_get_block_texture_rect(chunk->blocks[j]);
+
+            float flipH = brg->flipH ? (seed & 1) ? 1.0f : -1.0f : 1.0f;
+            float flipV = brg->flipV ? (seed & 2) ? 1.0f : -1.0f : 1.0f;
+
+            blockTextRect.width *= flipH;
+            blockTextRect.height *= flipV;
+
+            DrawTexturePro(
                 *block_registry_get_block_atlas(),
-                block_registry_get_block_texture_rect(chunk->blocks[j]),
-                (Vector2) { (float)x, (float)y },
+                blockTextRect,
+                blockRect,
+                Vector2Zero(),
+                0.0f,
                 WHITE
             );
         }

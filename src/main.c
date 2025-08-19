@@ -95,12 +95,14 @@ int main() {
         
         chunk_manager_draw();
 
+        float cos = 47.5f * cosf(GetTime() * 4.0f) + 79.5f;
+
         DrawRectangle(
             mouseBlockPos.x * TILE_SIZE,
             mouseBlockPos.y * TILE_SIZE,
             TILE_SIZE,
             TILE_SIZE,
-            (Color){ 255, 255, 255, 128 }
+            (Color){ 255, 255, 255, cos }
         );
 
         EndMode2D();
@@ -128,14 +130,6 @@ int main() {
         );
         DrawText(buffer, 0, 0, 24, WHITE);
 
-        /*
-        DrawTextureRec(
-            *block_registry_get_block_atlas(),
-            block_registry_get_block_texture_rect(selected_block),
-            GetMousePosition(),
-            WHITE
-        );
-        */
         DrawTexturePro(
             *block_registry_get_block_atlas(),
             block_registry_get_block_texture_rect(selected_block),

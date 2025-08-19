@@ -37,5 +37,7 @@ uint8_t chunk_get_block(Chunk* chunk, Vector2u position, bool isWall);
 void chunk_set_light(Chunk* chunk, Vector2u position, uint8_t value);
 // Position is relative to the chunk origin
 uint8_t chunk_get_light(Chunk* chunk, Vector2u position);
+// Position is relative to the chunk origin
+unsigned int chunk_get_block_seed(Chunk* chunk, Vector2u position, bool isWall);
 
 #endif

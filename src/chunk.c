@@ -161,7 +161,7 @@ void chunk_draw(Chunk* chunk) {
             );
 
             // Wall "ambient occlusion"
-            uint8_t neighbors[] = {
+            uint8_t neighbors[8] = {
                 chunk_get_block_extrapolating(chunk, (Vector2i) { x,     y - 1 }, false),   // Up
                 chunk_get_block_extrapolating(chunk, (Vector2i) { x + 1, y     }, false),   // Right
                 chunk_get_block_extrapolating(chunk, (Vector2i) { x,     y + 1 }, false),   // Down
@@ -173,6 +173,10 @@ void chunk_draw(Chunk* chunk) {
                 chunk_get_block_extrapolating(chunk, (Vector2i) { x + 1,  y + 1 }, false),  // Down right
             };
 
+            BlockRegistry* registries[8];
+            for (int i = 0; i < 8; i++)
+                registries[i] = block_registry_get_block_registry(neighbors[i]);
+
             const Color fadeColor = { 0, 0, 0, 128 };
 
             Color topLeft = { 0, 0, 0, 0 };
@@ -180,15 +184,15 @@ void chunk_draw(Chunk* chunk) {
             Color topRight = { 0, 0, 0, 0 };
             Color bottomRight = { 0, 0, 0, 0 };
 
-            if (neighbors[0] > 0) topLeft = topRight = fadeColor;
-            if (neighbors[1] > 0) topRight = bottomRight = fadeColor;
-            if (neighbors[2] > 0) bottomLeft = bottomRight = fadeColor;
-            if (neighbors[3] > 0) topLeft = bottomLeft = fadeColor;
-
-            if (neighbors[4] > 0) topLeft = fadeColor;
-            if (neighbors[5] > 0) topRight = fadeColor;
-            if (neighbors[6] > 0) bottomLeft = fadeColor;
-            if (neighbors[7] > 0) bottomRight = fadeColor;
+            if (!registries[0]->transparent) topLeft = topRight = fadeColor;
+            if (!registries[1]->transparent) topRight = bottomRight = fadeColor;
+            if (!registries[2]->transparent) bottomLeft = bottomRight = fadeColor;
+            if (!registries[3]->transparent) topLeft = bottomLeft = fadeColor;
+                
+            if (!registries[4]->transparent) topLeft = fadeColor;
+            if (!registries[5]->transparent) topRight = fadeColor;
+            if (!registries[6]->transparent) bottomLeft = fadeColor;
+            if (!registries[7]->transparent) bottomRight = fadeColor;
 
             DrawRectangleGradientEx(
                 blockRect,

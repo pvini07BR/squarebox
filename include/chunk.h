@@ -20,11 +20,19 @@ typedef struct {
 } Vector2i;
 
 typedef struct {
+	void* up;
+	void* right;
+	void* down;
+	void* left;
+} ChunkNeighbors;
+
+typedef struct {
 	unsigned int seed;
 	Vector2i position;
 	uint8_t blocks[CHUNK_AREA];
 	uint8_t walls[CHUNK_AREA];
     uint8_t light[CHUNK_AREA];
+	ChunkNeighbors neighbors;
 } Chunk;
 
 void chunk_regenerate(Chunk* chunk);

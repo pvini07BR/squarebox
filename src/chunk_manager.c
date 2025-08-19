@@ -90,10 +90,40 @@ void chunk_manager_relocate(Vector2i newCenter) {
             tempChunks[i].position = newPos;
             chunk_regenerate(&tempChunks[i]);
         }
+
+        tempChunks[i].neighbors.up = NULL;
+        tempChunks[i].neighbors.right = NULL;
+        tempChunks[i].neighbors.down = NULL;
+        tempChunks[i].neighbors.left = NULL;
     }
     
     for (int i = 0; i < CHUNK_COUNT; i++) {
         chunks[i] = tempChunks[i];
+    }
+
+    for (int i = 0; i < CHUNK_COUNT; i++) {
+        int x = i % CHUNK_VIEW_WIDTH;
+        int y = i / CHUNK_VIEW_WIDTH;
+
+        if (y > 0) {
+            int upIndex = (y - 1) * CHUNK_VIEW_WIDTH + x;
+            chunks[i].neighbors.up = &chunks[upIndex];
+        }
+
+        if (x < CHUNK_VIEW_WIDTH - 1) {
+            int rightIndex = y * CHUNK_VIEW_WIDTH + (x + 1);
+            chunks[i].neighbors.right = &chunks[rightIndex];
+        }
+
+        if (y < CHUNK_VIEW_HEIGHT - 1) {
+            int downIndex = (y + 1) * CHUNK_VIEW_WIDTH + x;
+            chunks[i].neighbors.down = &chunks[downIndex];
+        }
+
+        if (x > 0) {
+            int leftIndex = y * CHUNK_VIEW_WIDTH + (x - 1);
+            chunks[i].neighbors.left = &chunks[leftIndex];
+        }
     }
     
     chunk_manager_calculate_ligthing();

@@ -21,7 +21,7 @@ typedef struct {
 void block_registry_init();
 BlockRegistry* block_registry_get_block_registry(uint8_t idx);
 Texture2D* block_registry_get_block_atlas();
-Rectangle block_registry_get_block_texture_rect(uint8_t idx);
+Rectangle block_registry_get_block_texture_rect(uint8_t idx, bool flipH, bool flipV);
 void block_registry_free();
 
 #endif

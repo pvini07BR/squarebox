@@ -104,13 +104,11 @@ void chunk_draw(Chunk* chunk) {
         if (chunk->walls[j] > 0) {
             unsigned int seed = chunk_get_block_seed(chunk, (Vector2u) { x, y }, true);
             BlockRegistry* brg = block_registry_get_block_registry(chunk->walls[j]);
-            Rectangle blockTextRect = block_registry_get_block_texture_rect(chunk->walls[j]);
-
-            float flipH = brg->flipH ? (seed & 1) ? 1.0f : -1.0f : 1.0f;
-            float flipV = brg->flipV ? (seed & 2) ? 1.0f : -1.0f : 1.0f;
-
-            blockTextRect.width *= flipH;
-            blockTextRect.height *= flipV;
+            Rectangle blockTextRect = block_registry_get_block_texture_rect(
+                chunk->blocks[j],
+                (seed & 1) ? true : false,
+                (seed & 2) ? true : false
+            );
 
             DrawTexturePro(
                 *block_registry_get_block_atlas(),
@@ -125,13 +123,11 @@ void chunk_draw(Chunk* chunk) {
         if (chunk->blocks[j] > 0) {
             unsigned int seed = chunk_get_block_seed(chunk, (Vector2u) { x, y }, false);
             BlockRegistry* brg = block_registry_get_block_registry(chunk->blocks[j]);
-            Rectangle blockTextRect = block_registry_get_block_texture_rect(chunk->blocks[j]);
-
-            float flipH = brg->flipH ? (seed & 1) ? 1.0f : -1.0f : 1.0f;
-            float flipV = brg->flipV ? (seed & 2) ? 1.0f : -1.0f : 1.0f;
-
-            blockTextRect.width *= flipH;
-            blockTextRect.height *= flipV;
+            Rectangle blockTextRect = block_registry_get_block_texture_rect(
+                chunk->blocks[j],
+                brg->flipH && (seed & 1) ? true : false,
+                brg->flipV && (seed & 2) ? true : false
+            );
 
             DrawTexturePro(
                 *block_registry_get_block_atlas(),

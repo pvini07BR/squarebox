@@ -132,7 +132,7 @@ int main() {
 
         DrawTexturePro(
             *block_registry_get_block_atlas(),
-            block_registry_get_block_texture_rect(selected_block),
+            block_registry_get_block_texture_rect(selected_block, false, false),
             (Rectangle) {
             .x = GetMouseX(),
                 .y = GetMouseY(),

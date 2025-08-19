@@ -113,15 +113,15 @@ Texture2D* block_registry_get_block_atlas()
     return &blockAtlas;
 }
 
-Rectangle block_registry_get_block_texture_rect(uint8_t idx)
+Rectangle block_registry_get_block_texture_rect(uint8_t idx, bool flipH, bool flipV)
 {
     if (idx > BLOCK_COUNT - 1) return (Rectangle) { 0, 0, 0, 0 };
     if (idx == 0) (Rectangle) { 0, 0, 0, 0 };
     return (Rectangle){
         .x = (float)registry[idx].atlasX,
         .y = 0.0f,
-        .width = (float)TILE_SIZE,
-        .height = (float)TILE_SIZE
+        .width = (float)TILE_SIZE * (flipH ? -1.0f : 1.0f),
+        .height = (float)TILE_SIZE * (flipV ? -1.0f : 1.0f)
     };
 }
 

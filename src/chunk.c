@@ -9,6 +9,11 @@
 #include <raymath.h>
 #include <rlgl.h>
 
+unsigned int posmod(int v, int m) {
+    int r = v % m;
+    return (unsigned int)(r < 0 ? r + m : r);
+}
+
 void chunk_set_block(Chunk* chunk, Vector2u position, uint8_t blockValue, bool isWall) {
     if (!chunk) return;
     if (position.x > CHUNK_WIDTH || position.y > CHUNK_WIDTH) return;
@@ -20,12 +25,42 @@ void chunk_set_block(Chunk* chunk, Vector2u position, uint8_t blockValue, bool i
 }
 
 uint8_t chunk_get_block(Chunk* chunk, Vector2u position, bool isWall) {
-	if (!chunk) return 0;
+    if (!chunk) return 0;
     if (position.x > CHUNK_WIDTH || position.y > CHUNK_WIDTH) return 0;
     if (!isWall)
         return chunk->blocks[position.x + (position.y * CHUNK_WIDTH)];
     else
         return chunk->walls[position.x + (position.y * CHUNK_WIDTH)];
+}
+
+uint8_t chunk_get_block_extrapolating(Chunk* chunk, Vector2i position, bool isWall) {
+    if (!chunk) return 0;
+    if (position.x >= 0 && position.y >= 0 && position.x < CHUNK_WIDTH && position.y < CHUNK_WIDTH) {
+        if (!isWall)
+            return chunk->blocks[position.x + (position.y * CHUNK_WIDTH)];
+        else
+            return chunk->walls[position.x + (position.y * CHUNK_WIDTH)];
+    }
+    else {
+        Chunk* neighbor = NULL;
+
+        if (position.x < 0) neighbor = chunk->neighbors.left;
+        else if (position.x >= CHUNK_WIDTH) neighbor = chunk->neighbors.right;
+        if (position.y < 0) neighbor = chunk->neighbors.up;
+        else if (position.y >= CHUNK_WIDTH) neighbor = chunk->neighbors.down;
+
+        if (neighbor == NULL) return 0;
+
+        Vector2u relPos = {
+            .x = posmod(position.x, CHUNK_WIDTH),
+            .y = posmod(position.y, CHUNK_WIDTH)
+        };
+
+        if (!isWall)
+            return neighbor->blocks[relPos.x + (relPos.y * CHUNK_WIDTH)];
+        else
+            return neighbor->walls[relPos.x + (relPos.y * CHUNK_WIDTH)];
+    }
 }
 
 uint8_t chunk_get_light(Chunk* chunk, Vector2u position) {
@@ -42,6 +77,7 @@ unsigned int chunk_get_block_seed(Chunk* chunk, Vector2u position, bool isWall) 
     h = (h ^ (h >> 13)) * 1274126177u;
     return h;
 }
+
 
 void chunk_set_light(Chunk* chunk, Vector2u position, uint8_t value) {
     if (!chunk) return;
@@ -91,12 +127,12 @@ void chunk_draw(Chunk* chunk) {
     );
 
     for (int j = 0; j < CHUNK_AREA; j++) {
-        int x = j % CHUNK_WIDTH * TILE_SIZE;
-        int y = (j / CHUNK_WIDTH) % CHUNK_WIDTH * TILE_SIZE;
+        int x = j % CHUNK_WIDTH;
+        int y = (j / CHUNK_WIDTH) % CHUNK_WIDTH;
 
         Rectangle blockRect = {
-            .x = x,
-            .y = y,
+            .x = x * TILE_SIZE,
+            .y = y * TILE_SIZE,
             .width = TILE_SIZE,
             .height = TILE_SIZE
         };
@@ -105,9 +141,9 @@ void chunk_draw(Chunk* chunk) {
             unsigned int seed = chunk_get_block_seed(chunk, (Vector2u) { x, y }, true);
             BlockRegistry* brg = block_registry_get_block_registry(chunk->walls[j]);
             Rectangle blockTextRect = block_registry_get_block_texture_rect(
-                chunk->blocks[j],
-                (seed & 1) ? true : false,
-                (seed & 2) ? true : false
+                chunk->walls[j],
+                brg->flipH && (seed & 1) ? true : false,
+                brg->flipV && (seed & 2) ? true : false
             );
 
             DrawTexturePro(
@@ -118,6 +154,23 @@ void chunk_draw(Chunk* chunk) {
                 0.0f,
                 GRAY
             );
+
+            // Wall "ambient occlusion"
+            uint8_t neighbors[] = {
+                chunk_get_block_extrapolating(chunk, (Vector2i) { x,     y - 1 }, false),   // Up
+                chunk_get_block_extrapolating(chunk, (Vector2i) { x + 1, y     }, false),   // Right
+                chunk_get_block_extrapolating(chunk, (Vector2i) { x,     y + 1 }, false),   // Down
+                chunk_get_block_extrapolating(chunk, (Vector2i) { x - 1, y     }, false)    // Left
+            };
+
+            if (neighbors[0] > 0)
+                DrawRectangleGradientV(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE, (Color) { 0, 0, 0, 128 }, (Color) { 0, 0, 0, 0 });
+            if (neighbors[1] > 0)
+                DrawRectangleGradientH(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE, (Color) { 0, 0, 0, 0 }, (Color) { 0, 0, 0, 128 });
+            if (neighbors[2] > 0)
+                DrawRectangleGradientV(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE, (Color) { 0, 0, 0, 0 }, (Color) { 0, 0, 0, 128 });
+            if (neighbors[3] > 0)
+                DrawRectangleGradientH(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE, (Color) { 0, 0, 0, 128 }, (Color) { 0, 0, 0, 0 });
         }
 
         if (chunk->blocks[j] > 0) {

@@ -95,6 +95,10 @@ void chunk_manager_relocate(Vector2i newCenter) {
         tempChunks[i].neighbors.right = NULL;
         tempChunks[i].neighbors.down = NULL;
         tempChunks[i].neighbors.left = NULL;
+        tempChunks[i].neighbors.upLeft = NULL;
+        tempChunks[i].neighbors.upRight = NULL;
+        tempChunks[i].neighbors.downLeft = NULL;
+        tempChunks[i].neighbors.downRight = NULL;
     }
     
     for (int i = 0; i < CHUNK_COUNT; i++) {
@@ -123,6 +127,26 @@ void chunk_manager_relocate(Vector2i newCenter) {
         if (x > 0) {
             int leftIndex = y * CHUNK_VIEW_WIDTH + (x - 1);
             chunks[i].neighbors.left = &chunks[leftIndex];
+        }
+
+        if (x > 0 && y > 0) {
+            int upLeftIndex = (y - 1) * CHUNK_VIEW_WIDTH + (x - 1);
+            chunks[i].neighbors.upLeft = &chunks[upLeftIndex];
+        }
+
+        if (x < CHUNK_VIEW_WIDTH - 1 && y > 0) {
+            int upRightIndex = (y - 1) * CHUNK_VIEW_WIDTH + (x + 1);
+            chunks[i].neighbors.upRight = &chunks[upRightIndex];
+        }
+
+        if (x > 0 && y < CHUNK_VIEW_HEIGHT - 1) {
+            int downLeftIndex = (y + 1) * CHUNK_VIEW_WIDTH + (x - 1);
+            chunks[i].neighbors.downLeft = &chunks[downLeftIndex];
+        }
+
+        if (x < CHUNK_VIEW_WIDTH - 1 && y < CHUNK_VIEW_HEIGHT - 1) {
+            int downRightIndex = (y + 1) * CHUNK_VIEW_WIDTH + (x + 1);
+            chunks[i].neighbors.downRight = &chunks[downRightIndex];
         }
     }
     

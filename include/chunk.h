@@ -24,6 +24,11 @@ typedef struct {
 	void* right;
 	void* down;
 	void* left;
+
+	void* upLeft;
+	void* upRight;
+	void* downLeft;
+	void* downRight;
 } ChunkNeighbors;
 
 typedef struct {

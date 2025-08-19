@@ -35,6 +35,7 @@ uint8_t chunk_get_block(Chunk* chunk, Vector2u position, bool isWall) {
 
 uint8_t chunk_get_block_extrapolating(Chunk* chunk, Vector2i position, bool isWall) {
     if (!chunk) return 0;
+
     if (position.x >= 0 && position.y >= 0 && position.x < CHUNK_WIDTH && position.y < CHUNK_WIDTH) {
         if (!isWall)
             return chunk->blocks[position.x + (position.y * CHUNK_WIDTH)];
@@ -44,10 +45,14 @@ uint8_t chunk_get_block_extrapolating(Chunk* chunk, Vector2i position, bool isWa
     else {
         Chunk* neighbor = NULL;
 
-        if (position.x < 0) neighbor = chunk->neighbors.left;
-        else if (position.x >= CHUNK_WIDTH) neighbor = chunk->neighbors.right;
-        if (position.y < 0) neighbor = chunk->neighbors.up;
-        else if (position.y >= CHUNK_WIDTH) neighbor = chunk->neighbors.down;
+        if (position.x < 0 && position.y < 0) neighbor = (Chunk*)chunk->neighbors.upLeft;
+        else if (position.x >= CHUNK_WIDTH && position.y < 0) neighbor = (Chunk*)chunk->neighbors.upRight;
+        else if (position.x < 0 && position.y >= CHUNK_WIDTH) neighbor = (Chunk*)chunk->neighbors.downLeft;
+        else if (position.x >= CHUNK_WIDTH && position.y >= CHUNK_WIDTH) neighbor = (Chunk*)chunk->neighbors.downRight;
+        else if (position.x < 0) neighbor = (Chunk*)chunk->neighbors.left;
+        else if (position.x >= CHUNK_WIDTH) neighbor = (Chunk*)chunk->neighbors.right;
+        else if (position.y < 0) neighbor = (Chunk*)chunk->neighbors.up;
+        else if (position.y >= CHUNK_WIDTH) neighbor = (Chunk*)chunk->neighbors.down;
 
         if (neighbor == NULL) return 0;
 
@@ -127,10 +132,10 @@ void chunk_draw(Chunk* chunk) {
     );
 
     for (int j = 0; j < CHUNK_AREA; j++) {
-        int x = j % CHUNK_WIDTH;
-        int y = (j / CHUNK_WIDTH) % CHUNK_WIDTH;
+        const int x = j % CHUNK_WIDTH;
+        const int y = (j / CHUNK_WIDTH) % CHUNK_WIDTH;
 
-        Rectangle blockRect = {
+        const Rectangle blockRect = {
             .x = x * TILE_SIZE,
             .y = y * TILE_SIZE,
             .width = TILE_SIZE,
@@ -138,7 +143,7 @@ void chunk_draw(Chunk* chunk) {
         };
 
         if (chunk->walls[j] > 0) {
-            unsigned int seed = chunk_get_block_seed(chunk, (Vector2u) { x, y }, true);
+            const unsigned int seed = chunk_get_block_seed(chunk, (Vector2u) { x, y }, true);
             BlockRegistry* brg = block_registry_get_block_registry(chunk->walls[j]);
             Rectangle blockTextRect = block_registry_get_block_texture_rect(
                 chunk->walls[j],
@@ -160,17 +165,38 @@ void chunk_draw(Chunk* chunk) {
                 chunk_get_block_extrapolating(chunk, (Vector2i) { x,     y - 1 }, false),   // Up
                 chunk_get_block_extrapolating(chunk, (Vector2i) { x + 1, y     }, false),   // Right
                 chunk_get_block_extrapolating(chunk, (Vector2i) { x,     y + 1 }, false),   // Down
-                chunk_get_block_extrapolating(chunk, (Vector2i) { x - 1, y     }, false)    // Left
+                chunk_get_block_extrapolating(chunk, (Vector2i) { x - 1, y     }, false),   // Left
+
+                chunk_get_block_extrapolating(chunk, (Vector2i) { x - 1,  y - 1 }, false),  // Up left
+                chunk_get_block_extrapolating(chunk, (Vector2i) { x + 1,  y - 1 }, false),  // Up right
+                chunk_get_block_extrapolating(chunk, (Vector2i) { x - 1,  y + 1 }, false),  // Down left
+                chunk_get_block_extrapolating(chunk, (Vector2i) { x + 1,  y + 1 }, false),  // Down right
             };
 
-            if (neighbors[0] > 0)
-                DrawRectangleGradientV(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE, (Color) { 0, 0, 0, 128 }, (Color) { 0, 0, 0, 0 });
-            if (neighbors[1] > 0)
-                DrawRectangleGradientH(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE, (Color) { 0, 0, 0, 0 }, (Color) { 0, 0, 0, 128 });
-            if (neighbors[2] > 0)
-                DrawRectangleGradientV(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE, (Color) { 0, 0, 0, 0 }, (Color) { 0, 0, 0, 128 });
-            if (neighbors[3] > 0)
-                DrawRectangleGradientH(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE, (Color) { 0, 0, 0, 128 }, (Color) { 0, 0, 0, 0 });
+            const Color fadeColor = { 0, 0, 0, 128 };
+
+            Color topLeft = { 0, 0, 0, 0 };
+            Color bottomLeft = { 0, 0, 0, 0 };
+            Color topRight = { 0, 0, 0, 0 };
+            Color bottomRight = { 0, 0, 0, 0 };
+
+            if (neighbors[0] > 0) topLeft = topRight = fadeColor;
+            if (neighbors[1] > 0) topRight = bottomRight = fadeColor;
+            if (neighbors[2] > 0) bottomLeft = bottomRight = fadeColor;
+            if (neighbors[3] > 0) topLeft = bottomLeft = fadeColor;
+
+            if (neighbors[4] > 0) topLeft = fadeColor;
+            if (neighbors[5] > 0) topRight = fadeColor;
+            if (neighbors[6] > 0) bottomLeft = fadeColor;
+            if (neighbors[7] > 0) bottomRight = fadeColor;
+
+            DrawRectangleGradientEx(
+                blockRect,
+                topLeft,
+                bottomLeft,
+                bottomRight,
+                topRight
+            );
         }
 
         if (chunk->blocks[j] > 0) {

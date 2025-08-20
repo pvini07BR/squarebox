@@ -9,6 +9,8 @@
 #define CHUNK_WIDTH 16
 #define CHUNK_AREA CHUNK_WIDTH*CHUNK_WIDTH
 
+#define CHUNK_VERTEX_COUNT CHUNK_AREA * 6
+
 typedef struct {
     unsigned int x;
     unsigned int y;
@@ -38,10 +40,16 @@ typedef struct {
 	uint8_t walls[CHUNK_AREA];
     uint8_t light[CHUNK_AREA];
 	ChunkNeighbors neighbors;
+	bool initializedMeshes;
+	Mesh blockMesh;
+	Mesh wallMesh;
 } Chunk;
 
+void chunk_init_meshes(Chunk* chunk);
 void chunk_regenerate(Chunk* chunk);
-void chunk_draw(Chunk* chunk);
+void chunk_genmesh(Chunk* chunk);
+void chunk_draw(Chunk* chunk, Material* material);
+void chunk_free_meshes(Chunk* chunk);
 
 // Position is relative to the chunk origin
 unsigned int chunk_get_block_seed(Chunk* chunk, Vector2u position, bool isWall);

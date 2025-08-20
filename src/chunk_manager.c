@@ -11,18 +11,24 @@
 #include <raymath.h>
 
 static Chunk* chunks = NULL;
+static Material chunkMaterial;
 static Texture2D lightMap;
 static Vector2i currentChunkPos;
 
 void chunk_manager_init() {
-    chunks = (Chunk*)malloc(sizeof(Chunk) * CHUNK_COUNT);
+    chunks = (Chunk*)malloc(CHUNK_COUNT * sizeof(Chunk));
+    chunkMaterial = LoadMaterialDefault();
+    SetMaterialTexture(&chunkMaterial, MATERIAL_MAP_ALBEDO, *block_registry_get_block_atlas());
 
+    for (int c = 0; c < CHUNK_COUNT; c++) chunks[c].initializedMeshes = false;
     chunk_manager_relocate((Vector2i) { 0, 0 });
 }
 
 void chunk_manager_draw() {
+    rlDisableBackfaceCulling();
+
     for (int i = 0; i < CHUNK_COUNT; i++) {
-        chunk_draw(&chunks[i]);
+        chunk_draw(&chunks[i], &chunkMaterial);
     }
 
     DrawTextureEx(
@@ -59,10 +65,12 @@ void chunk_manager_draw() {
 void chunk_manager_free() {
     UnloadTexture(lightMap);
     if (chunks) {
+        for (int c = 0; c < CHUNK_COUNT; c++) chunk_free_meshes(&chunks[c]);
         free(chunks);
         chunks = NULL;
     }
 }
+
 
 void chunk_manager_relocate(Vector2i newCenter) {
     currentChunkPos = newCenter;
@@ -70,8 +78,10 @@ void chunk_manager_relocate(Vector2i newCenter) {
     int startChunkX = currentChunkPos.x - CHUNK_VIEW_WIDTH / 2;
     int startChunkY = currentChunkPos.y - CHUNK_VIEW_HEIGHT / 2;
 
-    Chunk tempChunks[CHUNK_COUNT];
-    
+    Chunk tempChunks[CHUNK_COUNT] = { 0 };
+
+    bool chunkUsed[CHUNK_COUNT] = { false };
+
     for (int i = 0; i < CHUNK_COUNT; i++) {
         int x = i % CHUNK_VIEW_WIDTH;
         int y = i / CHUNK_VIEW_WIDTH;
@@ -82,11 +92,12 @@ void chunk_manager_relocate(Vector2i newCenter) {
         for (int j = 0; j < CHUNK_COUNT; j++) {
             if (chunks[j].position.x == newPos.x && chunks[j].position.y == newPos.y) {
                 tempChunks[i] = chunks[j];
+                chunkUsed[j] = true;
                 found = true;
                 break;
             }
         }
-        
+
         tempChunks[i].neighbors.up = NULL;
         tempChunks[i].neighbors.right = NULL;
         tempChunks[i].neighbors.down = NULL;
@@ -97,11 +108,19 @@ void chunk_manager_relocate(Vector2i newCenter) {
         tempChunks[i].neighbors.downRight = NULL;
 
         if (!found) {
+            tempChunks[i].initializedMeshes = false;
             tempChunks[i].position = newPos;
+            chunk_init_meshes(&tempChunks[i]);
             chunk_regenerate(&tempChunks[i]);
         }
     }
-    
+
+    for (int i = 0; i < CHUNK_COUNT; i++) {
+        if (!chunkUsed[i] && chunks[i].initializedMeshes) {
+            chunk_free_meshes(&chunks[i]);
+        }
+    }
+
     for (int i = 0; i < CHUNK_COUNT; i++) {
         chunks[i] = tempChunks[i];
     }
@@ -178,6 +197,7 @@ void chunk_manager_update_lighting() {
                 chunk_fill_light(&chunks[c], (Vector2u) { x, y }, maxLight);
             }
         }
+        chunk_genmesh(&chunks[c]);
     }
 }
 
@@ -298,60 +318,3 @@ void chunk_manager_set_light(Vector2i position, uint8_t value) {
         );
     }
 }
-
-/*
-Rectangle rect = {
-    (float)x,
-    (float)y,
-    TILE_SIZE,
-    TILE_SIZE,
-};
-
-Color topLeft = (Color){ 0, 0, 0, 0 };
-Color bottomLeft = (Color){ 0, 0, 0, 0 };
-Color topRight = (Color){ 0, 0, 0, 0 };
-Color bottomRight = (Color){ 0, 0, 0, 0 };
-
-Vector2i globalBlockPos = {
-    chunks[i].position.x * CHUNK_WIDTH + (j % CHUNK_WIDTH),
-    chunks[i].position.y * CHUNK_WIDTH + (j / CHUNK_WIDTH)
-};
-
-Vector2i offsets[4] = {
-    { 1, 0 },
-    {-1, 0 },
-    { 0, 1 },
-    { 0,-1 }
-};
-
-for (int i = 0; i < 4; i++) {
-    Vector2i neighborPos = { globalBlockPos.x + offsets[i].x, globalBlockPos.y + offsets[i].y };
-    int neighborBlock = get_block(neighborPos, currentChunkPos);
-    if (neighborBlock > 0) {
-        if (offsets[i].x == 1 && offsets[i].y == 0) {
-            topRight = BLACK;
-            bottomRight = BLACK;
-        }
-        else if (offsets[i].x == -1 && offsets[i].y == 0) {
-            topLeft = BLACK;
-            bottomLeft = BLACK;
-        }
-        else if (offsets[i].y == 1 && offsets[i].x == 0) {
-            bottomLeft = BLACK;
-            bottomRight = BLACK;
-        }
-        else if (offsets[i].y == -1 && offsets[i].x == 0) {
-            topLeft = BLACK;
-            topRight = BLACK;
-        }
-    }
-}
-
-DrawRectangleGradientEx(
-    rect,
-    topLeft,
-    bottomLeft,
-    topRight,
-    bottomRight
-);
-*/

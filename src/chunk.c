@@ -5,6 +5,7 @@
 
 #include <math.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 #include <raylib.h>
@@ -30,6 +31,76 @@ Color get_light_color(uint8_t lightValue) {
 unsigned int posmod(int v, int m) {
     int r = v % m;
     return (unsigned int)(r < 0 ? r + m : r);
+}
+
+void set_quad_positions(float* positions, uint8_t bx, uint8_t by) {
+    float x = bx * TILE_SIZE;
+    float y = by * TILE_SIZE;
+
+    size_t i = bx + (by * CHUNK_WIDTH);
+    size_t voffset = i * 6 * 3;
+
+    float x0 = x;
+    float y0 = y;
+    float x1 = x + TILE_SIZE;
+    float y1 = y + TILE_SIZE;
+
+    float verts[6][3] = {
+        {x0, y0, 0.0f},
+        {x1, y0, 0.0f},
+        {x1, y1, 0.0f},
+        {x0, y0, 0.0f},
+        {x1, y1, 0.0f},
+        {x0, y1, 0.0f},
+    };
+
+    for (size_t v = 0; v < 6; v++) {
+        positions[voffset + v * 3 + 0] = verts[v][0];
+        positions[voffset + v * 3 + 1] = verts[v][1];
+        positions[voffset + v * 3 + 2] = verts[v][2];
+    }
+}
+
+void set_quad_uvs(float* uvs, uint8_t bx, uint8_t by,
+    float u0, float v0, float u1, float v1) {
+    size_t i = bx + (by * CHUNK_WIDTH);
+    size_t voffset = i * 6 * 2;
+
+    float verts[6][2] = {
+        {u0, v0},
+        {u1, v0},
+        {u1, v1},
+        {u0, v0},
+        {u1, v1},
+        {u0, v1},
+    };
+
+    for (size_t v = 0; v < 6; v++) {
+        uvs[voffset + v * 2 + 0] = verts[v][0];
+        uvs[voffset + v * 2 + 1] = verts[v][1];
+    }
+}
+
+void set_quad_colors(unsigned char* colors, uint8_t bx, uint8_t by,
+    unsigned char r, unsigned char g, unsigned char b, unsigned char a) {
+    size_t i = bx + (by * CHUNK_WIDTH);
+    size_t voffset = i * 6 * 4;
+
+    uint32_t verts[6][4] = {
+        {r, g, b, a},
+        {r, g, b, a},
+        {r, g, b, a},
+        {r, g, b, a},
+        {r, g, b, a},
+        {r, g, b, a},
+    };
+
+    for (size_t v = 0; v < 6; v++) {
+        colors[voffset + v * 4 + 0] = verts[v][0];
+        colors[voffset + v * 4 + 1] = verts[v][1];
+        colors[voffset + v * 4 + 2] = verts[v][2];
+        colors[voffset + v * 4 + 3] = verts[v][3];
+    }
 }
 
 void chunk_fill_light(Chunk* chunk, Vector2u startPoint, uint8_t newLightValue) {
@@ -123,6 +194,33 @@ uint8_t chunk_get_light(Chunk* chunk, Vector2u position) {
     return chunk->light[position.x + (position.y * CHUNK_WIDTH)];
 }
 
+void chunk_init_meshes(Chunk* chunk)
+{
+    if (chunk == NULL) return;
+    if (chunk->initializedMeshes == true) return;
+
+    chunk->wallMesh = (Mesh){ 0 };
+    chunk->blockMesh = (Mesh){ 0 };
+
+    chunk->wallMesh.triangleCount = chunk->blockMesh.triangleCount = CHUNK_AREA * 2;
+    chunk->wallMesh.vertexCount = chunk->wallMesh.triangleCount * 3;
+    chunk->blockMesh.vertexCount = chunk->blockMesh.triangleCount * 3;
+
+    chunk->wallMesh.vertices = (float*)MemAlloc(CHUNK_VERTEX_COUNT * 3 * sizeof(float));
+    chunk->blockMesh.vertices = (float*)MemAlloc(CHUNK_VERTEX_COUNT * 3 * sizeof(float));
+
+    chunk->wallMesh.texcoords = (float*)MemAlloc(CHUNK_VERTEX_COUNT * 2 * sizeof(float));
+    chunk->blockMesh.texcoords = (float*)MemAlloc(CHUNK_VERTEX_COUNT * 2 * sizeof(float));
+
+    chunk->wallMesh.colors = (unsigned char*)MemAlloc(CHUNK_VERTEX_COUNT * 4 * sizeof(unsigned char));
+    chunk->blockMesh.colors = (unsigned char*)MemAlloc(CHUNK_VERTEX_COUNT * 4 * sizeof(unsigned char));
+
+    UploadMesh(&chunk->wallMesh, true);
+    UploadMesh(&chunk->blockMesh, true);
+
+    chunk->initializedMeshes = true;
+}
+
 void chunk_regenerate(Chunk* chunk) {
     if (!chunk) return;
 
@@ -155,7 +253,38 @@ void chunk_regenerate(Chunk* chunk) {
     }
 }
 
-void chunk_draw(Chunk* chunk) {
+void chunk_genmesh(Chunk* chunk) {
+    if (chunk == NULL) return;
+
+    for (int i = 0; i < CHUNK_AREA; i++) {
+        int x = i % CHUNK_WIDTH;
+        int y = i / CHUNK_WIDTH;
+
+        float uv_unit = (1.0f / 8.0f);
+
+        if (chunk->walls[i] > 0) {
+            set_quad_positions(chunk->wallMesh.vertices, x, y);
+            set_quad_uvs(chunk->wallMesh.texcoords, x, y, uv_unit * (chunk->walls[i] - 1), 0.0f, (uv_unit * (chunk->walls[i] - 1)) + uv_unit, 1.0f);
+            set_quad_colors(chunk->wallMesh.colors, x, y, 128, 128, 128, 255);
+        }
+
+        if (chunk->blocks[i] > 0) {
+            set_quad_positions(chunk->blockMesh.vertices, x, y);
+            set_quad_uvs(chunk->blockMesh.texcoords, x, y, uv_unit * (chunk->blocks[i]-1), 0.0f, (uv_unit * (chunk->blocks[i] - 1)) + uv_unit, 1.0f);
+            set_quad_colors(chunk->blockMesh.colors, x, y, 255, 255, 255, 255);
+        }
+    }
+
+    UpdateMeshBuffer(chunk->wallMesh, 0, chunk->wallMesh.vertices, chunk->wallMesh.vertexCount * 3 * sizeof(float), 0);
+    UpdateMeshBuffer(chunk->wallMesh, 1, chunk->wallMesh.texcoords, chunk->wallMesh.vertexCount * 2 * sizeof(float), 0);
+    UpdateMeshBuffer(chunk->wallMesh, 3, chunk->wallMesh.colors, chunk->wallMesh.vertexCount * 4 * sizeof(unsigned char), 0);
+
+    UpdateMeshBuffer(chunk->blockMesh, 0, chunk->blockMesh.vertices, chunk->blockMesh.vertexCount * 3 * sizeof(float), 0);
+    UpdateMeshBuffer(chunk->blockMesh, 1, chunk->blockMesh.texcoords, chunk->blockMesh.vertexCount * 2 * sizeof(float), 0);
+    UpdateMeshBuffer(chunk->blockMesh, 3, chunk->blockMesh.colors, chunk->blockMesh.vertexCount * 4 * sizeof(unsigned char), 0);
+}
+
+void chunk_draw(Chunk* chunk, Material* material) {
     if (!chunk) return;
 
     rlPushMatrix();
@@ -165,6 +294,11 @@ void chunk_draw(Chunk* chunk) {
         chunk->position.y * CHUNK_WIDTH * TILE_SIZE,
         0.0f
     );
+
+    DrawMesh(chunk->wallMesh, *material, MatrixIdentity());
+    DrawMesh(chunk->blockMesh, *material, MatrixIdentity());
+
+    /*
 
     for (int j = 0; j < CHUNK_AREA; j++) {
         const int x = j % CHUNK_WIDTH;
@@ -326,8 +460,17 @@ void chunk_draw(Chunk* chunk) {
             }
         }
     }
+    */
 
     rlPopMatrix();
+}
+
+void chunk_free_meshes(Chunk* chunk)
+{
+    if (!chunk) return;
+
+    UnloadMesh(chunk->wallMesh);
+    UnloadMesh(chunk->blockMesh);
 }
 
 unsigned int chunk_get_block_seed(Chunk* chunk, Vector2u position, bool isWall) {

@@ -263,7 +263,6 @@ void chunk_draw(Chunk* chunk) {
         if (chunk->blocks[j] > 0 || chunk->walls[j] > 0) {
             if (!smoothLighting) {
                 // Without smooth lighting, just draw some simple squares
-                
                 DrawRectangle(
                     x * TILE_SIZE,
                     y * TILE_SIZE,
@@ -271,7 +270,7 @@ void chunk_draw(Chunk* chunk) {
                     TILE_SIZE,
                     get_light_color(chunk->light[j])
                 );
-            } {
+            } else {
                 // Smooth lighting gets neighboring light values
                 uint8_t neighbors[8] = {
                     chunk_get_light_extrapolating(chunk, (Vector2i) { x,     y - 1 }),   // Up

@@ -151,6 +151,14 @@ void chunk_manager_relocate(Vector2i newCenter) {
         }
     }
 
+    chunk_manager_update_lighting();
+}
+
+void chunk_manager_update_lighting() {
+    for (int c = 0; c < CHUNK_COUNT; c++) {
+        for (int i = 0; i < CHUNK_AREA; i++) chunks[c].light[i] = 0;
+    }
+
     for (int c = 0; c < CHUNK_COUNT; c++) {
         for (int i = 0; i < CHUNK_AREA; i++) {
             uint8_t b = chunks[c].blocks[i];
@@ -207,6 +215,7 @@ void chunk_manager_set_block(Vector2i position, int blockValue, bool isWall) {
             isWall
         );
     }
+    chunk_manager_update_lighting();
 }
 
 int chunk_manager_get_block(Vector2i position, bool isWall) {

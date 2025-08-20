@@ -11,8 +11,21 @@
 #include <raymath.h>
 #include <rlgl.h>
 
+bool wallAmbientOcclusion = true;
+bool smoothLighting = true;
+
 #define BLOCK_IS_SOLID_DARK(i) \
     (!(registries[i]->transparent) && (registries[i]->lightLevel <= 0))
+
+Color get_light_color(uint8_t lightValue) {
+    unsigned char value = (unsigned char)(((float)lightValue / 15.0f) * 255.0f);
+    return (Color) {
+        .r = 0,
+        .g = 0,
+        .b = 0,
+        .a = 255 - value
+    };
+}
 
 unsigned int posmod(int v, int m) {
     int r = v % m;
@@ -182,7 +195,7 @@ void chunk_draw(Chunk* chunk) {
                 GRAY
             );
 
-            if (brg->lightLevel <= 0) {
+            if (brg->lightLevel <= 0 && wallAmbientOcclusion) {
                 // Wall "ambient occlusion"
                 uint8_t neighbors[8] = {
                     chunk_get_block_extrapolating(chunk, (Vector2i) { x,     y - 1 }, false),   // Up
@@ -246,21 +259,72 @@ void chunk_draw(Chunk* chunk) {
             );
         }
 
+        // Drawing light
         if (chunk->blocks[j] > 0 || chunk->walls[j] > 0) {
-            unsigned char value = (unsigned char)(((float)chunk->light[j] / 15.0f) * 255.0f);
-            Color lightColor = {
-                .r = 0,
-                .g = 0,
-                .b = 0,
-                .a = 255 - value
-            };
-            DrawRectangle(
-                x * TILE_SIZE,
-                y * TILE_SIZE,
-                TILE_SIZE,
-                TILE_SIZE,
-                lightColor
-            );
+            if (!smoothLighting) {
+                // Without smooth lighting, just draw some simple squares
+                
+                DrawRectangle(
+                    x * TILE_SIZE,
+                    y * TILE_SIZE,
+                    TILE_SIZE,
+                    TILE_SIZE,
+                    get_light_color(chunk->light[j])
+                );
+            } {
+                // Smooth lighting gets neighboring light values
+                uint8_t neighbors[8] = {
+                    chunk_get_light_extrapolating(chunk, (Vector2i) { x,     y - 1 }),   // Up
+                    chunk_get_light_extrapolating(chunk, (Vector2i) { x + 1, y     }),   // Right
+                    chunk_get_light_extrapolating(chunk, (Vector2i) { x,     y + 1 }),   // Down
+                    chunk_get_light_extrapolating(chunk, (Vector2i) { x - 1, y     }),   // Left
+                              
+                    chunk_get_light_extrapolating(chunk, (Vector2i) { x - 1, y - 1 }),   // Up left
+                    chunk_get_light_extrapolating(chunk, (Vector2i) { x + 1, y - 1 }),   // Up right
+                    chunk_get_light_extrapolating(chunk, (Vector2i) { x - 1, y + 1 }),   // Down left
+                    chunk_get_light_extrapolating(chunk, (Vector2i) { x + 1, y + 1 }),   // Down right
+                };
+
+                float topLeftAverage = (
+                    (float)chunk->light[j] +
+                    (float)neighbors[3] +
+                    (float)neighbors[4] +
+                    (float)neighbors[0]
+                ) / 4.0f;
+                Color topLeft = get_light_color(topLeftAverage);
+
+                float bottomLeftAverage = (
+                    (float)chunk->light[j] +
+                    (float)neighbors[3] +
+                    (float)neighbors[6] +
+                    (float)neighbors[2]
+                ) / 4.0f;
+                Color bottomLeft = get_light_color(bottomLeftAverage);
+
+                float topRightAverage = (
+                    (float)chunk->light[j] +
+                    (float)neighbors[1] +
+                    (float)neighbors[5] +
+                    (float)neighbors[0]
+                ) / 4.0f;
+                Color topRight = get_light_color(topRightAverage);
+
+                float bottomRightAverage = (
+                    (float)chunk->light[j] +
+                    (float)neighbors[1] +
+                    (float)neighbors[7] +
+                    (float)neighbors[2]
+                ) / 4.0f;
+                Color bottomRight = get_light_color(bottomRightAverage);
+
+                DrawRectangleGradientEx(
+                    blockRect,
+                    topLeft,
+                    bottomLeft,
+                    bottomRight,
+                    topRight
+                );
+            }
         }
     }
 
@@ -308,5 +372,35 @@ uint8_t chunk_get_block_extrapolating(Chunk* chunk, Vector2i position, bool isWa
             return neighbor->blocks[relPos.x + (relPos.y * CHUNK_WIDTH)];
         else
             return neighbor->walls[relPos.x + (relPos.y * CHUNK_WIDTH)];
+    }
+}
+
+uint8_t chunk_get_light_extrapolating(Chunk* chunk, Vector2i position)
+{
+    if (!chunk) return 0;
+
+    if (position.x >= 0 && position.y >= 0 && position.x < CHUNK_WIDTH && position.y < CHUNK_WIDTH) {
+        return chunk->light[position.x + (position.y * CHUNK_WIDTH)];
+    }
+    else {
+        Chunk* neighbor = NULL;
+
+        if (position.x < 0 && position.y < 0) neighbor = (Chunk*)chunk->neighbors.upLeft;
+        else if (position.x >= CHUNK_WIDTH && position.y < 0) neighbor = (Chunk*)chunk->neighbors.upRight;
+        else if (position.x < 0 && position.y >= CHUNK_WIDTH) neighbor = (Chunk*)chunk->neighbors.downLeft;
+        else if (position.x >= CHUNK_WIDTH && position.y >= CHUNK_WIDTH) neighbor = (Chunk*)chunk->neighbors.downRight;
+        else if (position.x < 0) neighbor = (Chunk*)chunk->neighbors.left;
+        else if (position.x >= CHUNK_WIDTH) neighbor = (Chunk*)chunk->neighbors.right;
+        else if (position.y < 0) neighbor = (Chunk*)chunk->neighbors.up;
+        else if (position.y >= CHUNK_WIDTH) neighbor = (Chunk*)chunk->neighbors.down;
+
+        if (neighbor == NULL) return 0;
+
+        Vector2u relPos = {
+            .x = posmod(position.x, CHUNK_WIDTH),
+            .y = posmod(position.y, CHUNK_WIDTH)
+        };
+
+        return neighbor->light[relPos.x + (relPos.y * CHUNK_WIDTH)];
     }
 }

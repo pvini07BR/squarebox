@@ -48,17 +48,21 @@ unsigned int chunk_get_block_seed(Chunk* chunk, Vector2u position, bool isWall);
 
 void chunk_fill_light(Chunk* chunk, Vector2u startPoint, uint8_t newLightValue);
 
-// Position is relative to the chunk origin
+// Position is relative to the chunk origin.
 void chunk_set_block(Chunk* chunk, Vector2u position, uint8_t blockValue, bool isWall);
-// Position is relative to the chunk origin
+// Position is relative to the chunk origin.
 uint8_t chunk_get_block(Chunk* chunk, Vector2u position, bool isWall);
-// Position is relative to the chunk origin
+// Position is relative to the chunk origin.
 void chunk_set_light(Chunk* chunk, Vector2u position, uint8_t value);
-// Position is relative to the chunk origin
+// Position is relative to the chunk origin.
 uint8_t chunk_get_light(Chunk* chunk, Vector2u position);
 // Position is relative to the chunk origin, but it accepts
 // negative values so that it is used to get the block from the neighboring
 // chunk.
 uint8_t chunk_get_block_extrapolating(Chunk* chunk, Vector2i position, bool isWall);
+// Position is relative to the chunk origin, but it accepts
+// negative values so that it is used to get the light from the neighboring
+// chunk.
+uint8_t chunk_get_light_extrapolating(Chunk* chunk, Vector2i position);
 
 #endif

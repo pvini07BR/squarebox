@@ -22,9 +22,9 @@ Color get_light_color(uint8_t lightValue) {
     unsigned char value = (unsigned char)(((float)lightValue / 15.0f) * 255.0f);
     return (Color) {
         .r = 0,
-        .g = 0,
-        .b = 0,
-        .a = 255 - value
+            .g = 0,
+            .b = 0,
+            .a = 255 - value
     };
 }
 
@@ -154,7 +154,7 @@ void chunk_fill_light(Chunk* chunk, Vector2u startPoint, uint8_t newLightValue) 
 
 void chunk_calc_lighting(Chunk* chunk) {
     for (int i = 0; i < CHUNK_AREA; i++) chunk->light[i] = 0;
-    
+
     for (int i = 0; i < CHUNK_AREA; i++) {
         if (chunk->blocks[i] == 0 && chunk->walls[i] == 0) {
             chunk_fill_light(chunk, (Vector2u) { (i % CHUNK_WIDTH), (i / CHUNK_WIDTH) }, 15);
@@ -238,10 +238,12 @@ void chunk_regenerate(Chunk* chunk) {
         if (globalBlockPos.y == sin) {
             chunk->blocks[i] = 1;
             chunk->walls[i] = 1;
-        } else if (globalBlockPos.y > sin && globalBlockPos.y <= 50) {
+        }
+        else if (globalBlockPos.y > sin && globalBlockPos.y <= 50) {
             chunk->blocks[i] = 2;
             chunk->walls[i] = 2;
-        } else if (globalBlockPos.y > 50) {
+        }
+        else if (globalBlockPos.y > 50) {
             chunk->blocks[i] = 3;
             chunk->walls[i] = 3;
         }
@@ -255,6 +257,11 @@ void chunk_regenerate(Chunk* chunk) {
 
 void chunk_genmesh(Chunk* chunk) {
     if (chunk == NULL) return;
+
+    for (int i = 0; i < (CHUNK_VERTEX_COUNT * 3); i++) {
+        chunk->wallMesh.vertices[i] = 0.0f;
+        chunk->blockMesh.vertices[i] = 0.0f;
+    }
 
     for (int i = 0; i < CHUNK_AREA; i++) {
         int x = i % CHUNK_WIDTH;
@@ -270,7 +277,7 @@ void chunk_genmesh(Chunk* chunk) {
 
         if (chunk->blocks[i] > 0) {
             set_quad_positions(chunk->blockMesh.vertices, x, y);
-            set_quad_uvs(chunk->blockMesh.texcoords, x, y, uv_unit * (chunk->blocks[i]-1), 0.0f, (uv_unit * (chunk->blocks[i] - 1)) + uv_unit, 1.0f);
+            set_quad_uvs(chunk->blockMesh.texcoords, x, y, uv_unit * (chunk->blocks[i] - 1), 0.0f, (uv_unit * (chunk->blocks[i] - 1)) + uv_unit, 1.0f);
             set_quad_colors(chunk->blockMesh.colors, x, y, 255, 255, 255, 255);
         }
     }
@@ -411,7 +418,7 @@ void chunk_draw(Chunk* chunk, Material* material) {
                     chunk_get_light_extrapolating(chunk, (Vector2i) { x + 1, y     }),   // Right
                     chunk_get_light_extrapolating(chunk, (Vector2i) { x,     y + 1 }),   // Down
                     chunk_get_light_extrapolating(chunk, (Vector2i) { x - 1, y     }),   // Left
-                              
+
                     chunk_get_light_extrapolating(chunk, (Vector2i) { x - 1, y - 1 }),   // Up left
                     chunk_get_light_extrapolating(chunk, (Vector2i) { x + 1, y - 1 }),   // Up right
                     chunk_get_light_extrapolating(chunk, (Vector2i) { x - 1, y + 1 }),   // Down left

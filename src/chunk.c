@@ -246,7 +246,7 @@ void chunk_draw(Chunk* chunk) {
             );
         }
 
-        //if (chunk->blocks[j] > 0 || chunk->walls[j] > 0) {
+        if (chunk->blocks[j] > 0 || chunk->walls[j] > 0) {
             unsigned char value = (unsigned char)(((float)chunk->light[j] / 15.0f) * 255.0f);
             Color lightColor = {
                 .r = 0,
@@ -261,7 +261,7 @@ void chunk_draw(Chunk* chunk) {
                 TILE_SIZE,
                 lightColor
             );
-        //}
+        }
     }
 
     rlPopMatrix();

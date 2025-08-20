@@ -87,11 +87,6 @@ void chunk_manager_relocate(Vector2i newCenter) {
             }
         }
         
-        if (!found) {
-            tempChunks[i].position = newPos;
-            chunk_regenerate(&tempChunks[i]);
-        }
-
         tempChunks[i].neighbors.up = NULL;
         tempChunks[i].neighbors.right = NULL;
         tempChunks[i].neighbors.down = NULL;
@@ -100,6 +95,11 @@ void chunk_manager_relocate(Vector2i newCenter) {
         tempChunks[i].neighbors.upRight = NULL;
         tempChunks[i].neighbors.downLeft = NULL;
         tempChunks[i].neighbors.downRight = NULL;
+
+        if (!found) {
+            tempChunks[i].position = newPos;
+            chunk_regenerate(&tempChunks[i]);
+        }
     }
     
     for (int i = 0; i < CHUNK_COUNT; i++) {
@@ -149,7 +149,23 @@ void chunk_manager_relocate(Vector2i newCenter) {
             int downRightIndex = (y + 1) * CHUNK_VIEW_WIDTH + (x + 1);
             chunks[i].neighbors.downRight = &chunks[downRightIndex];
         }
-    }    
+    }
+
+    for (int c = 0; c < CHUNK_COUNT; c++) {
+        for (int i = 0; i < CHUNK_AREA; i++) {
+            uint8_t b = chunks[c].blocks[i];
+            uint8_t w = chunks[c].walls[i];
+
+            BlockRegistry* bbr = block_registry_get_block_registry(b);
+            BlockRegistry* wbr = block_registry_get_block_registry(w);
+
+            if (bbr->transparent && wbr->transparent) {
+                int x = i % CHUNK_WIDTH;
+                int y = i / CHUNK_WIDTH;
+                chunk_fill_light(&chunks[c], (Vector2u) { x, y }, 15);
+            }
+        }
+    }
 }
 
 Chunk* chunk_manager_get_chunk(Vector2i position) {

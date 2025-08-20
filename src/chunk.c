@@ -32,62 +32,37 @@ void chunk_fill_light(Chunk* chunk, Vector2u startPoint, uint8_t newLightValue) 
     BlockRegistry* br = block_registry_get_block_registry(chunk_get_block(chunk, startPoint, false));
     if (!br->transparent) decayAmount = 4;
 
-    chunk_fill_light(chunk, (Vector2u) { startPoint.x + 1, startPoint.y }, newLightValue - decayAmount);
-    chunk_fill_light(chunk, (Vector2u) { startPoint.x - 1, startPoint.y }, newLightValue - decayAmount);
-    chunk_fill_light(chunk, (Vector2u) { startPoint.x, startPoint.y + 1 }, newLightValue - decayAmount);
-    chunk_fill_light(chunk, (Vector2u) { startPoint.x, startPoint.y - 1 }, newLightValue - decayAmount);
-
-    /*
-    for (int i = 0; i < CHUNK_AREA; i++) chunk->light[i] = 0;
-
-    LightQueue* q = (LightQueue*)malloc(sizeof(LightQueue));
-    light_queue_init(q);
-
-    chunk_set_light(chunk, startPoint, newLightValue);
-    light_queue_add(q, startPoint, newLightValue);
-
-    Vector2i directions[] = {
-        {-1,  0}, {1,  0}, {0, -1}, {0,  1}
+    Vector2i neighbors[] = {
+        { -1, 0 }, { 1, 0 }, { 0, 1 }, { 0, -1 }
     };
 
-    while (!light_queue_is_empty(q)) {
-        LightNode current = light_queue_remove(q);
+    for (int i = 0; i < 4; i++) {
+        Chunk* nextChunk = chunk;
 
-        uint8_t nextLightLevel = current.light > 1 ? current.light - 1 : 0;
-        if (nextLightLevel == 0) continue;
+        Vector2i neighPos = {
+            .x = startPoint.x + neighbors[i].x,
+            .y = startPoint.y + neighbors[i].y
+        };
 
-        for (int i = 0; i < 4; i++) {
-            Vector2i newPos = {
-                .x = current.position.x + directions[i].x,
-                .y = current.position.y + directions[i].y
-            };
-
-            if (newPos.x < 0 || newPos.x >= CHUNK_WIDTH || newPos.y < 0 || newPos.y >= CHUNK_WIDTH) continue;
-
-            Vector2u neighbor = {
-                .x = (unsigned)newPos.x,
-                .y = (unsigned)newPos.y
-            };
-
-            //BlockRegistry* block_br = block_registry_get_block_registry(chunk_get_block(chunk, neighbor, false));
-
-            //if (!block_br->transparent) continue;
-
-            uint8_t currentNeighLight = chunk_get_light(chunk, neighbor);
-            if (nextLightLevel > currentNeighLight) {
-                chunk_set_light(chunk, neighbor, nextLightLevel);
-                printf("(%d, %d)\n", neighbor.x, neighbor.y);
-                light_queue_add(q, neighbor, nextLightLevel);
-
-                if (light_queue_is_empty(q)) {
-                    printf("Queue got empty\n");
-                }
-            }
+        if (neighPos.x < 0) {
+            nextChunk = chunk->neighbors.left;
+            neighPos.x = posmod(neighPos.x, CHUNK_WIDTH);
         }
-    }
+        else if (neighPos.x >= CHUNK_WIDTH) {
+            nextChunk = chunk->neighbors.right;
+            neighPos.x = posmod(neighPos.x, CHUNK_WIDTH);
+        }
+        if (neighPos.y < 0) {
+            nextChunk = chunk->neighbors.up;
+            neighPos.y = posmod(neighPos.y, CHUNK_WIDTH);
+        }
+        else if (neighPos.y >= CHUNK_WIDTH) {
+            nextChunk = chunk->neighbors.down;
+            neighPos.y = posmod(neighPos.y, CHUNK_WIDTH);
+        }
 
-    free(q);
-    */
+        if (nextChunk) chunk_fill_light(nextChunk, (Vector2u) { neighPos.x, neighPos.y }, newLightValue - decayAmount);
+    }
 }
 
 void chunk_calc_lighting(Chunk* chunk) {
@@ -108,7 +83,6 @@ void chunk_set_block(Chunk* chunk, Vector2u position, uint8_t blockValue, bool i
         chunk->blocks[position.x + (position.y * CHUNK_WIDTH)] = blockValue;
     else
         chunk->walls[position.x + (position.y * CHUNK_WIDTH)] = blockValue;
-    chunk_calc_lighting(chunk);
 }
 
 uint8_t chunk_get_block(Chunk* chunk, Vector2u position, bool isWall) {
@@ -163,8 +137,6 @@ void chunk_regenerate(Chunk* chunk) {
         }
         chunk->light[i] = 0;
     }
-
-    chunk_calc_lighting(chunk);
 }
 
 void chunk_draw(Chunk* chunk) {

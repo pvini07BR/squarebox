@@ -46,6 +46,8 @@ void chunk_draw(Chunk* chunk);
 // Position is relative to the chunk origin
 unsigned int chunk_get_block_seed(Chunk* chunk, Vector2u position, bool isWall);
 
+void chunk_fill_light(Chunk* chunk, Vector2u startPoint, uint8_t newLightValue);
+
 // Position is relative to the chunk origin
 void chunk_set_block(Chunk* chunk, Vector2u position, uint8_t blockValue, bool isWall);
 // Position is relative to the chunk origin

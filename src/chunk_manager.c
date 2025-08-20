@@ -167,10 +167,15 @@ void chunk_manager_update_lighting() {
             BlockRegistry* bbr = block_registry_get_block_registry(b);
             BlockRegistry* wbr = block_registry_get_block_registry(w);
 
+            int x = i % CHUNK_WIDTH;
+            int y = i / CHUNK_WIDTH;
+
             if (bbr->transparent && wbr->transparent) {
-                int x = i % CHUNK_WIDTH;
-                int y = i / CHUNK_WIDTH;
                 chunk_fill_light(&chunks[c], (Vector2u) { x, y }, 15);
+            }
+            else if (bbr->lightLevel > 0 || wbr->lightLevel > 0) {
+                uint8_t maxLight = fmax(bbr->lightLevel, wbr->lightLevel);
+                chunk_fill_light(&chunks[c], (Vector2u) { x, y }, maxLight);
             }
         }
     }

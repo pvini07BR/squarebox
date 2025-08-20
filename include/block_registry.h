@@ -12,6 +12,7 @@ typedef struct {
 	const char* name;
 	unsigned int atlasX;
 	unsigned int atlasY;
+	uint8_t lightLevel;
 	bool transparent;
 	bool solid;
 	bool flipH;

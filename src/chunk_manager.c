@@ -1,8 +1,8 @@
 ﻿#include "chunk_manager.h"
 #include "chunk.h"
 #include "block_registry.h"
-#include "light_queue.h"
 
+#include <limits.h>
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -34,8 +34,8 @@ void chunk_manager_draw() {
     DrawTextureEx(
         lightMap,
         (Vector2) {
-            (currentChunkPos.x - (CHUNK_VIEW_WIDTH / 2)) * CHUNK_WIDTH * TILE_SIZE,
-            (currentChunkPos.y - (CHUNK_VIEW_HEIGHT / 2)) * CHUNK_WIDTH * TILE_SIZE
+            (currentChunkPos.x - (CHUNK_VIEW_WIDTH / 2.0f)) * CHUNK_WIDTH * TILE_SIZE,
+            (currentChunkPos.y - (CHUNK_VIEW_HEIGHT / 2.0f)) * CHUNK_WIDTH * TILE_SIZE
         },
         0.0f,
         TILE_SIZE,
@@ -71,7 +71,7 @@ void chunk_manager_free() {
     }
 }
 
-void chunk_manager_reset_chunks()
+void chunk_manager_reload_chunks()
 {
     for (int c = 0; c < CHUNK_COUNT; c++) {
         chunks[c].position = (Vector2i){ .x = INT_MAX, .y = INT_MAX };

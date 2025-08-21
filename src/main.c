@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <limits.h>
 
 #include <raylib.h>
 #include <raymath.h>
@@ -202,7 +203,7 @@ int main() {
         if (GuiValueBox((Rectangle) { MeasureText("Wall Brightness  ", 8) + padding, textSize.y + (height += sum), 64, elementHeight }, "Wall Brightness ", &wallBrightness, 0, 255, wallBrightEdit)) wallBrightEdit = !wallBrightEdit;
         if (GuiValueBox((Rectangle) { MeasureText("Wall AO Value  ", 8) + padding, textSize.y + (height += sum), 64, elementHeight }, "Wall AO Value ", &wallAOvalue, 0, 255, wallAOEdit)) wallAOEdit = !wallAOEdit;
         if (GuiButton((Rectangle) { padding, textSize.y + (height += sum), interPanel.width - (padding * 2), 32 }, "Reload chunks")) {
-            chunk_manager_reset_chunks();
+            chunk_manager_reload_chunks();
         }
 
         interPanel.height = height + sum + 16;

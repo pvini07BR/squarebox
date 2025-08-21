@@ -107,7 +107,7 @@ Texture2D* br_get_block_atlas()
 Rectangle br_get_block_texture_rect(uint8_t idx, bool flipH, bool flipV)
 {
     if (idx > BLOCK_COUNT - 1) return (Rectangle) { 0, 0, 0, 0 };
-    if (idx == 0) (Rectangle) { 0, 0, 0, 0 };
+    if (idx == 0) return (Rectangle) { 0, 0, 0, 0 };
     return (Rectangle){
         .x = (float)(idx - 1) * (float)TILE_SIZE,
         .y = 0.0f,

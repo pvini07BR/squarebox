@@ -1,7 +1,5 @@
 ﻿#include "chunk.h"
-#include "chunk_manager.h"
 #include "block_registry.h"
-#include "light_queue.h"
 
 #include <math.h>
 #include <stdint.h>
@@ -11,6 +9,7 @@
 #include <raylib.h>
 #include <raymath.h>
 #include <rlgl.h>
+#include <string.h>
 
 #define FNL_IMPL
 #include <FastNoiseLite.h>
@@ -351,7 +350,7 @@ void build_quad(Chunk* chunk, uint8_t* blocks, Mesh* mesh, bool isWall, uint8_t 
                 for (int c = 0; c < 2; c++) {
                     int corner = aoRules[dir].corners[c];
                     if (corner >= 0) {
-                        cornerValues[corner] = min(cornerValues[corner], wallAOvalue);
+                        cornerValues[corner] = fminf(cornerValues[corner], wallAOvalue);
                     }
                 }
 

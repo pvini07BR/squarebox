@@ -15,6 +15,7 @@
 bool wallAmbientOcclusion = true;
 bool smoothLighting = true;
 uint8_t wallBrightness = 128;
+uint8_t wallAOvalue = 32;
 
 #define BLOCK_IS_SOLID_DARK(i) \
     (!(registries[i]->transparent) && (registries[i]->lightLevel <= 0))
@@ -312,7 +313,12 @@ void build_quad(Chunk* chunk, uint8_t* blocks, Mesh* mesh, bool isWall, uint8_t 
         for (int i = 0; i < 8; i++)
             registries[i] = br_get_block_registry(neighbors[i]);
 
-        const Color fadeColor = { 0, 0, 0, 0 };
+        const Color fadeColor = {
+            min(lightValue, wallAOvalue),
+            min(lightValue, wallAOvalue),
+            min(lightValue, wallAOvalue),
+            255
+        };
 
         // 0 = Top Left
         // 1 = Top Right

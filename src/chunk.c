@@ -40,30 +40,24 @@ void set_quad_positions(float* positions, uint8_t bx, uint8_t by, bool flipTrian
     float verts[6][3];
 
     if (flipTriangles) {
-        // Triângulos invertidos horizontalmente (CCW)
-        // Triângulo 1: superior esquerdo → superior direito → inferior esquerdo
-        // Triângulo 2: inferior esquerdo → inferior direito → superior direito
         float invertedVerts[6][3] = {
-            {x0, y0, 0.0f},  // superior esquerdo
-            {x1, y0, 0.0f},  // superior direito
-            {x0, y1, 0.0f},  // inferior esquerdo
-            {x0, y1, 0.0f},  // inferior esquerdo
-            {x1, y1, 0.0f},  // inferior direito
-            {x1, y0, 0.0f},  // superior direito
+            {x0, y0, 0.0f},
+            {x1, y0, 0.0f},
+            {x0, y1, 0.0f},
+            {x0, y1, 0.0f},
+            {x1, y1, 0.0f},
+            {x1, y0, 0.0f},
         };
         memcpy(verts, invertedVerts, sizeof(verts));
     }
     else {
-        // Triângulos normais (CCW)
-        // Triângulo 1: superior esquerdo → superior direito → inferior direito
-        // Triângulo 2: superior esquerdo → inferior direito → inferior esquerdo
         float normalVerts[6][3] = {
-            {x0, y0, 0.0f},  // superior esquerdo
-            {x1, y0, 0.0f},  // superior direito
-            {x1, y1, 0.0f},  // inferior direito
-            {x0, y0, 0.0f},  // superior esquerdo
-            {x1, y1, 0.0f},  // inferior direito
-            {x0, y1, 0.0f},  // inferior esquerdo
+            {x0, y0, 0.0f},
+            {x1, y0, 0.0f},
+            {x1, y1, 0.0f},
+            {x0, y0, 0.0f},
+            {x1, y1, 0.0f},
+            {x0, y1, 0.0f},
         };
         memcpy(verts, normalVerts, sizeof(verts));
     }
@@ -87,30 +81,24 @@ void set_quad_uvs(float* uvs, uint8_t bx, uint8_t by, Rectangle rect, bool flipT
     float verts[6][2];
 
     if (flipTriangles) {
-        // UVs para triângulos invertidos horizontalmente
-        // Triângulo 1: superior esquerdo → superior direito → inferior esquerdo
-        // Triângulo 2: inferior esquerdo → inferior direito → superior direito
         float invertedVerts[6][2] = {
-            {u0, v0},  // superior esquerdo
-            {u1, v0},  // superior direito
-            {u0, v1},  // inferior esquerdo
-            {u0, v1},  // inferior esquerdo
-            {u1, v1},  // inferior direito
-            {u1, v0},  // superior direito
+            {u0, v0},
+            {u1, v0},
+            {u0, v1},
+            {u0, v1},
+            {u1, v1},
+            {u1, v0},
         };
         memcpy(verts, invertedVerts, sizeof(verts));
     }
     else {
-        // UVs para triângulos normais
-        // Triângulo 1: superior esquerdo → superior direito → inferior direito
-        // Triângulo 2: superior esquerdo → inferior direito → inferior esquerdo
         float normalVerts[6][2] = {
-            {u0, v0},  // superior esquerdo
-            {u1, v0},  // superior direito
-            {u1, v1},  // inferior direito
-            {u0, v0},  // superior esquerdo
-            {u1, v1},  // inferior direito
-            {u0, v1},  // inferior esquerdo
+            {u0, v0},
+            {u1, v0},
+            {u1, v1},
+            {u0, v0},
+            {u1, v1},
+            {u0, v1},
         };
         memcpy(verts, normalVerts, sizeof(verts));
     }
@@ -128,18 +116,10 @@ void set_quad_colors(unsigned char* colors, uint8_t bx, uint8_t by, Color corner
     int indices[6];
 
     if (flipTriangles) {
-        // Índices para triângulos invertidos horizontalmente
-        // corners[0] = superior esquerdo, corners[1] = superior direito
-        // corners[2] = inferior direito, corners[3] = inferior esquerdo
-        // Triângulo 1: superior esquerdo → superior direito → inferior esquerdo
-        // Triângulo 2: inferior esquerdo → inferior direito → superior direito
         int invertedIndices[6] = { 0, 1, 3, 3, 2, 1 };
         memcpy(indices, invertedIndices, sizeof(indices));
     }
     else {
-        // Índices para triângulos normais
-        // Triângulo 1: superior esquerdo → superior direito → inferior direito
-        // Triângulo 2: superior esquerdo → inferior direito → inferior esquerdo
         int normalIndices[6] = { 0, 1, 2, 0, 2, 3 };
         memcpy(indices, normalIndices, sizeof(indices));
     }

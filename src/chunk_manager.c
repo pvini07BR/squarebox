@@ -197,8 +197,9 @@ void chunk_manager_update_lighting() {
                 chunk_fill_light(&chunks[c], (Vector2u) { x, y }, maxLight);
             }
         }
-        chunk_genmesh(&chunks[c]);
     }
+
+    for (int c = 0; c < CHUNK_COUNT; c++) chunk_genmesh(&chunks[c]);
 }
 
 Chunk* chunk_manager_get_chunk(Vector2i position) {

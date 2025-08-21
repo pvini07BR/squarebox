@@ -125,20 +125,20 @@ int main() {
             mouseBlockPos.y,
             cameraChunkPos.x,
             cameraChunkPos.y,
-            block_registry_get_block_registry(selected_block)->name,
+            br_get_block_registry(selected_block)->name,
             wall_mode ? "true" : "false"
         );
         DrawText(buffer, 0, 0, 24, WHITE);
 
         DrawTexturePro(
-            *block_registry_get_block_atlas(),
-            block_registry_get_block_texture_rect(selected_block, false, false),
+            *br_get_block_atlas(),
+            br_get_block_texture_rect(selected_block, false, false),
             (Rectangle) {
-            .x = GetMouseX(),
+                .x = GetMouseX(),
                 .y = GetMouseY(),
                 .width = TILE_SIZE * 0.8f,
                 .height = TILE_SIZE * 0.8f
-        },
+            },
             Vector2Zero(),
             0.0f,
             WHITE

@@ -10,8 +10,6 @@
 
 typedef struct {
 	const char* name;
-	unsigned int atlasX;
-	unsigned int atlasY;
 	uint8_t lightLevel;
 	bool transparent;
 	bool solid;
@@ -20,9 +18,10 @@ typedef struct {
 } BlockRegistry;
 
 void block_registry_init();
-BlockRegistry* block_registry_get_block_registry(uint8_t idx);
-Texture2D* block_registry_get_block_atlas();
-Rectangle block_registry_get_block_texture_rect(uint8_t idx, bool flipH, bool flipV);
+BlockRegistry* br_get_block_registry(uint8_t idx);
+Texture2D* br_get_block_atlas();
+Rectangle br_get_block_texture_rect(uint8_t idx, bool flipH, bool flipV);
+Rectangle br_get_block_uvs(uint8_t idx, bool flipH, bool flipV);
 void block_registry_free();
 
 #endif

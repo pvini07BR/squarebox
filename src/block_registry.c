@@ -14,8 +14,6 @@ void block_registry_init() {
 
     registry[0] = (BlockRegistry){
         .name = "Air",
-        .atlasX = 0,
-        .atlasY = 0,
         .lightLevel = 0,
         .transparent = true,
         .solid = false,
@@ -25,8 +23,6 @@ void block_registry_init() {
 
     registry[1] = (BlockRegistry){
         .name = "Grass Block",
-        .atlasX = 0,
-        .atlasY = 0,
         .lightLevel = 0,
         .transparent = false,
         .solid = true,
@@ -36,8 +32,6 @@ void block_registry_init() {
 
     registry[2] = (BlockRegistry){
         .name = "Dirt Block",
-        .atlasX = 32,
-        .atlasY = 0,
         .lightLevel = 0,
         .transparent = false,
         .solid = true,
@@ -47,8 +41,6 @@ void block_registry_init() {
 
     registry[3] = (BlockRegistry){
         .name = "Stone Block",
-        .atlasX = 64,
-        .atlasY = 0,
         .lightLevel = 0,
         .transparent = false,
         .solid = true,
@@ -58,8 +50,6 @@ void block_registry_init() {
 
     registry[4] = (BlockRegistry){
         .name = "Cobblestone",
-        .atlasX = 96,
-        .atlasY = 0,
         .lightLevel = 0,
         .transparent = false,
         .solid = true,
@@ -69,8 +59,6 @@ void block_registry_init() {
 
     registry[5] = (BlockRegistry){
         .name = "Wooden Planks",
-        .atlasX = 128,
-        .atlasY = 0,
         .lightLevel = 0,
         .transparent = false,
         .solid = true,
@@ -80,8 +68,6 @@ void block_registry_init() {
 
     registry[6] = (BlockRegistry){
         .name = "Wood Log",
-        .atlasX = 160,
-        .atlasY = 0,
         .lightLevel = 0,
         .transparent = false,
         .solid = true,
@@ -91,8 +77,6 @@ void block_registry_init() {
 
     registry[7] = (BlockRegistry){
         .name = "Leaves",
-        .atlasX = 192,
-        .atlasY = 0,
         .lightLevel = 0,
         .transparent = true,
         .solid = true,
@@ -102,8 +86,6 @@ void block_registry_init() {
 
     registry[8] = (BlockRegistry){
         .name = "Glass Block",
-        .atlasX = 224,
-        .atlasY = 0,
         .lightLevel = 0,
         .transparent = true,
         .solid = true,
@@ -112,25 +94,55 @@ void block_registry_init() {
     };
 }
 
-BlockRegistry* block_registry_get_block_registry(uint8_t idx) {
+BlockRegistry* br_get_block_registry(uint8_t idx) {
     if (idx > BLOCK_COUNT - 1) return NULL;
     return &registry[idx];
 }
 
-Texture2D* block_registry_get_block_atlas()
+Texture2D* br_get_block_atlas()
 {
     return &blockAtlas;
 }
 
-Rectangle block_registry_get_block_texture_rect(uint8_t idx, bool flipH, bool flipV)
+Rectangle br_get_block_texture_rect(uint8_t idx, bool flipH, bool flipV)
 {
     if (idx > BLOCK_COUNT - 1) return (Rectangle) { 0, 0, 0, 0 };
     if (idx == 0) (Rectangle) { 0, 0, 0, 0 };
     return (Rectangle){
-        .x = (float)registry[idx].atlasX,
+        .x = (float)(idx - 1) * (float)TILE_SIZE,
         .y = 0.0f,
         .width = (float)TILE_SIZE * (flipH ? -1.0f : 1.0f),
         .height = (float)TILE_SIZE * (flipV ? -1.0f : 1.0f)
+    };
+}
+
+Rectangle br_get_block_uvs(uint8_t idx, bool flipH, bool flipV)
+{
+    if (idx == 0 || idx > BLOCK_COUNT - 1) return (Rectangle) { 0, 0, 0, 0 };
+
+    float uv_unit = 1.0f / (BLOCK_COUNT - 1);
+
+    float u0 = uv_unit * (idx - 1);
+    float u1 = u0 + uv_unit;
+    float v0 = 0.0f;
+    float v1 = 1.0f;
+
+    if (flipH) {
+        float tmp = u0;
+        u0 = u1;
+        u1 = tmp;
+    }
+    if (flipV) {
+        float tmp = v0;
+        v0 = v1;
+        v1 = tmp;
+    }
+
+    return (Rectangle) {
+        .x = u0,
+        .y = v0,
+        .width = u1 - u0,
+        .height = v1 - v0
     };
 }
 

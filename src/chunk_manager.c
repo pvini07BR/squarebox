@@ -18,7 +18,7 @@ static Vector2i currentChunkPos;
 void chunk_manager_init() {
     chunks = (Chunk*)malloc(CHUNK_COUNT * sizeof(Chunk));
     chunkMaterial = LoadMaterialDefault();
-    SetMaterialTexture(&chunkMaterial, MATERIAL_MAP_ALBEDO, *block_registry_get_block_atlas());
+    SetMaterialTexture(&chunkMaterial, MATERIAL_MAP_ALBEDO, *br_get_block_atlas());
 
     for (int c = 0; c < CHUNK_COUNT; c++) chunks[c].initializedMeshes = false;
     chunk_manager_relocate((Vector2i) { 0, 0 });
@@ -183,8 +183,8 @@ void chunk_manager_update_lighting() {
             uint8_t b = chunks[c].blocks[i];
             uint8_t w = chunks[c].walls[i];
 
-            BlockRegistry* bbr = block_registry_get_block_registry(b);
-            BlockRegistry* wbr = block_registry_get_block_registry(w);
+            BlockRegistry* bbr = br_get_block_registry(b);
+            BlockRegistry* wbr = br_get_block_registry(w);
 
             int x = i % CHUNK_WIDTH;
             int y = i / CHUNK_WIDTH;

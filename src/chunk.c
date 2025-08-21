@@ -14,19 +14,10 @@
 
 bool wallAmbientOcclusion = true;
 bool smoothLighting = true;
+uint8_t wallBrightness = 128;
 
 #define BLOCK_IS_SOLID_DARK(i) \
     (!(registries[i]->transparent) && (registries[i]->lightLevel <= 0))
-
-Color get_light_color(uint8_t lightValue) {
-    unsigned char value = (unsigned char)(((float)lightValue / 15.0f) * 255.0f);
-    return (Color) {
-        .r = 0,
-            .g = 0,
-            .b = 0,
-            .a = 255 - value
-    };
-}
 
 unsigned int posmod(int v, int m) {
     int r = v % m;
@@ -61,10 +52,14 @@ void set_quad_positions(float* positions, uint8_t bx, uint8_t by) {
     }
 }
 
-void set_quad_uvs(float* uvs, uint8_t bx, uint8_t by,
-    float u0, float v0, float u1, float v1) {
+void set_quad_uvs(float* uvs, uint8_t bx, uint8_t by, Rectangle rect) {
     size_t i = bx + (by * CHUNK_WIDTH);
     size_t voffset = i * 6 * 2;
+
+    float u0 = rect.x;
+    float v0 = rect.y;
+    float u1 = rect.x + rect.width;
+    float v1 = rect.y + rect.height;
 
     float verts[6][2] = {
         {u0, v0},
@@ -81,18 +76,17 @@ void set_quad_uvs(float* uvs, uint8_t bx, uint8_t by,
     }
 }
 
-void set_quad_colors(unsigned char* colors, uint8_t bx, uint8_t by,
-    unsigned char r, unsigned char g, unsigned char b, unsigned char a) {
+void set_quad_colors(unsigned char* colors, uint8_t bx, uint8_t by, Color color) {
     size_t i = bx + (by * CHUNK_WIDTH);
     size_t voffset = i * 6 * 4;
 
     uint32_t verts[6][4] = {
-        {r, g, b, a},
-        {r, g, b, a},
-        {r, g, b, a},
-        {r, g, b, a},
-        {r, g, b, a},
-        {r, g, b, a},
+        {color.r, color.g, color.b, color.a},
+        {color.r, color.g, color.b, color.a},
+        {color.r, color.g, color.b, color.a},
+        {color.r, color.g, color.b, color.a},
+        {color.r, color.g, color.b, color.a},
+        {color.r, color.g, color.b, color.a},
     };
 
     for (size_t v = 0; v < 6; v++) {
@@ -116,7 +110,7 @@ void chunk_fill_light(Chunk* chunk, Vector2u startPoint, uint8_t newLightValue) 
 
     uint8_t decayAmount = 1;
 
-    BlockRegistry* br = block_registry_get_block_registry(chunk_get_block(chunk, startPoint, false));
+    BlockRegistry* br = br_get_block_registry(chunk_get_block(chunk, startPoint, false));
     if (!br->transparent) decayAmount = 4;
 
     Vector2i neighbors[] = {
@@ -149,16 +143,6 @@ void chunk_fill_light(Chunk* chunk, Vector2u startPoint, uint8_t newLightValue) 
         }
 
         if (nextChunk) chunk_fill_light(nextChunk, (Vector2u) { neighPos.x, neighPos.y }, newLightValue - decayAmount);
-    }
-}
-
-void chunk_calc_lighting(Chunk* chunk) {
-    for (int i = 0; i < CHUNK_AREA; i++) chunk->light[i] = 0;
-
-    for (int i = 0; i < CHUNK_AREA; i++) {
-        if (chunk->blocks[i] == 0 && chunk->walls[i] == 0) {
-            chunk_fill_light(chunk, (Vector2u) { (i % CHUNK_WIDTH), (i / CHUNK_WIDTH) }, 15);
-        }
     }
 }
 
@@ -221,6 +205,72 @@ void chunk_init_meshes(Chunk* chunk)
     chunk->initializedMeshes = true;
 }
 
+void build_quad(uint8_t* blocks, uint8_t* light, Mesh* mesh, unsigned int seed, bool isWall, uint8_t x, uint8_t y, uint8_t brightness) {
+    int i = x + (y * CHUNK_WIDTH);
+    if (blocks[i] <= 0) return;
+
+    uint8_t lightValue = (uint8_t)(((float)light[i] / 15.0f) * 255.0f);
+    uint8_t darkness = 255 - brightness;
+
+    if (lightValue > darkness) lightValue -= darkness;
+    else lightValue = 0;
+
+    Color color = (Color){
+        .r = lightValue,
+        .g = lightValue,
+        .b = lightValue,
+        .a = 255
+    };
+
+    unsigned int h = seed;
+    h ^= x * 374761393u;
+    h ^= y * 668265263u;
+    h ^= (unsigned int)isWall * 1442695040888963407ull;
+    h = (h ^ (h >> 13)) * 1274126177u;
+
+    BlockRegistry* brg = br_get_block_registry(blocks[i]);
+
+    bool flipH = brg->flipH && (h & 1) ? true : false;
+    bool flipV = brg->flipV && (h & 2) ? true : false;
+
+    set_quad_positions(mesh->vertices, x, y);
+    set_quad_uvs(mesh->texcoords, x, y, br_get_block_uvs(blocks[i], flipH, flipV));
+    set_quad_colors(mesh->colors, x, y, color);
+}
+
+void chunk_genmesh(Chunk* chunk) {
+    if (chunk == NULL) return;
+
+    for (int i = 0; i < (CHUNK_VERTEX_COUNT * 3); i++) {
+        chunk->wallMesh.vertices[i] = 0.0f;
+        chunk->blockMesh.vertices[i] = 0.0f;
+    }
+
+    for (int i = 0; i < CHUNK_AREA; i++) {
+        int x = i % CHUNK_WIDTH;
+        int y = i / CHUNK_WIDTH;
+
+        build_quad(chunk->walls, chunk->light, &chunk->wallMesh, chunk->seed, true, x, y, wallBrightness);
+        build_quad(chunk->blocks, chunk->light, &chunk->blockMesh, chunk->seed, false, x, y, 255);
+    }
+
+    UpdateMeshBuffer(chunk->wallMesh, 0, chunk->wallMesh.vertices, chunk->wallMesh.vertexCount * 3 * sizeof(float), 0);
+    UpdateMeshBuffer(chunk->wallMesh, 1, chunk->wallMesh.texcoords, chunk->wallMesh.vertexCount * 2 * sizeof(float), 0);
+    UpdateMeshBuffer(chunk->wallMesh, 3, chunk->wallMesh.colors, chunk->wallMesh.vertexCount * 4 * sizeof(unsigned char), 0);
+
+    UpdateMeshBuffer(chunk->blockMesh, 0, chunk->blockMesh.vertices, chunk->blockMesh.vertexCount * 3 * sizeof(float), 0);
+    UpdateMeshBuffer(chunk->blockMesh, 1, chunk->blockMesh.texcoords, chunk->blockMesh.vertexCount * 2 * sizeof(float), 0);
+    UpdateMeshBuffer(chunk->blockMesh, 3, chunk->blockMesh.colors, chunk->blockMesh.vertexCount * 4 * sizeof(unsigned char), 0);
+}
+
+void chunk_free_meshes(Chunk* chunk)
+{
+    if (!chunk) return;
+
+    UnloadMesh(chunk->wallMesh);
+    UnloadMesh(chunk->blockMesh);
+}
+
 void chunk_regenerate(Chunk* chunk) {
     if (!chunk) return;
 
@@ -255,42 +305,6 @@ void chunk_regenerate(Chunk* chunk) {
     }
 }
 
-void chunk_genmesh(Chunk* chunk) {
-    if (chunk == NULL) return;
-
-    for (int i = 0; i < (CHUNK_VERTEX_COUNT * 3); i++) {
-        chunk->wallMesh.vertices[i] = 0.0f;
-        chunk->blockMesh.vertices[i] = 0.0f;
-    }
-
-    for (int i = 0; i < CHUNK_AREA; i++) {
-        int x = i % CHUNK_WIDTH;
-        int y = i / CHUNK_WIDTH;
-
-        float uv_unit = (1.0f / 8.0f);
-
-        if (chunk->walls[i] > 0) {
-            set_quad_positions(chunk->wallMesh.vertices, x, y);
-            set_quad_uvs(chunk->wallMesh.texcoords, x, y, uv_unit * (chunk->walls[i] - 1), 0.0f, (uv_unit * (chunk->walls[i] - 1)) + uv_unit, 1.0f);
-            set_quad_colors(chunk->wallMesh.colors, x, y, 128, 128, 128, 255);
-        }
-
-        if (chunk->blocks[i] > 0) {
-            set_quad_positions(chunk->blockMesh.vertices, x, y);
-            set_quad_uvs(chunk->blockMesh.texcoords, x, y, uv_unit * (chunk->blocks[i] - 1), 0.0f, (uv_unit * (chunk->blocks[i] - 1)) + uv_unit, 1.0f);
-            set_quad_colors(chunk->blockMesh.colors, x, y, 255, 255, 255, 255);
-        }
-    }
-
-    UpdateMeshBuffer(chunk->wallMesh, 0, chunk->wallMesh.vertices, chunk->wallMesh.vertexCount * 3 * sizeof(float), 0);
-    UpdateMeshBuffer(chunk->wallMesh, 1, chunk->wallMesh.texcoords, chunk->wallMesh.vertexCount * 2 * sizeof(float), 0);
-    UpdateMeshBuffer(chunk->wallMesh, 3, chunk->wallMesh.colors, chunk->wallMesh.vertexCount * 4 * sizeof(unsigned char), 0);
-
-    UpdateMeshBuffer(chunk->blockMesh, 0, chunk->blockMesh.vertices, chunk->blockMesh.vertexCount * 3 * sizeof(float), 0);
-    UpdateMeshBuffer(chunk->blockMesh, 1, chunk->blockMesh.texcoords, chunk->blockMesh.vertexCount * 2 * sizeof(float), 0);
-    UpdateMeshBuffer(chunk->blockMesh, 3, chunk->blockMesh.colors, chunk->blockMesh.vertexCount * 4 * sizeof(unsigned char), 0);
-}
-
 void chunk_draw(Chunk* chunk, Material* material) {
     if (!chunk) return;
 
@@ -305,188 +319,7 @@ void chunk_draw(Chunk* chunk, Material* material) {
     DrawMesh(chunk->wallMesh, *material, MatrixIdentity());
     DrawMesh(chunk->blockMesh, *material, MatrixIdentity());
 
-    /*
-
-    for (int j = 0; j < CHUNK_AREA; j++) {
-        const int x = j % CHUNK_WIDTH;
-        const int y = (j / CHUNK_WIDTH) % CHUNK_WIDTH;
-
-        const Rectangle blockRect = {
-            .x = x * TILE_SIZE,
-            .y = y * TILE_SIZE,
-            .width = TILE_SIZE,
-            .height = TILE_SIZE
-        };
-
-        if (chunk->walls[j] > 0) {
-            const unsigned int seed = chunk_get_block_seed(chunk, (Vector2u) { x, y }, true);
-            BlockRegistry* brg = block_registry_get_block_registry(chunk->walls[j]);
-            Rectangle blockTextRect = block_registry_get_block_texture_rect(
-                chunk->walls[j],
-                brg->flipH && (seed & 1) ? true : false,
-                brg->flipV && (seed & 2) ? true : false
-            );
-
-            DrawTexturePro(
-                *block_registry_get_block_atlas(),
-                blockTextRect,
-                blockRect,
-                Vector2Zero(),
-                0.0f,
-                GRAY
-            );
-
-            if (brg->lightLevel <= 0 && wallAmbientOcclusion) {
-                // Wall "ambient occlusion"
-                uint8_t neighbors[8] = {
-                    chunk_get_block_extrapolating(chunk, (Vector2i) { x,     y - 1 }, false),   // Up
-                    chunk_get_block_extrapolating(chunk, (Vector2i) { x + 1, y     }, false),   // Right
-                    chunk_get_block_extrapolating(chunk, (Vector2i) { x,     y + 1 }, false),   // Down
-                    chunk_get_block_extrapolating(chunk, (Vector2i) { x - 1, y     }, false),   // Left
-
-                    chunk_get_block_extrapolating(chunk, (Vector2i) { x - 1,  y - 1 }, false),  // Up left
-                    chunk_get_block_extrapolating(chunk, (Vector2i) { x + 1,  y - 1 }, false),  // Up right
-                    chunk_get_block_extrapolating(chunk, (Vector2i) { x - 1,  y + 1 }, false),  // Down left
-                    chunk_get_block_extrapolating(chunk, (Vector2i) { x + 1,  y + 1 }, false),  // Down right
-                };
-
-                BlockRegistry* registries[8];
-                for (int i = 0; i < 8; i++)
-                    registries[i] = block_registry_get_block_registry(neighbors[i]);
-
-                const Color fadeColor = { 0, 0, 0, 128 };
-
-                Color topLeft = { 0, 0, 0, 0 };
-                Color bottomLeft = { 0, 0, 0, 0 };
-                Color topRight = { 0, 0, 0, 0 };
-                Color bottomRight = { 0, 0, 0, 0 };
-
-                if (BLOCK_IS_SOLID_DARK(0)) topLeft = topRight = fadeColor;
-                if (BLOCK_IS_SOLID_DARK(1)) topRight = bottomRight = fadeColor;
-                if (BLOCK_IS_SOLID_DARK(2)) bottomLeft = bottomRight = fadeColor;
-                if (BLOCK_IS_SOLID_DARK(3)) topLeft = bottomLeft = fadeColor;
-
-                if (BLOCK_IS_SOLID_DARK(4)) topLeft = fadeColor;
-                if (BLOCK_IS_SOLID_DARK(5)) topRight = fadeColor;
-                if (BLOCK_IS_SOLID_DARK(6)) bottomLeft = fadeColor;
-                if (BLOCK_IS_SOLID_DARK(7)) bottomRight = fadeColor;
-
-                DrawRectangleGradientEx(
-                    blockRect,
-                    topLeft,
-                    bottomLeft,
-                    bottomRight,
-                    topRight
-                );
-            }
-        }
-
-        if (chunk->blocks[j] > 0) {
-            unsigned int seed = chunk_get_block_seed(chunk, (Vector2u) { x, y }, false);
-            BlockRegistry* brg = block_registry_get_block_registry(chunk->blocks[j]);
-            Rectangle blockTextRect = block_registry_get_block_texture_rect(
-                chunk->blocks[j],
-                brg->flipH && (seed & 1) ? true : false,
-                brg->flipV && (seed & 2) ? true : false
-            );
-
-            DrawTexturePro(
-                *block_registry_get_block_atlas(),
-                blockTextRect,
-                blockRect,
-                Vector2Zero(),
-                0.0f,
-                WHITE
-            );
-        }
-
-        // Drawing light
-        if (chunk->blocks[j] > 0 || chunk->walls[j] > 0) {
-            if (!smoothLighting) {
-                // Without smooth lighting, just draw some simple squares
-                DrawRectangle(
-                    x * TILE_SIZE,
-                    y * TILE_SIZE,
-                    TILE_SIZE,
-                    TILE_SIZE,
-                    get_light_color(chunk->light[j])
-                );
-            } else {
-                // Smooth lighting gets neighboring light values
-                uint8_t neighbors[8] = {
-                    chunk_get_light_extrapolating(chunk, (Vector2i) { x,     y - 1 }),   // Up
-                    chunk_get_light_extrapolating(chunk, (Vector2i) { x + 1, y     }),   // Right
-                    chunk_get_light_extrapolating(chunk, (Vector2i) { x,     y + 1 }),   // Down
-                    chunk_get_light_extrapolating(chunk, (Vector2i) { x - 1, y     }),   // Left
-
-                    chunk_get_light_extrapolating(chunk, (Vector2i) { x - 1, y - 1 }),   // Up left
-                    chunk_get_light_extrapolating(chunk, (Vector2i) { x + 1, y - 1 }),   // Up right
-                    chunk_get_light_extrapolating(chunk, (Vector2i) { x - 1, y + 1 }),   // Down left
-                    chunk_get_light_extrapolating(chunk, (Vector2i) { x + 1, y + 1 }),   // Down right
-                };
-
-                float topLeftAverage = (
-                    (float)chunk->light[j] +
-                    (float)neighbors[3] +
-                    (float)neighbors[4] +
-                    (float)neighbors[0]
-                ) / 4.0f;
-                Color topLeft = get_light_color(topLeftAverage);
-
-                float bottomLeftAverage = (
-                    (float)chunk->light[j] +
-                    (float)neighbors[3] +
-                    (float)neighbors[6] +
-                    (float)neighbors[2]
-                ) / 4.0f;
-                Color bottomLeft = get_light_color(bottomLeftAverage);
-
-                float topRightAverage = (
-                    (float)chunk->light[j] +
-                    (float)neighbors[1] +
-                    (float)neighbors[5] +
-                    (float)neighbors[0]
-                ) / 4.0f;
-                Color topRight = get_light_color(topRightAverage);
-
-                float bottomRightAverage = (
-                    (float)chunk->light[j] +
-                    (float)neighbors[1] +
-                    (float)neighbors[7] +
-                    (float)neighbors[2]
-                ) / 4.0f;
-                Color bottomRight = get_light_color(bottomRightAverage);
-
-                DrawRectangleGradientEx(
-                    blockRect,
-                    topLeft,
-                    bottomLeft,
-                    bottomRight,
-                    topRight
-                );
-            }
-        }
-    }
-    */
-
     rlPopMatrix();
-}
-
-void chunk_free_meshes(Chunk* chunk)
-{
-    if (!chunk) return;
-
-    UnloadMesh(chunk->wallMesh);
-    UnloadMesh(chunk->blockMesh);
-}
-
-unsigned int chunk_get_block_seed(Chunk* chunk, Vector2u position, bool isWall) {
-    unsigned int h = chunk->seed;
-    h ^= position.x * 374761393u;
-    h ^= position.y * 668265263u;
-    h ^= (unsigned int)isWall * 1442695040888963407ull;
-    h = (h ^ (h >> 13)) * 1274126177u;
-    return h;
 }
 
 uint8_t chunk_get_block_extrapolating(Chunk* chunk, Vector2i position, bool isWall) {

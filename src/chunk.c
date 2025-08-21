@@ -245,21 +245,8 @@ void build_quad(Chunk* chunk, uint8_t* blocks, Mesh* mesh, bool isWall, uint8_t 
     int i = x + (y * CHUNK_WIDTH);
     if (blocks[i] <= 0) return;
     
-    // Calculating color for light value
-    uint8_t lightValue = (uint8_t)(((float)chunk->light[i] / 15.0f) * 255.0f);
-    uint8_t darkness = 255 - brightness;
-
-    if (lightValue > darkness) lightValue -= darkness;
-    else lightValue = 0;
-
-    Color color = (Color){
-        .r = lightValue,
-        .g = lightValue,
-        .b = lightValue,
-        .a = 255
-    };
-
-    Color colors[4] = { color, color, color, color };
+    // Start by brightness value
+    uint8_t cornerValues[4] = { brightness, brightness, brightness, brightness };
 
     // Flipping the block texture when requested
     unsigned int h = chunk->seed;
@@ -275,29 +262,25 @@ void build_quad(Chunk* chunk, uint8_t* blocks, Mesh* mesh, bool isWall, uint8_t 
 
     bool flipTriangles = false;
 
-    // Wall "ambient occulsion" for walls only
-    if (wallAmbientOcclusion && isWall) {
+    if (!smoothLighting) {
+        uint8_t lightValue = (uint8_t)((chunk->light[i] / 15.0f) * 255.0f);
+        uint8_t reduction = 255 - lightValue;
+
+        for (int i = 0; i < 4; i++) {
+            if (cornerValues[i] > reduction) cornerValues[i] -= reduction;
+            else cornerValues[i] = 0;
+        }
+    } else {
         uint8_t neighbors[8] = {
-            chunk_get_block_extrapolating(chunk, (Vector2i) { x,     y - 1 }, false),   // Top
-            chunk_get_block_extrapolating(chunk, (Vector2i) { x + 1, y }, false),       // Right
-            chunk_get_block_extrapolating(chunk, (Vector2i) { x,     y + 1 }, false),   // Bottom
-            chunk_get_block_extrapolating(chunk, (Vector2i) { x - 1, y }, false),       // Left
+            chunk_get_light_extrapolating(chunk, (Vector2i) { x,     y - 1 }),   // Up
+            chunk_get_light_extrapolating(chunk, (Vector2i) { x + 1, y }),       // Right
+            chunk_get_light_extrapolating(chunk, (Vector2i) { x,     y + 1 }),   // Down
+            chunk_get_light_extrapolating(chunk, (Vector2i) { x - 1, y }),       // Left
 
-            chunk_get_block_extrapolating(chunk, (Vector2i) { x - 1,  y - 1 }, false),  // Top Left
-            chunk_get_block_extrapolating(chunk, (Vector2i) { x + 1,  y - 1 }, false),  // Top Right
-            chunk_get_block_extrapolating(chunk, (Vector2i) { x - 1,  y + 1 }, false),  // Bottom Left
-            chunk_get_block_extrapolating(chunk, (Vector2i) { x + 1,  y + 1 }, false),  // Bottom Right
-        };
-
-        BlockRegistry* registries[8];
-        for (int i = 0; i < 8; i++)
-            registries[i] = br_get_block_registry(neighbors[i]);
-
-        const Color fadeColor = {
-            min(lightValue, wallAOvalue),
-            min(lightValue, wallAOvalue),
-            min(lightValue, wallAOvalue),
-            255
+            chunk_get_light_extrapolating(chunk, (Vector2i) { x - 1, y - 1 }),   // Up left
+            chunk_get_light_extrapolating(chunk, (Vector2i) { x + 1, y - 1 }),   // Up right
+            chunk_get_light_extrapolating(chunk, (Vector2i) { x - 1, y + 1 }),   // Down left
+            chunk_get_light_extrapolating(chunk, (Vector2i) { x + 1, y + 1 }),   // Down right
         };
 
         // 0 = Top Left
@@ -305,19 +288,82 @@ void build_quad(Chunk* chunk, uint8_t* blocks, Mesh* mesh, bool isWall, uint8_t 
         // 2 = Bottom Right
         // 3 = Bottom Left
 
-        if (BLOCK_IS_SOLID_DARK(0)) colors[0] = colors[1] = fadeColor;   // Top
-        if (BLOCK_IS_SOLID_DARK(1)) colors[1] = colors[2] = fadeColor;   // Right
-        if (BLOCK_IS_SOLID_DARK(2)) colors[3] = colors[2] = fadeColor;   // Bottom
-        if (BLOCK_IS_SOLID_DARK(3)) colors[0] = colors[3] = fadeColor;   // Left
+        int cornerNeighbors[4][3] = {
+            {3, 4, 0},  // Top Left: Left, Top-Left diagonal, Top
+            {1, 5, 0},  // Top Right: Right, Top-Right diagonal, Top  
+            {1, 7, 2},  // Bottom Right: Right, Bottom-Right diagonal, Bottom
+            {3, 6, 2}   // Bottom Left: Left, Bottom-Left diagonal, Bottom
+        };
 
-        if (BLOCK_IS_SOLID_DARK(4)) {                                    // Top Left
-            colors[0] = fadeColor; flipTriangles = true;
-        }               
-        if (BLOCK_IS_SOLID_DARK(5)) colors[1] = fadeColor;               // Top Right
-        if (BLOCK_IS_SOLID_DARK(6)) colors[3] = fadeColor;               // Bottom Left
-        if (BLOCK_IS_SOLID_DARK(7)) {                                    // Bottom Right
-            colors[2] = fadeColor; flipTriangles = true;
-        }                                                       
+        for (int corner = 0; corner < 4; corner++) {
+            float lightSum = (float)chunk->light[i];
+            for (int n = 0; n < 3; n++) {
+                lightSum += (float)neighbors[cornerNeighbors[corner][n]];
+            }
+            float average = lightSum / 4.0f;
+
+            uint8_t lightValue = (uint8_t)((average / 15.0f) * 255.0f);
+
+            uint8_t reduction = 255 - lightValue;
+            if (cornerValues[corner] > reduction) cornerValues[corner] -= reduction;
+            else cornerValues[corner] = 0;
+        }
+    }
+
+    // Wall "ambient occulsion" for walls only
+    if (wallAmbientOcclusion && isWall) {
+        uint8_t neighbors[8] = {
+        chunk_get_block_extrapolating(chunk, (Vector2i) { x,     y - 1 }, false),   // Top
+        chunk_get_block_extrapolating(chunk, (Vector2i) { x + 1, y }, false),       // Right
+        chunk_get_block_extrapolating(chunk, (Vector2i) { x,     y + 1 }, false),   // Bottom
+        chunk_get_block_extrapolating(chunk, (Vector2i) { x - 1, y }, false),       // Left
+
+        chunk_get_block_extrapolating(chunk, (Vector2i) { x - 1,  y - 1 }, false),  // Top Left
+        chunk_get_block_extrapolating(chunk, (Vector2i) { x + 1,  y - 1 }, false),  // Top Right
+        chunk_get_block_extrapolating(chunk, (Vector2i) { x - 1,  y + 1 }, false),  // Bottom Left
+        chunk_get_block_extrapolating(chunk, (Vector2i) { x + 1,  y + 1 }, false),  // Bottom Right
+        };
+
+        BlockRegistry* registries[8];
+        for (int i = 0; i < 8; i++)
+            registries[i] = br_get_block_registry(neighbors[i]);
+
+        struct {
+            int corners[2];
+            bool flipTri;
+        } aoRules[8] = {
+            {{0, 1}, false},    // Top
+            {{1, 2}, false},    // Right
+            {{2, 3}, false},    // Bottom
+            {{0, 3}, false},    // Left
+            {{0, -1}, true},    // Top Left
+            {{1, -1}, false},   // Top Right
+            {{3, -1}, false},   // Bottom Left
+            {{2, -1}, true}     // Bottom Right
+        };
+
+        for (int dir = 0; dir < 8; dir++) {
+            if (BLOCK_IS_SOLID_DARK(dir)) {
+                for (int c = 0; c < 2; c++) {
+                    int corner = aoRules[dir].corners[c];
+                    if (corner >= 0) {
+                        cornerValues[corner] = min(cornerValues[corner], wallAOvalue);
+                    }
+                }
+
+                flipTriangles = aoRules[dir].flipTri;
+            }
+        }
+    }
+
+    Color colors[4];
+    for (int i = 0; i < 4; i++) {
+        colors[i] = (Color){
+            .r = cornerValues[i],
+            .g = cornerValues[i],
+            .b = cornerValues[i],
+            .a = 255
+        };
     }
 
     set_quad_positions(mesh->vertices, x, y, flipTriangles);

@@ -15,7 +15,7 @@
 bool wallAmbientOcclusion = true;
 bool smoothLighting = true;
 uint8_t wallBrightness = 128;
-uint8_t wallAOvalue = 32;
+uint8_t wallAOvalue = 64;
 
 #define BLOCK_IS_SOLID_DARK(i) \
     (!(registries[i]->transparent) && (registries[i]->lightLevel <= 0))

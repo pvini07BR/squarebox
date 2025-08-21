@@ -24,7 +24,7 @@ unsigned int posmod(int v, int m) {
     return (unsigned int)(r < 0 ? r + m : r);
 }
 
-void set_quad_positions(float* positions, uint8_t bx, uint8_t by) {
+void set_quad_positions(float* positions, uint8_t bx, uint8_t by, bool flipTriangles) {
     float x = bx * TILE_SIZE;
     float y = by * TILE_SIZE;
 
@@ -36,14 +36,36 @@ void set_quad_positions(float* positions, uint8_t bx, uint8_t by) {
     float x1 = x + TILE_SIZE;
     float y1 = y + TILE_SIZE;
 
-    float verts[6][3] = {
-        {x0, y0, 0.0f},
-        {x1, y0, 0.0f},
-        {x1, y1, 0.0f},
-        {x0, y0, 0.0f},
-        {x1, y1, 0.0f},
-        {x0, y1, 0.0f},
-    };
+    float verts[6][3];
+
+    if (flipTriangles) {
+        // Triângulos invertidos horizontalmente (CCW)
+        // Triângulo 1: superior esquerdo → superior direito → inferior esquerdo
+        // Triângulo 2: inferior esquerdo → inferior direito → superior direito
+        float invertedVerts[6][3] = {
+            {x0, y0, 0.0f},  // superior esquerdo
+            {x1, y0, 0.0f},  // superior direito
+            {x0, y1, 0.0f},  // inferior esquerdo
+            {x0, y1, 0.0f},  // inferior esquerdo
+            {x1, y1, 0.0f},  // inferior direito
+            {x1, y0, 0.0f},  // superior direito
+        };
+        memcpy(verts, invertedVerts, sizeof(verts));
+    }
+    else {
+        // Triângulos normais (CCW)
+        // Triângulo 1: superior esquerdo → superior direito → inferior direito
+        // Triângulo 2: superior esquerdo → inferior direito → inferior esquerdo
+        float normalVerts[6][3] = {
+            {x0, y0, 0.0f},  // superior esquerdo
+            {x1, y0, 0.0f},  // superior direito
+            {x1, y1, 0.0f},  // inferior direito
+            {x0, y0, 0.0f},  // superior esquerdo
+            {x1, y1, 0.0f},  // inferior direito
+            {x0, y1, 0.0f},  // inferior esquerdo
+        };
+        memcpy(verts, normalVerts, sizeof(verts));
+    }
 
     for (size_t v = 0; v < 6; v++) {
         positions[voffset + v * 3 + 0] = verts[v][0];
@@ -52,7 +74,7 @@ void set_quad_positions(float* positions, uint8_t bx, uint8_t by) {
     }
 }
 
-void set_quad_uvs(float* uvs, uint8_t bx, uint8_t by, Rectangle rect) {
+void set_quad_uvs(float* uvs, uint8_t bx, uint8_t by, Rectangle rect, bool flipTriangles) {
     size_t i = bx + (by * CHUNK_WIDTH);
     size_t voffset = i * 6 * 2;
 
@@ -61,14 +83,36 @@ void set_quad_uvs(float* uvs, uint8_t bx, uint8_t by, Rectangle rect) {
     float u1 = rect.x + rect.width;
     float v1 = rect.y + rect.height;
 
-    float verts[6][2] = {
-        {u0, v0},
-        {u1, v0},
-        {u1, v1},
-        {u0, v0},
-        {u1, v1},
-        {u0, v1},
-    };
+    float verts[6][2];
+
+    if (flipTriangles) {
+        // UVs para triângulos invertidos horizontalmente
+        // Triângulo 1: superior esquerdo → superior direito → inferior esquerdo
+        // Triângulo 2: inferior esquerdo → inferior direito → superior direito
+        float invertedVerts[6][2] = {
+            {u0, v0},  // superior esquerdo
+            {u1, v0},  // superior direito
+            {u0, v1},  // inferior esquerdo
+            {u0, v1},  // inferior esquerdo
+            {u1, v1},  // inferior direito
+            {u1, v0},  // superior direito
+        };
+        memcpy(verts, invertedVerts, sizeof(verts));
+    }
+    else {
+        // UVs para triângulos normais
+        // Triângulo 1: superior esquerdo → superior direito → inferior direito
+        // Triângulo 2: superior esquerdo → inferior direito → inferior esquerdo
+        float normalVerts[6][2] = {
+            {u0, v0},  // superior esquerdo
+            {u1, v0},  // superior direito
+            {u1, v1},  // inferior direito
+            {u0, v0},  // superior esquerdo
+            {u1, v1},  // inferior direito
+            {u0, v1},  // inferior esquerdo
+        };
+        memcpy(verts, normalVerts, sizeof(verts));
+    }
 
     for (size_t v = 0; v < 6; v++) {
         uvs[voffset + v * 2 + 0] = verts[v][0];
@@ -76,24 +120,35 @@ void set_quad_uvs(float* uvs, uint8_t bx, uint8_t by, Rectangle rect) {
     }
 }
 
-void set_quad_colors(unsigned char* colors, uint8_t bx, uint8_t by, Color color) {
+void set_quad_colors(unsigned char* colors, uint8_t bx, uint8_t by, Color corners[4], bool flipTriangles) {
     size_t i = bx + (by * CHUNK_WIDTH);
     size_t voffset = i * 6 * 4;
 
-    uint32_t verts[6][4] = {
-        {color.r, color.g, color.b, color.a},
-        {color.r, color.g, color.b, color.a},
-        {color.r, color.g, color.b, color.a},
-        {color.r, color.g, color.b, color.a},
-        {color.r, color.g, color.b, color.a},
-        {color.r, color.g, color.b, color.a},
-    };
+    int indices[6];
+
+    if (flipTriangles) {
+        // Índices para triângulos invertidos horizontalmente
+        // corners[0] = superior esquerdo, corners[1] = superior direito
+        // corners[2] = inferior direito, corners[3] = inferior esquerdo
+        // Triângulo 1: superior esquerdo → superior direito → inferior esquerdo
+        // Triângulo 2: inferior esquerdo → inferior direito → superior direito
+        int invertedIndices[6] = { 0, 1, 3, 3, 2, 1 };
+        memcpy(indices, invertedIndices, sizeof(indices));
+    }
+    else {
+        // Índices para triângulos normais
+        // Triângulo 1: superior esquerdo → superior direito → inferior direito
+        // Triângulo 2: superior esquerdo → inferior direito → inferior esquerdo
+        int normalIndices[6] = { 0, 1, 2, 0, 2, 3 };
+        memcpy(indices, normalIndices, sizeof(indices));
+    }
 
     for (size_t v = 0; v < 6; v++) {
-        colors[voffset + v * 4 + 0] = verts[v][0];
-        colors[voffset + v * 4 + 1] = verts[v][1];
-        colors[voffset + v * 4 + 2] = verts[v][2];
-        colors[voffset + v * 4 + 3] = verts[v][3];
+        Color c = corners[indices[v]];
+        colors[voffset + v * 4 + 0] = c.r;
+        colors[voffset + v * 4 + 1] = c.g;
+        colors[voffset + v * 4 + 2] = c.b;
+        colors[voffset + v * 4 + 3] = 255;
     }
 }
 
@@ -205,11 +260,12 @@ void chunk_init_meshes(Chunk* chunk)
     chunk->initializedMeshes = true;
 }
 
-void build_quad(uint8_t* blocks, uint8_t* light, Mesh* mesh, unsigned int seed, bool isWall, uint8_t x, uint8_t y, uint8_t brightness) {
+void build_quad(Chunk* chunk, uint8_t* blocks, Mesh* mesh, bool isWall, uint8_t x, uint8_t y, uint8_t brightness) {
     int i = x + (y * CHUNK_WIDTH);
     if (blocks[i] <= 0) return;
-
-    uint8_t lightValue = (uint8_t)(((float)light[i] / 15.0f) * 255.0f);
+    
+    // Calculating color for light value
+    uint8_t lightValue = (uint8_t)(((float)chunk->light[i] / 15.0f) * 255.0f);
     uint8_t darkness = 255 - brightness;
 
     if (lightValue > darkness) lightValue -= darkness;
@@ -222,7 +278,10 @@ void build_quad(uint8_t* blocks, uint8_t* light, Mesh* mesh, unsigned int seed, 
         .a = 255
     };
 
-    unsigned int h = seed;
+    Color colors[4] = { color, color, color, color };
+
+    // Flipping the block texture when requested
+    unsigned int h = chunk->seed;
     h ^= x * 374761393u;
     h ^= y * 668265263u;
     h ^= (unsigned int)isWall * 1442695040888963407ull;
@@ -233,9 +292,51 @@ void build_quad(uint8_t* blocks, uint8_t* light, Mesh* mesh, unsigned int seed, 
     bool flipH = brg->flipH && (h & 1) ? true : false;
     bool flipV = brg->flipV && (h & 2) ? true : false;
 
-    set_quad_positions(mesh->vertices, x, y);
-    set_quad_uvs(mesh->texcoords, x, y, br_get_block_uvs(blocks[i], flipH, flipV));
-    set_quad_colors(mesh->colors, x, y, color);
+    bool flipTriangles = false;
+
+    // Wall "ambient occulsion" for walls only
+    if (wallAmbientOcclusion && isWall) {
+        uint8_t neighbors[8] = {
+            chunk_get_block_extrapolating(chunk, (Vector2i) { x,     y - 1 }, false),   // Top
+            chunk_get_block_extrapolating(chunk, (Vector2i) { x + 1, y }, false),       // Right
+            chunk_get_block_extrapolating(chunk, (Vector2i) { x,     y + 1 }, false),   // Bottom
+            chunk_get_block_extrapolating(chunk, (Vector2i) { x - 1, y }, false),       // Left
+
+            chunk_get_block_extrapolating(chunk, (Vector2i) { x - 1,  y - 1 }, false),  // Top Left
+            chunk_get_block_extrapolating(chunk, (Vector2i) { x + 1,  y - 1 }, false),  // Top Right
+            chunk_get_block_extrapolating(chunk, (Vector2i) { x - 1,  y + 1 }, false),  // Bottom Left
+            chunk_get_block_extrapolating(chunk, (Vector2i) { x + 1,  y + 1 }, false),  // Bottom Right
+        };
+
+        BlockRegistry* registries[8];
+        for (int i = 0; i < 8; i++)
+            registries[i] = br_get_block_registry(neighbors[i]);
+
+        const Color fadeColor = { 0, 0, 0, 0 };
+
+        // 0 = Top Left
+        // 1 = Top Right
+        // 2 = Bottom Right
+        // 3 = Bottom Left
+
+        if (BLOCK_IS_SOLID_DARK(0)) colors[0] = colors[1] = fadeColor;   // Top
+        if (BLOCK_IS_SOLID_DARK(1)) colors[1] = colors[2] = fadeColor;   // Right
+        if (BLOCK_IS_SOLID_DARK(2)) colors[3] = colors[2] = fadeColor;   // Bottom
+        if (BLOCK_IS_SOLID_DARK(3)) colors[0] = colors[3] = fadeColor;   // Left
+
+        if (BLOCK_IS_SOLID_DARK(4)) {                                    // Top Left
+            colors[0] = fadeColor; flipTriangles = true;
+        }               
+        if (BLOCK_IS_SOLID_DARK(5)) colors[1] = fadeColor;               // Top Right
+        if (BLOCK_IS_SOLID_DARK(6)) colors[3] = fadeColor;               // Bottom Left
+        if (BLOCK_IS_SOLID_DARK(7)) {                                    // Bottom Right
+            colors[2] = fadeColor; flipTriangles = true;
+        }                                                       
+    }
+
+    set_quad_positions(mesh->vertices, x, y, flipTriangles);
+    set_quad_uvs(mesh->texcoords, x, y, br_get_block_uvs(blocks[i], flipH, flipV), flipTriangles);
+    set_quad_colors(mesh->colors, x, y, colors, flipTriangles);
 }
 
 void chunk_genmesh(Chunk* chunk) {
@@ -250,8 +351,8 @@ void chunk_genmesh(Chunk* chunk) {
         int x = i % CHUNK_WIDTH;
         int y = i / CHUNK_WIDTH;
 
-        build_quad(chunk->walls, chunk->light, &chunk->wallMesh, chunk->seed, true, x, y, wallBrightness);
-        build_quad(chunk->blocks, chunk->light, &chunk->blockMesh, chunk->seed, false, x, y, 255);
+        build_quad(chunk, chunk->walls, &chunk->wallMesh, true, x, y, wallBrightness);
+        build_quad(chunk, chunk->blocks, &chunk->blockMesh, false, x, y, 255);
     }
 
     UpdateMeshBuffer(chunk->wallMesh, 0, chunk->wallMesh.vertices, chunk->wallMesh.vertexCount * 3 * sizeof(float), 0);

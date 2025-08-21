@@ -71,6 +71,17 @@ void chunk_manager_free() {
     }
 }
 
+void chunk_manager_reset_chunks()
+{
+    for (int c = 0; c < CHUNK_COUNT; c++) {
+        chunks[c].position = (Vector2i){ .x = INT_MAX, .y = INT_MAX };
+        chunks[c].initializedMeshes = false;
+        chunk_free_meshes(&chunks[c]);
+    }
+
+    chunk_manager_relocate(currentChunkPos);
+}
+
 
 void chunk_manager_relocate(Vector2i newCenter) {
     currentChunkPos = newCenter;

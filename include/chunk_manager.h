@@ -12,6 +12,7 @@
 void chunk_manager_init();
 void chunk_manager_draw();
 void chunk_manager_free();
+void chunk_manager_reload_chunks();
 void chunk_manager_relocate(Vector2i newCenter);
 void chunk_manager_update_lighting();
 

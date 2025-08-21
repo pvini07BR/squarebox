@@ -8,6 +8,7 @@ set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build Raylib as static libraries" FORCE)
 
 include(FetchContent)
 
+message(STATUS "Downloading Raylib...")
 FetchContent_Declare(
     raylib
     GIT_REPOSITORY https://github.com/raysan5/raylib.git

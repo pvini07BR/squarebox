@@ -10,15 +10,22 @@
 #include "chunk_manager.h"
 #include "block_registry.h"
 
+extern int seed;
 extern bool wallAmbientOcclusion;
 extern bool smoothLighting;
+extern unsigned int wallBrightness;
+extern unsigned int wallAOvalue;
 
 bool mouseIsInUI = false;
+
+bool seedEdit = false;
+bool wallBrightEdit = false;
+bool wallAOEdit = false;
 
 Rectangle interPanel = {
     .x = 0,
     .y = 0,
-    .width = 160,
+    .width = 170,
     .height = 32 * 3
 };
 
@@ -183,12 +190,22 @@ int main() {
 
         mouseIsInUI = !CheckCollisionPointRec(GetMousePosition(), interPanel);
 
+        const int padding = 8;
+        const int elementHeight = 16;
+        const int sum = elementHeight + padding;
+        int height = (-elementHeight) + (padding/2);
+
         GuiPanel(interPanel, NULL);
-        GuiCheckBox((Rectangle) { 0, textSize.y, 32, 32 }, "Toggle Wall AO", &wallAmbientOcclusion);
-        GuiCheckBox((Rectangle) { 0, textSize.y + 32, 32, 32 }, "Toggle Smooth Lighting", &smoothLighting);
-        if (GuiButton((Rectangle) { 0, textSize.y + 64, 128, 32 }, "Reload chunks")) {
-            chunk_manager_update_lighting();
+        if (GuiValueBox((Rectangle) { MeasureText("Seed ", 8) + padding, textSize.y + (height += sum), 64, elementHeight }, "Seed ", & seed, INT_MIN, INT_MAX, seedEdit)) seedEdit = !seedEdit;
+        GuiCheckBox((Rectangle) { padding, textSize.y + (height += sum), elementHeight, elementHeight }, "Toggle Wall AO", & wallAmbientOcclusion);
+        GuiCheckBox((Rectangle) { padding, textSize.y + (height += sum), elementHeight, elementHeight }, "Toggle Smooth Lighting", &smoothLighting);
+        if (GuiValueBox((Rectangle) { MeasureText("Wall Brightness  ", 8) + padding, textSize.y + (height += sum), 64, elementHeight }, "Wall Brightness ", &wallBrightness, 0, 255, wallBrightEdit)) wallBrightEdit = !wallBrightEdit;
+        if (GuiValueBox((Rectangle) { MeasureText("Wall AO Value  ", 8) + padding, textSize.y + (height += sum), 64, elementHeight }, "Wall AO Value ", &wallAOvalue, 0, 255, wallAOEdit)) wallAOEdit = !wallAOEdit;
+        if (GuiButton((Rectangle) { padding, textSize.y + (height += sum), interPanel.width - (padding * 2), 32 }, "Reload chunks")) {
+            chunk_manager_reset_chunks();
         }
+
+        interPanel.height = height + sum + 16;
 
         EndDrawing();
     }

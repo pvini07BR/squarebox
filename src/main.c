@@ -10,6 +10,18 @@
 #include "chunk_manager.h"
 #include "block_registry.h"
 
+extern bool wallAmbientOcclusion;
+extern bool smoothLighting;
+
+bool mouseIsInUI = false;
+
+Rectangle interPanel = {
+    .x = 0,
+    .y = 0,
+    .width = 160,
+    .height = 32 * 3
+};
+
 int main() {
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(1280, 720, "mijocraft");
@@ -49,10 +61,12 @@ int main() {
             (int)floorf((float)mouseWorldPos.y / (float)TILE_SIZE)
         };
 
-        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-            chunk_manager_set_block(mouseBlockPos, 0, wall_mode);
-        else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
-            chunk_manager_set_block(mouseBlockPos, selected_block, wall_mode);
+        if (mouseIsInUI) {
+            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+                chunk_manager_set_block(mouseBlockPos, 0, wall_mode);
+            else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
+                chunk_manager_set_block(mouseBlockPos, selected_block, wall_mode);
+        }
 
         Vector2 input = { 0 };
 
@@ -128,6 +142,8 @@ int main() {
             br_get_block_registry(selected_block)->name,
             wall_mode ? "true" : "false"
         );
+
+        Vector2 textSize = MeasureTextEx(GetFontDefault(), buffer, 24, 0);
         DrawText(buffer, 0, 0, 24, WHITE);
 
         DrawTexturePro(
@@ -162,6 +178,17 @@ int main() {
             0.0f,
             WHITE
         );
+
+        interPanel.y = textSize.y;
+
+        mouseIsInUI = !CheckCollisionPointRec(GetMousePosition(), interPanel);
+
+        GuiPanel(interPanel, NULL);
+        GuiCheckBox((Rectangle) { 0, textSize.y, 32, 32 }, "Toggle Wall AO", &wallAmbientOcclusion);
+        GuiCheckBox((Rectangle) { 0, textSize.y + 32, 32, 32 }, "Toggle Smooth Lighting", &smoothLighting);
+        if (GuiButton((Rectangle) { 0, textSize.y + 64, 128, 32 }, "Reload chunks")) {
+            chunk_manager_update_lighting();
+        }
 
         EndDrawing();
     }

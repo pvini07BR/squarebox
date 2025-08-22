@@ -71,9 +71,9 @@ int main() {
 
         if (mouseIsInUI) {
             if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-                chunk_manager_set_block(mouseBlockPos, 0, wall_mode);
+                chunk_manager_set_block(mouseBlockPos, (BlockInstance) { 0, 0 }, wall_mode);
             else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
-                chunk_manager_set_block(mouseBlockPos, selected_block, wall_mode);
+                chunk_manager_set_block(mouseBlockPos, (BlockInstance) { selected_block, 0 }, wall_mode);
         }
 
         Vector2 input = { 0 };

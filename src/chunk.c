@@ -72,7 +72,7 @@ void set_quad_positions(float* positions, uint8_t bx, uint8_t by, bool flipTrian
     }
 }
 
-void set_quad_uvs(float* uvs, uint8_t bx, uint8_t by, Rectangle rect, bool flipTriangles) {
+void set_quad_uvs(float* uvs, uint8_t bx, uint8_t by, Rectangle rect, bool flipTriangles, uint8_t rotation) {
     size_t i = bx + (by * CHUNK_WIDTH);
     size_t voffset = i * 6 * 2;
 
@@ -81,27 +81,67 @@ void set_quad_uvs(float* uvs, uint8_t bx, uint8_t by, Rectangle rect, bool flipT
     float u1 = rect.x + rect.width;
     float v1 = rect.y + rect.height;
 
+    // Definir UVs dos 4 cantos baseado na rotação
+    float cornerUVs[4][2];
+
+    switch (rotation) {
+    case 1: // 90° anti-horário
+        cornerUVs[0][0] = u1; cornerUVs[0][1] = v0; // superior esquerdo = superior direito original
+        cornerUVs[1][0] = u1; cornerUVs[1][1] = v1; // superior direito = inferior direito original
+        cornerUVs[2][0] = u0; cornerUVs[2][1] = v1; // inferior direito = inferior esquerdo original
+        cornerUVs[3][0] = u0; cornerUVs[3][1] = v0; // inferior esquerdo = superior esquerdo original
+        break;
+
+    case 2: // 180°
+        cornerUVs[0][0] = u1; cornerUVs[0][1] = v1; // superior esquerdo = inferior direito original
+        cornerUVs[1][0] = u0; cornerUVs[1][1] = v1; // superior direito = inferior esquerdo original
+        cornerUVs[2][0] = u0; cornerUVs[2][1] = v0; // inferior direito = superior esquerdo original
+        cornerUVs[3][0] = u1; cornerUVs[3][1] = v0; // inferior esquerdo = superior direito original
+        break;
+
+    case 3: // 270° anti-horário (90° horário)
+        cornerUVs[0][0] = u0; cornerUVs[0][1] = v1; // superior esquerdo = inferior esquerdo original
+        cornerUVs[1][0] = u0; cornerUVs[1][1] = v0; // superior direito = superior esquerdo original
+        cornerUVs[2][0] = u1; cornerUVs[2][1] = v0; // inferior direito = superior direito original
+        cornerUVs[3][0] = u1; cornerUVs[3][1] = v1; // inferior esquerdo = inferior direito original
+        break;
+
+    case 0: // sem rotação
+    default:
+        cornerUVs[0][0] = u0; cornerUVs[0][1] = v0; // superior esquerdo
+        cornerUVs[1][0] = u1; cornerUVs[1][1] = v0; // superior direito
+        cornerUVs[2][0] = u1; cornerUVs[2][1] = v1; // inferior direito
+        cornerUVs[3][0] = u0; cornerUVs[3][1] = v1; // inferior esquerdo
+        break;
+    }
+
     float verts[6][2];
 
     if (flipTriangles) {
+        // Triângulos invertidos horizontalmente
+        // Triângulo 1: superior esquerdo → superior direito → inferior esquerdo
+        // Triângulo 2: inferior esquerdo → inferior direito → superior direito
         float invertedVerts[6][2] = {
-            {u0, v0},
-            {u1, v0},
-            {u0, v1},
-            {u0, v1},
-            {u1, v1},
-            {u1, v0},
+            {cornerUVs[0][0], cornerUVs[0][1]}, // superior esquerdo
+            {cornerUVs[1][0], cornerUVs[1][1]}, // superior direito
+            {cornerUVs[3][0], cornerUVs[3][1]}, // inferior esquerdo
+            {cornerUVs[3][0], cornerUVs[3][1]}, // inferior esquerdo
+            {cornerUVs[2][0], cornerUVs[2][1]}, // inferior direito
+            {cornerUVs[1][0], cornerUVs[1][1]}, // superior direito
         };
         memcpy(verts, invertedVerts, sizeof(verts));
     }
     else {
+        // Triângulos normais
+        // Triângulo 1: superior esquerdo → superior direito → inferior direito
+        // Triângulo 2: superior esquerdo → inferior direito → inferior esquerdo
         float normalVerts[6][2] = {
-            {u0, v0},
-            {u1, v0},
-            {u1, v1},
-            {u0, v0},
-            {u1, v1},
-            {u0, v1},
+            {cornerUVs[0][0], cornerUVs[0][1]}, // superior esquerdo
+            {cornerUVs[1][0], cornerUVs[1][1]}, // superior direito
+            {cornerUVs[2][0], cornerUVs[2][1]}, // inferior direito
+            {cornerUVs[0][0], cornerUVs[0][1]}, // superior esquerdo
+            {cornerUVs[2][0], cornerUVs[2][1]}, // inferior direito
+            {cornerUVs[3][0], cornerUVs[3][1]}, // inferior esquerdo
         };
         memcpy(verts, normalVerts, sizeof(verts));
     }
@@ -149,7 +189,7 @@ void chunk_fill_light(Chunk* chunk, Vector2u startPoint, uint8_t newLightValue) 
 
     uint8_t decayAmount = 1;
 
-    BlockRegistry* br = br_get_block_registry(chunk_get_block(chunk, startPoint, false));
+    BlockRegistry* br = br_get_block_registry(chunk_get_block(chunk, startPoint, false).id);
     if (!br->transparent) decayAmount = 4;
 
     Vector2i neighbors[] = {
@@ -185,7 +225,7 @@ void chunk_fill_light(Chunk* chunk, Vector2u startPoint, uint8_t newLightValue) 
     }
 }
 
-void chunk_set_block(Chunk* chunk, Vector2u position, uint8_t blockValue, bool isWall) {
+void chunk_set_block(Chunk* chunk, Vector2u position, BlockInstance blockValue, bool isWall) {
     if (!chunk) return;
     if (position.x >= CHUNK_WIDTH || position.y >= CHUNK_WIDTH) return;
 
@@ -195,9 +235,9 @@ void chunk_set_block(Chunk* chunk, Vector2u position, uint8_t blockValue, bool i
         chunk->walls[position.x + (position.y * CHUNK_WIDTH)] = blockValue;
 }
 
-uint8_t chunk_get_block(Chunk* chunk, Vector2u position, bool isWall) {
-    if (!chunk) return 0;
-    if (position.x >= CHUNK_WIDTH || position.y >= CHUNK_WIDTH) return 0;
+BlockInstance chunk_get_block(Chunk* chunk, Vector2u position, bool isWall) {
+    if (!chunk) return (BlockInstance){ 0, 0 };
+    if (position.x >= CHUNK_WIDTH || position.y >= CHUNK_WIDTH) return (BlockInstance) { 0, 0 };
     if (!isWall)
         return chunk->blocks[position.x + (position.y * CHUNK_WIDTH)];
     else
@@ -244,9 +284,9 @@ void chunk_init_meshes(Chunk* chunk)
     chunk->initializedMeshes = true;
 }
 
-void build_quad(Chunk* chunk, uint8_t* blocks, Mesh* mesh, bool isWall, uint8_t x, uint8_t y, uint8_t brightness) {
+void build_quad(Chunk* chunk, BlockInstance* blocks, Mesh* mesh, bool isWall, uint8_t x, uint8_t y, uint8_t brightness) {
     int i = x + (y * CHUNK_WIDTH);
-    if (blocks[i] <= 0) return;
+    if (blocks[i].id <= 0) return;
     
     // Start by brightness value
     uint8_t cornerValues[4] = { brightness, brightness, brightness, brightness };
@@ -258,7 +298,7 @@ void build_quad(Chunk* chunk, uint8_t* blocks, Mesh* mesh, bool isWall, uint8_t 
     h ^= (unsigned int)isWall * 1442695040888963407ull;
     h = (h ^ (h >> 13)) * 1274126177u;
 
-    BlockRegistry* brg = br_get_block_registry(blocks[i]);
+    BlockRegistry* brg = br_get_block_registry(blocks[i].id);
 
     bool flipH = brg->flipH && (h & 1) ? true : false;
     bool flipV = brg->flipV && (h & 2) ? true : false;
@@ -315,21 +355,21 @@ void build_quad(Chunk* chunk, uint8_t* blocks, Mesh* mesh, bool isWall, uint8_t 
 
     // Wall "ambient occulsion" for walls only
     if (wallAmbientOcclusion && isWall) {
-        uint8_t neighbors[8] = {
-        chunk_get_block_extrapolating(chunk, (Vector2i) { x,     y - 1 }, false),   // Top
-        chunk_get_block_extrapolating(chunk, (Vector2i) { x + 1, y }, false),       // Right
-        chunk_get_block_extrapolating(chunk, (Vector2i) { x,     y + 1 }, false),   // Bottom
-        chunk_get_block_extrapolating(chunk, (Vector2i) { x - 1, y }, false),       // Left
+        BlockInstance neighbors[8] = {
+            chunk_get_block_extrapolating(chunk, (Vector2i) { x,     y - 1 }, false),   // Top
+            chunk_get_block_extrapolating(chunk, (Vector2i) { x + 1, y }, false),       // Right
+            chunk_get_block_extrapolating(chunk, (Vector2i) { x,     y + 1 }, false),   // Bottom
+            chunk_get_block_extrapolating(chunk, (Vector2i) { x - 1, y }, false),       // Left
 
-        chunk_get_block_extrapolating(chunk, (Vector2i) { x - 1,  y - 1 }, false),  // Top Left
-        chunk_get_block_extrapolating(chunk, (Vector2i) { x + 1,  y - 1 }, false),  // Top Right
-        chunk_get_block_extrapolating(chunk, (Vector2i) { x - 1,  y + 1 }, false),  // Bottom Left
-        chunk_get_block_extrapolating(chunk, (Vector2i) { x + 1,  y + 1 }, false),  // Bottom Right
+            chunk_get_block_extrapolating(chunk, (Vector2i) { x - 1,  y - 1 }, false),  // Top Left
+            chunk_get_block_extrapolating(chunk, (Vector2i) { x + 1,  y - 1 }, false),  // Top Right
+            chunk_get_block_extrapolating(chunk, (Vector2i) { x - 1,  y + 1 }, false),  // Bottom Left
+            chunk_get_block_extrapolating(chunk, (Vector2i) { x + 1,  y + 1 }, false),  // Bottom Right
         };
 
         BlockRegistry* registries[8];
         for (int i = 0; i < 8; i++)
-            registries[i] = br_get_block_registry(neighbors[i]);
+            registries[i] = br_get_block_registry(neighbors[i].id);
 
         struct {
             int corners[2];
@@ -369,8 +409,15 @@ void build_quad(Chunk* chunk, uint8_t* blocks, Mesh* mesh, bool isWall, uint8_t 
         };
     }
 
+    // Block state rendering
+    uint8_t uvRotation = 0;
+
+    if (brg->flag == BLOCK_FLAG_LOG_LIKE) {
+        uvRotation = blocks[i].state;
+    }
+
     set_quad_positions(mesh->vertices, x, y, flipTriangles);
-    set_quad_uvs(mesh->texcoords, x, y, br_get_block_uvs(blocks[i], flipH, flipV), flipTriangles);
+    set_quad_uvs(mesh->texcoords, x, y, br_get_block_uvs(blocks[i].id, flipH, flipV), flipTriangles, uvRotation);
     set_quad_colors(mesh->colors, x, y, colors, flipTriangles);
 }
 
@@ -431,20 +478,20 @@ void chunk_regenerate(Chunk* chunk) {
             };
 
             if (globalBlockPos.y == value) {
-                chunk->blocks[i] = 1;
-                chunk->walls[i] = 1;
+                chunk->blocks[i] = (BlockInstance){ 1, 0 };
+                chunk->walls[i] = (BlockInstance){ 1, 0 };
             }
             else if (globalBlockPos.y > value && globalBlockPos.y <= (value + 16)) {
-                chunk->blocks[i] = 2;
-                chunk->walls[i] = 2;
+                chunk->blocks[i] = (BlockInstance){ 2, 0 };
+                chunk->walls[i] = (BlockInstance){ 2, 0 };
             } 
             else if (globalBlockPos.y > (value + 16)) {
-                chunk->blocks[i] = 3;
-                chunk->walls[i] = 3;
+                chunk->blocks[i] = (BlockInstance){ 3, 0 };
+                chunk->walls[i] = (BlockInstance){ 3, 0 };
             }
             else {
-                chunk->blocks[i] = 0;
-                chunk->walls[i] = 0;
+                chunk->blocks[i] = (BlockInstance){ 0, 0 };
+                chunk->walls[i] = (BlockInstance){ 0, 0 };
             }
 
             chunk->light[i] = 0;
@@ -469,8 +516,8 @@ void chunk_draw(Chunk* chunk, Material* material) {
     rlPopMatrix();
 }
 
-uint8_t chunk_get_block_extrapolating(Chunk* chunk, Vector2i position, bool isWall) {
-    if (!chunk) return 0;
+BlockInstance chunk_get_block_extrapolating(Chunk* chunk, Vector2i position, bool isWall) {
+    if (!chunk) return (BlockInstance) { 0, 0 };
 
     if (position.x >= 0 && position.y >= 0 && position.x < CHUNK_WIDTH && position.y < CHUNK_WIDTH) {
         if (!isWall)
@@ -490,7 +537,7 @@ uint8_t chunk_get_block_extrapolating(Chunk* chunk, Vector2i position, bool isWa
         else if (position.y < 0) neighbor = (Chunk*)chunk->neighbors.up;
         else if (position.y >= CHUNK_WIDTH) neighbor = (Chunk*)chunk->neighbors.down;
 
-        if (neighbor == NULL) return 0;
+        if (neighbor == NULL) return (BlockInstance) { 0, 0 };
 
         Vector2u relPos = {
             .x = posmod(position.x, CHUNK_WIDTH),

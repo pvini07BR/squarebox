@@ -191,8 +191,8 @@ void chunk_manager_update_lighting() {
 
     for (int c = 0; c < CHUNK_COUNT; c++) {
         for (int i = 0; i < CHUNK_AREA; i++) {
-            uint8_t b = chunks[c].blocks[i];
-            uint8_t w = chunks[c].walls[i];
+            uint8_t b = chunks[c].blocks[i].id;
+            uint8_t w = chunks[c].walls[i].id;
 
             BlockRegistry* bbr = br_get_block_registry(b);
             BlockRegistry* wbr = br_get_block_registry(w);
@@ -228,7 +228,7 @@ Chunk* chunk_manager_get_chunk(Vector2i position) {
     }
 }
 
-void chunk_manager_set_block(Vector2i position, int blockValue, bool isWall) {
+void chunk_manager_set_block(Vector2i position, BlockInstance blockValue, bool isWall) {
     Vector2i chunkPos = {
         (int)floorf((float)position.x / (float)CHUNK_WIDTH),
         (int)floorf((float)position.y / (float)CHUNK_WIDTH)
@@ -255,7 +255,7 @@ void chunk_manager_set_block(Vector2i position, int blockValue, bool isWall) {
     chunk_manager_update_lighting();
 }
 
-int chunk_manager_get_block(Vector2i position, bool isWall) {
+BlockInstance chunk_manager_get_block(Vector2i position, bool isWall) {
     Vector2i chunkPos = {
         (int)floorf((float)position.x / (float)CHUNK_WIDTH),
         (int)floorf((float)position.y / (float)CHUNK_WIDTH)
@@ -278,7 +278,7 @@ int chunk_manager_get_block(Vector2i position, bool isWall) {
             isWall
         );
     }
-    return 0;
+    return (BlockInstance) { 0, 0 };
 }
 
 uint8_t chunk_manager_get_light(Vector2i position) {

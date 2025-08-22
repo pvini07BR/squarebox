@@ -18,9 +18,9 @@ void chunk_manager_update_lighting();
 
 Chunk* chunk_manager_get_chunk(Vector2i position);
 // Position is in global block coordinates
-void chunk_manager_set_block(Vector2i position, int blockValue, bool isWall);
+void chunk_manager_set_block(Vector2i position, BlockInstance blockValue, bool isWall);
 // Position is in global block coordinates
-int chunk_manager_get_block(Vector2i position, bool isWall);
+BlockInstance chunk_manager_get_block(Vector2i position, bool isWall);
 // Position is in global block coordinates
 void chunk_manager_set_light(Vector2i position, uint8_t value);
 // Position is in global block coordinates

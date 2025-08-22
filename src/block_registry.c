@@ -15,6 +15,7 @@ void block_registry_init() {
     registry[0] = (BlockRegistry){
         .name = "Air",
         .lightLevel = 0,
+        .flag = BLOCK_FLAG_NONE,
         .transparent = true,
         .solid = false,
         .flipH = false,
@@ -24,6 +25,7 @@ void block_registry_init() {
     registry[1] = (BlockRegistry){
         .name = "Grass Block",
         .lightLevel = 0,
+        .flag = BLOCK_FLAG_NONE,
         .transparent = false,
         .solid = true,
         .flipH = true,
@@ -33,6 +35,7 @@ void block_registry_init() {
     registry[2] = (BlockRegistry){
         .name = "Dirt Block",
         .lightLevel = 0,
+        .flag = BLOCK_FLAG_NONE,
         .transparent = false,
         .solid = true,
         .flipH = true,
@@ -42,6 +45,7 @@ void block_registry_init() {
     registry[3] = (BlockRegistry){
         .name = "Stone Block",
         .lightLevel = 0,
+        .flag = BLOCK_FLAG_NONE,
         .transparent = false,
         .solid = true,
         .flipH = true,
@@ -60,6 +64,7 @@ void block_registry_init() {
     registry[5] = (BlockRegistry){
         .name = "Wooden Planks",
         .lightLevel = 0,
+        .flag = BLOCK_FLAG_NONE,
         .transparent = false,
         .solid = true,
         .flipH = false,
@@ -69,6 +74,7 @@ void block_registry_init() {
     registry[6] = (BlockRegistry){
         .name = "Wood Log",
         .lightLevel = 0,
+        .flag = BLOCK_FLAG_LOG_LIKE,
         .transparent = false,
         .solid = true,
         .flipH = false,
@@ -78,6 +84,7 @@ void block_registry_init() {
     registry[7] = (BlockRegistry){
         .name = "Leaves",
         .lightLevel = 0,
+        .flag = BLOCK_FLAG_NONE,
         .transparent = true,
         .solid = true,
         .flipH = true,
@@ -87,6 +94,7 @@ void block_registry_init() {
     registry[8] = (BlockRegistry){
         .name = "Glass Block",
         .lightLevel = 0,
+        .flag = BLOCK_FLAG_NONE,
         .transparent = true,
         .solid = true,
         .flipH = false,

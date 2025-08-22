@@ -8,9 +8,15 @@
 
 #include <raylib.h>
 
+typedef enum {
+	BLOCK_FLAG_NONE,
+	BLOCK_FLAG_LOG_LIKE
+} BlockFlag;
+
 typedef struct {
 	const char* name;
 	uint8_t lightLevel;
+	BlockFlag flag;
 	bool transparent;
 	bool solid;
 	bool flipH;

@@ -6,6 +6,14 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build Raylib as static libraries" FORCE)
 
+if(MSVC) 
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Release>:Release>")
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+    add_compile_options(/arch:AVX2)
+endif()
+
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+
 include(FetchContent)
 
 message(STATUS "Downloading Raylib...")

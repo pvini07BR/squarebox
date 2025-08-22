@@ -38,6 +38,7 @@ void item_container_set_item(ItemContainer* ic, uint8_t row, uint8_t column, Ite
 {
 	if (!ic) return;
 	if (row < 0 || row >= ic->rows || column < 0 || column >= ic->columns) return;
+	if (item.amount <= 0) item.amount = 1;
 	int i = column + (row * ic->columns);
 	ic->items[i] = item;
 }
@@ -49,9 +50,11 @@ void item_container_open(ItemContainer* ic)
 }
 
 void item_container_close() {
+	// If closing the item container while having a grabbed item,
+	// add it back to the slot it came from
 	if (lastSlotIdx >= 0) {
 		openedContainer->items[lastSlotIdx].item_id = grabbedItem.item_id;
-		openedContainer->items[lastSlotIdx].amount = grabbedItem.amount;
+		openedContainer->items[lastSlotIdx].amount += grabbedItem.amount;
 
 		grabbedItem.item_id = 0;
 		grabbedItem.amount = 0;
@@ -84,7 +87,7 @@ void draw_item(ItemSlot* is, int x, int y) {
 	}
 
 	char amountStr[4];
-	sprintf(amountStr, "%d", is->amount + 1);
+	sprintf(amountStr, "%d", is->amount);
 	Vector2 textSize = MeasureTextEx(GetFontDefault(), amountStr, 18.0f, 0.0f);
 
 	DrawText(amountStr,
@@ -127,25 +130,103 @@ void item_container_draw()
 
 			bool isHovered = CheckCollisionPointRec(GetMousePosition(), slotRect);
 			ItemRegistry* ir = ir_get_item_registry(openedContainer->items[i].item_id);
-			if (isHovered && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-				if (ir) {
-					lastSlotIdx = i;
+			if (isHovered) {
+				if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+					// Swapping existing items
+					if (ir && grabbedItem.item_id != openedContainer->items[i].item_id) {
+						lastSlotIdx = i;
 
-					grabbedItem.item_id = openedContainer->items[i].item_id;
-					grabbedItem.amount = openedContainer->items[i].amount;
+						uint8_t prev_slot_item_id = openedContainer->items[i].item_id;
+						uint8_t prev_slot_amount = openedContainer->items[i].amount;
 
-					openedContainer->items[i].item_id = 0;
-					openedContainer->items[i].amount = 0;
+						uint8_t prev_grab_item_id = grabbedItem.item_id;
+						uint8_t prev_grab_amount = grabbedItem.amount;
+
+						grabbedItem.item_id = prev_slot_item_id;
+						grabbedItem.amount = prev_slot_amount;
+
+						openedContainer->items[i].item_id = prev_grab_item_id;
+						openedContainer->items[i].amount = prev_grab_amount;
+					}
+					// Adding an amount of items to a existing slot if the item IDs match
+					else if (ir && grabbedItem.item_id == openedContainer->items[i].item_id) {
+						lastSlotIdx = -1;
+
+						openedContainer->items[i].amount += grabbedItem.amount;
+
+						grabbedItem.item_id = 0;
+						grabbedItem.amount = 0;
+					}
+					// Putting the holding item on a empty slot
+					else if (!ir && grabbedItem.item_id > 0) {
+						lastSlotIdx = -1;
+
+						openedContainer->items[i].item_id = grabbedItem.item_id;
+						openedContainer->items[i].amount = grabbedItem.amount;
+
+						grabbedItem.item_id = 0;
+						grabbedItem.amount = 0;
+					}
 				}
-				else if (!ir && grabbedItem.item_id > 0) {
-					lastSlotIdx = -1;
+				if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {
+					if (ir) {
+						// Adding to existing item with the grabbed item
+						if (grabbedItem.item_id == openedContainer->items[i].item_id) {
+							if (grabbedItem.amount > 1) {
+								lastSlotIdx = i;
+								grabbedItem.amount--;
+								openedContainer->items[i].amount++;
+							}
+							else {
+								lastSlotIdx = -1;
 
-					openedContainer->items[i].item_id = grabbedItem.item_id;
-					openedContainer->items[i].amount = grabbedItem.amount;
+								grabbedItem.item_id = 0;
+								grabbedItem.amount = 0;
 
-					grabbedItem.item_id = 0;
-					grabbedItem.amount = 0;
+								openedContainer->items[i].amount++;
+							}
+						}
+						// Dividing a stack of items into two
+						else if (grabbedItem.item_id <= 0) {
+							uint8_t amount = openedContainer->items[i].amount;
+							lastSlotIdx = i;
+							if (amount > 1) {
+								grabbedItem.item_id = openedContainer->items[i].item_id;
+								grabbedItem.amount = amount / 2;
 
+								openedContainer->items[i].amount = amount - grabbedItem.amount;
+							}
+							else {
+								grabbedItem.item_id = openedContainer->items[i].item_id;
+								grabbedItem.amount = openedContainer->items[i].amount;
+
+								openedContainer->items[i].item_id = 0;
+								openedContainer->items[i].amount = 0;
+							}
+						}
+					}
+					else {
+						// Adding to an empty slot with the grabbed item
+						if (grabbedItem.item_id > 0) {
+							if (grabbedItem.amount > 1) {
+								lastSlotIdx = i;
+
+								openedContainer->items[i].item_id = grabbedItem.item_id;
+								openedContainer->items[i].amount++;
+
+								grabbedItem.amount--;
+							}
+							else {
+								lastSlotIdx = -1;
+
+								openedContainer->items[i].item_id = grabbedItem.item_id;
+								openedContainer->items[i].amount++;
+
+								grabbedItem.item_id = 0;
+								grabbedItem.amount = 0;
+							}
+						}
+					}
 				}
 			}
 

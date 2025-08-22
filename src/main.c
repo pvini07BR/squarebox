@@ -49,7 +49,8 @@ int main() {
 
     item_container_create(&testContainer, 3, 9);
     item_container_set_item(&testContainer, 0, 0, (ItemSlot){ 1, 255 });
-    item_container_set_item(&testContainer, 0, 1, (ItemSlot) { 2, 128 });
+    item_container_set_item(&testContainer, 0, 1, (ItemSlot) { 2, 5, });
+    item_container_set_item(&testContainer, 0, 2, (ItemSlot) { 2, 5, });
 
     Camera2D camera = {
         .target =  { (CHUNK_WIDTH*TILE_SIZE)/2.0f, (CHUNK_WIDTH*TILE_SIZE)/2.0f },

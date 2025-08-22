@@ -86,16 +86,18 @@ void draw_item(ItemSlot* is, int x, int y) {
 		);
 	}
 
-	char amountStr[4];
-	sprintf(amountStr, "%d", is->amount);
-	Vector2 textSize = MeasureTextEx(GetFontDefault(), amountStr, 18.0f, 0.0f);
+	if (is->amount > 1) {
+		char amountStr[4];
+		sprintf(amountStr, "%d", is->amount);
+		Vector2 textSize = MeasureTextEx(GetFontDefault(), amountStr, 18.0f, 0.0f);
 
-	DrawText(amountStr,
-		(x + ITEM_SLOT_SIZE) - (textSize.x / 1.25f),
-		(y + ITEM_SLOT_SIZE) - (textSize.y / 1.25f),
-		18.0f,
-		WHITE
-	);
+		DrawText(amountStr,
+			(x + ITEM_SLOT_SIZE) - (textSize.x / 1.25f),
+			(y + ITEM_SLOT_SIZE) - (textSize.y / 1.25f),
+			18.0f,
+			WHITE
+		);
+	}
 }
 
 void item_container_draw()

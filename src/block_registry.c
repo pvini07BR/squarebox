@@ -2,18 +2,24 @@
 
 #include <stdlib.h>
 #include <chunk.h>
+#include <stdio.h>
 
 static Texture2D blockAtlas;
-static BlockRegistry* registry = NULL;
+static BlockRegistry* blockRegistry = NULL;
 
 void block_registry_init() {
     blockAtlas = LoadTexture(ASSETS_PATH "blocks.png");
     SetTextureWrap(blockAtlas, TEXTURE_WRAP_CLAMP);
 
-	registry = calloc(BLOCK_COUNT, sizeof(BlockRegistry));
+    blockRegistry = calloc(BLOCK_COUNT, sizeof(BlockRegistry));
+    if (blockRegistry == NULL) {
+        fprintf(stderr, "[ERROR] Could not allocate memory for the block registry.\n");
+        return;
+    };
 
-    registry[0] = (BlockRegistry){
+    blockRegistry[0] = (BlockRegistry){
         .name = "Air",
+        .atlas_idx = 0,
         .lightLevel = 0,
         .flag = BLOCK_FLAG_NONE,
         .transparent = true,
@@ -22,8 +28,9 @@ void block_registry_init() {
         .flipV = false
     };
 
-    registry[1] = (BlockRegistry){
+    blockRegistry[1] = (BlockRegistry){
         .name = "Grass Block",
+        .atlas_idx = 0,
         .lightLevel = 0,
         .flag = BLOCK_FLAG_NONE,
         .transparent = false,
@@ -32,8 +39,9 @@ void block_registry_init() {
         .flipV = false
     };
 
-    registry[2] = (BlockRegistry){
+    blockRegistry[2] = (BlockRegistry){
         .name = "Dirt Block",
+        .atlas_idx = 1,
         .lightLevel = 0,
         .flag = BLOCK_FLAG_NONE,
         .transparent = false,
@@ -42,8 +50,9 @@ void block_registry_init() {
         .flipV = true
     };
 
-    registry[3] = (BlockRegistry){
+    blockRegistry[3] = (BlockRegistry){
         .name = "Stone Block",
+        .atlas_idx = 2,
         .lightLevel = 0,
         .flag = BLOCK_FLAG_NONE,
         .transparent = false,
@@ -52,8 +61,9 @@ void block_registry_init() {
         .flipV = false
     };
 
-    registry[4] = (BlockRegistry){
+    blockRegistry[4] = (BlockRegistry){
         .name = "Cobblestone",
+        .atlas_idx = 3,
         .lightLevel = 0,
         .transparent = false,
         .solid = true,
@@ -61,8 +71,9 @@ void block_registry_init() {
         .flipV = false
     };
 
-    registry[5] = (BlockRegistry){
+    blockRegistry[5] = (BlockRegistry){
         .name = "Wooden Planks",
+        .atlas_idx = 4,
         .lightLevel = 0,
         .flag = BLOCK_FLAG_NONE,
         .transparent = false,
@@ -71,8 +82,9 @@ void block_registry_init() {
         .flipV = false
     };
 
-    registry[6] = (BlockRegistry){
+    blockRegistry[6] = (BlockRegistry){
         .name = "Wood Log",
+        .atlas_idx = 5,
         .lightLevel = 0,
         .flag = BLOCK_FLAG_LOG_LIKE,
         .transparent = false,
@@ -81,8 +93,9 @@ void block_registry_init() {
         .flipV = false
     };
 
-    registry[7] = (BlockRegistry){
+    blockRegistry[7] = (BlockRegistry){
         .name = "Leaves",
+        .atlas_idx = 6,
         .lightLevel = 0,
         .flag = BLOCK_FLAG_NONE,
         .transparent = true,
@@ -91,8 +104,9 @@ void block_registry_init() {
         .flipV = true
     };
 
-    registry[8] = (BlockRegistry){
+    blockRegistry[8] = (BlockRegistry){
         .name = "Glass Block",
+        .atlas_idx = 7,
         .lightLevel = 0,
         .flag = BLOCK_FLAG_NONE,
         .transparent = true,
@@ -102,9 +116,9 @@ void block_registry_init() {
     };
 }
 
-BlockRegistry* br_get_block_registry(uint8_t idx) {
-    if (idx > BLOCK_COUNT - 1) return NULL;
-    return &registry[idx];
+BlockRegistry* br_get_block_registry(size_t idx) {
+    if (idx > BLOCK_ATLAS_SIZE - 1) return NULL;
+    return &blockRegistry[idx];
 }
 
 Texture2D* br_get_block_atlas()
@@ -112,25 +126,24 @@ Texture2D* br_get_block_atlas()
     return &blockAtlas;
 }
 
-Rectangle br_get_block_texture_rect(uint8_t idx, bool flipH, bool flipV)
+Rectangle br_get_block_texture_rect(size_t idx, bool flipH, bool flipV)
 {
-    if (idx > BLOCK_COUNT - 1) return (Rectangle) { 0, 0, 0, 0 };
-    if (idx == 0) return (Rectangle) { 0, 0, 0, 0 };
+    if (idx <= 0 || idx > BLOCK_COUNT - 1) return (Rectangle) { 0, 0, 0, 0 };
     return (Rectangle){
-        .x = (float)(idx - 1) * (float)TILE_SIZE,
+        .x = (float)(blockRegistry[idx].atlas_idx) * (float)TILE_SIZE,
         .y = 0.0f,
         .width = (float)TILE_SIZE * (flipH ? -1.0f : 1.0f),
         .height = (float)TILE_SIZE * (flipV ? -1.0f : 1.0f)
     };
 }
 
-Rectangle br_get_block_uvs(uint8_t idx, bool flipH, bool flipV)
+Rectangle br_get_block_uvs(size_t idx, bool flipH, bool flipV)
 {
-    if (idx == 0 || idx > BLOCK_COUNT - 1) return (Rectangle) { 0, 0, 0, 0 };
+    if (idx <= 0 || idx > BLOCK_COUNT - 1) return (Rectangle) { 0, 0, 0, 0 };
 
-    float uv_unit = 1.0f / (BLOCK_COUNT - 1);
+    float uv_unit = 1.0f / (BLOCK_ATLAS_SIZE - 1);
 
-    float u0 = uv_unit * (idx - 1);
+    float u0 = uv_unit * blockRegistry[idx].atlas_idx;
     float u1 = u0 + uv_unit;
     float v0 = 0.0f;
     float v1 = 1.0f;
@@ -156,5 +169,5 @@ Rectangle br_get_block_uvs(uint8_t idx, bool flipH, bool flipV)
 
 void block_registry_free() {
     UnloadTexture(blockAtlas);
-	if (registry) free(registry);
+	if (blockRegistry) free(blockRegistry);
 }

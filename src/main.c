@@ -6,10 +6,12 @@
 #include <rlgl.h>
 
 #define RAYGUI_IMPLEMENTATION
-#include "raygui.h"
+#include "thirdparty/raygui.h"
 
 #include "chunk_manager.h"
 #include "block_registry.h"
+#include "item_registry.h"
+#include "item_container.h"
 
 extern int seed;
 extern bool wallAmbientOcclusion;
@@ -30,6 +32,8 @@ Rectangle interPanel = {
     .height = 32 * 3
 };
 
+ItemContainer testContainer;
+
 int main() {
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(1280, 720, "mijocraft");
@@ -40,7 +44,12 @@ int main() {
     Texture2D place_mode_icon = LoadTexture(ASSETS_PATH "place_modes.png");
 
     block_registry_init();
+    item_registry_init();
     chunk_manager_init();
+
+    item_container_create(&testContainer, 3, 9);
+    item_container_set_item(&testContainer, 0, 0, (ItemSlot){ 1, 255 });
+    item_container_set_item(&testContainer, 0, 1, (ItemSlot) { 2, 128 });
 
     Camera2D camera = {
         .target =  { (CHUNK_WIDTH*TILE_SIZE)/2.0f, (CHUNK_WIDTH*TILE_SIZE)/2.0f },
@@ -69,7 +78,7 @@ int main() {
             (int)floorf((float)mouseWorldPos.y / (float)TILE_SIZE)
         };
 
-        if (mouseIsInUI) {
+        if (!mouseIsInUI && !item_container_is_open()) {
             if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
                 chunk_manager_set_block(mouseBlockPos, (BlockInstance) { 0, 0 }, wall_mode);
             else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
@@ -86,6 +95,15 @@ int main() {
 
         if (IsKeyPressed(KEY_EQUAL))camera.zoom *= 1.1f;
         else if (IsKeyPressed(KEY_MINUS)) camera.zoom /= 1.1f;
+
+        if (IsKeyPressed(KEY_E)) {
+            if (!item_container_is_open()) {
+                item_container_open(&testContainer);
+            }
+            else {
+                item_container_close();
+            }
+        }
 
         int scroll = GetMouseWheelMoveV().y;
         if (selected_block > 1 && scroll < 0) selected_block--;
@@ -117,15 +135,19 @@ int main() {
         
         chunk_manager_draw();
 
-        float cos = 47.5f * cosf(GetTime() * 4.0f) + 79.5f;
+        if (!item_container_is_open()) {
+            float cos = 47.5f * cosf(GetTime() * 4.0f) + 79.5f;
 
-        DrawRectangle(
-            mouseBlockPos.x * TILE_SIZE,
-            mouseBlockPos.y * TILE_SIZE,
-            TILE_SIZE,
-            TILE_SIZE,
-            (Color){ 255, 255, 255, cos }
-        );
+            DrawRectangle(
+                mouseBlockPos.x * TILE_SIZE,
+                mouseBlockPos.y * TILE_SIZE,
+                TILE_SIZE,
+                TILE_SIZE,
+                (Color) {
+                255, 255, 255, cos
+            }
+            );
+        }
 
         EndMode2D();
 
@@ -154,63 +176,71 @@ int main() {
         Vector2 textSize = MeasureTextEx(GetFontDefault(), buffer, 24, 0);
         DrawText(buffer, 0, 0, 24, WHITE);
 
-        DrawTexturePro(
-            *br_get_block_atlas(),
-            br_get_block_texture_rect(selected_block, false, false),
-            (Rectangle) {
-                .x = GetMouseX(),
-                .y = GetMouseY(),
-                .width = TILE_SIZE * 0.8f,
-                .height = TILE_SIZE * 0.8f
-            },
-            Vector2Zero(),
-            0.0f,
-            WHITE
-        );
+        if (!item_container_is_open()) {
+            DrawTexturePro(
+                *br_get_block_atlas(),
+                br_get_block_texture_rect(selected_block, false, false),
+                (Rectangle) {
+                    .x = GetMouseX(),
+                    .y = GetMouseY(),
+                    .width = TILE_SIZE * 0.8f,
+                    .height = TILE_SIZE * 0.8f
+                },
+                Vector2Zero(),
+                0.0f,
+                WHITE
+            );
 
-        DrawTexturePro(
-            place_mode_icon,
-            (Rectangle) {
-                .x = wall_mode ? 0 : 8,
-                .y = 0,
-                .width = 8,
-                .height = 8
-            },
-            (Rectangle) {
-                .x = GetMouseX() + (TILE_SIZE * 0.8f) - 8,
-                .y = GetMouseY() + (TILE_SIZE * 0.8f) - 8,
-                .width = 16,
-                .height = 16
-            },
-            Vector2Zero(),
-            0.0f,
-            WHITE
-        );
-
-        interPanel.y = textSize.y;
-
-        mouseIsInUI = !CheckCollisionPointRec(GetMousePosition(), interPanel);
-
-        const int padding = 8;
-        const int elementHeight = 16;
-        const int sum = elementHeight + padding;
-        int height = (-elementHeight) + (padding/2);
-
-        GuiPanel(interPanel, NULL);
-        if (GuiValueBox((Rectangle) { MeasureText("Seed ", 8) + padding, textSize.y + (height += sum), 64, elementHeight }, "Seed ", & seed, INT_MIN, INT_MAX, seedEdit)) seedEdit = !seedEdit;
-        GuiCheckBox((Rectangle) { padding, textSize.y + (height += sum), elementHeight, elementHeight }, "Toggle Wall AO", & wallAmbientOcclusion);
-        GuiCheckBox((Rectangle) { padding, textSize.y + (height += sum), elementHeight, elementHeight }, "Toggle Smooth Lighting", &smoothLighting);
-        if (GuiValueBox((Rectangle) { MeasureText("Wall Brightness  ", 8) + padding, textSize.y + (height += sum), 64, elementHeight }, "Wall Brightness ", &wallBrightness, 0, 255, wallBrightEdit)) wallBrightEdit = !wallBrightEdit;
-        if (GuiValueBox((Rectangle) { MeasureText("Wall AO Value  ", 8) + padding, textSize.y + (height += sum), 64, elementHeight }, "Wall AO Value ", &wallAOvalue, 0, 255, wallAOEdit)) wallAOEdit = !wallAOEdit;
-        if (GuiButton((Rectangle) { padding, textSize.y + (height += sum), interPanel.width - (padding * 2), 32 }, "Reload chunks")) {
-            chunk_manager_reload_chunks();
+            DrawTexturePro(
+                place_mode_icon,
+                (Rectangle) {
+                    .x = wall_mode ? 0 : 8,
+                    .y = 0,
+                    .width = 8,
+                    .height = 8
+                },
+                (Rectangle) {
+                    .x = GetMouseX() + (TILE_SIZE * 0.8f) - 8,
+                    .y = GetMouseY() + (TILE_SIZE * 0.8f) - 8,
+                    .width = 16,
+                    .height = 16
+                },
+                Vector2Zero(),
+                0.0f,
+                WHITE
+            );
         }
 
-        interPanel.height = height + sum + 16;
+        if (!item_container_is_open()) {
+            interPanel.y = textSize.y;
+
+            mouseIsInUI = CheckCollisionPointRec(GetMousePosition(), interPanel);
+
+            const int padding = 8;
+            const int elementHeight = 16;
+            const int sum = elementHeight + padding;
+            int height = (-elementHeight) + (padding/2);
+
+            GuiPanel(interPanel, NULL);
+            if (GuiValueBox((Rectangle) { MeasureText("Seed ", 8) + padding, textSize.y + (height += sum), 64, elementHeight }, "Seed ", & seed, INT_MIN, INT_MAX, seedEdit)) seedEdit = !seedEdit;
+            GuiCheckBox((Rectangle) { padding, textSize.y + (height += sum), elementHeight, elementHeight }, "Toggle Wall AO", & wallAmbientOcclusion);
+            GuiCheckBox((Rectangle) { padding, textSize.y + (height += sum), elementHeight, elementHeight }, "Toggle Smooth Lighting", &smoothLighting);
+            if (GuiValueBox((Rectangle) { MeasureText("Wall Brightness  ", 8) + padding, textSize.y + (height += sum), 64, elementHeight }, "Wall Brightness ", &wallBrightness, 0, 255, wallBrightEdit)) wallBrightEdit = !wallBrightEdit;
+            if (GuiValueBox((Rectangle) { MeasureText("Wall AO Value  ", 8) + padding, textSize.y + (height += sum), 64, elementHeight }, "Wall AO Value ", &wallAOvalue, 0, 255, wallAOEdit)) wallAOEdit = !wallAOEdit;
+            if (GuiButton((Rectangle) { padding, textSize.y + (height += sum), interPanel.width - (padding * 2), 32 }, "Reload chunks")) {
+                chunk_manager_reload_chunks();
+            }
+
+            interPanel.height = height + sum + 16;
+        }
+
+        item_container_draw(&testContainer);
 
         EndDrawing();
     }
     
+    item_container_free(&testContainer);
+    item_registry_free();
     chunk_manager_free();
     block_registry_free();
     CloseWindow();

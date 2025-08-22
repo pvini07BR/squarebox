@@ -2,6 +2,7 @@
 #define BLOCK_REGISTRY_H
 
 #define BLOCK_COUNT 9
+#define BLOCK_ATLAS_SIZE 9
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -15,6 +16,7 @@ typedef enum {
 
 typedef struct {
 	const char* name;
+	uint8_t atlas_idx;
 	uint8_t lightLevel;
 	BlockFlag flag;
 	bool transparent;
@@ -24,10 +26,10 @@ typedef struct {
 } BlockRegistry;
 
 void block_registry_init();
-BlockRegistry* br_get_block_registry(uint8_t idx);
+BlockRegistry* br_get_block_registry(size_t idx);
 Texture2D* br_get_block_atlas();
-Rectangle br_get_block_texture_rect(uint8_t idx, bool flipH, bool flipV);
-Rectangle br_get_block_uvs(uint8_t idx, bool flipH, bool flipV);
+Rectangle br_get_block_texture_rect(size_t idx, bool flipH, bool flipV);
+Rectangle br_get_block_uvs(size_t idx, bool flipH, bool flipV);
 void block_registry_free();
 
 #endif

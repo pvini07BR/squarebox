@@ -12,7 +12,7 @@
 #include <string.h>
 
 #define FNL_IMPL
-#include <FastNoiseLite.h>
+#include <thirdparty/FastNoiseLite.h>
 
 int seed = 0;
 bool wallAmbientOcclusion = true;

@@ -9,6 +9,7 @@
 #include "thirdparty/raygui.h"
 
 #include "defines.h"
+#include "texture_atlas.h"
 #include "chunk_manager.h"
 #include "block_registry.h"
 #include "item_registry.h"
@@ -44,17 +45,17 @@ int main() {
     
     Texture2D place_mode_icon = LoadTexture(ASSETS_PATH "place_modes.png");
 
-    Texture2D atlasTexture = LoadTexture(ASSETS_PATH "atlas.png");
-    SetTextureWrap(atlasTexture, TEXTURE_WRAP_CLAMP);
+    texture_atlas_load(ASSETS_PATH "atlas.png");
 
-    block_registry_init(&atlasTexture);
-    item_registry_init(&atlasTexture);
-    chunk_manager_init(&atlasTexture);
+    block_registry_init();
+    item_registry_init();
+    chunk_manager_init();
 
     item_container_create(&testContainer, 3, 9);
     item_container_set_item(&testContainer, 0, 0, (ItemSlot){ 1, 255 });
     item_container_set_item(&testContainer, 0, 1, (ItemSlot) { 2, 5, });
     item_container_set_item(&testContainer, 0, 2, (ItemSlot) { 2, 5, });
+    item_container_set_item(&testContainer, 1, 2, (ItemSlot) { 3, 69, });
 
     Camera2D camera = {
         .target =  { (CHUNK_WIDTH*TILE_SIZE)/2.0f, (CHUNK_WIDTH*TILE_SIZE)/2.0f },
@@ -183,8 +184,8 @@ int main() {
 
         if (!item_container_is_open()) {
             DrawTexturePro(
-                atlasTexture,
-                br_get_block_texture_rect(selected_block, false, false),
+                texture_atlas_get(),
+                texture_atlas_get_rect(br_get_block_registry(selected_block)->atlas_idx, false, false),
                 (Rectangle) {
                     .x = GetMouseX(),
                     .y = GetMouseY(),
@@ -239,7 +240,7 @@ int main() {
             interPanel.height = height + sum + 16;
         }
 
-        item_container_draw(&atlasTexture);
+        item_container_draw();
 
         EndDrawing();
     }
@@ -248,7 +249,7 @@ int main() {
     item_registry_free();
     chunk_manager_free();
     block_registry_free();
-    UnloadTexture(atlasTexture);
+    texture_atlas_free();
     CloseWindow();
     return 0;
 }

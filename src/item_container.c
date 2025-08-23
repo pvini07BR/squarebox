@@ -8,6 +8,7 @@
 
 #include "block_registry.h"
 #include "item_registry.h"
+#include "texture_atlas.h"
 
 #define ITEM_SLOT_SIZE 32
 #define ITEM_SLOT_GAP 8
@@ -66,25 +67,23 @@ void item_container_close() {
 }
 bool item_container_is_open() { return openedContainer != NULL; }
 
-void draw_item(ItemSlot* is, int x, int y, Texture2D* textureAtlas) {
+void draw_item(ItemSlot* is, int x, int y) {
 	ItemRegistry* ir = ir_get_item_registry(is->item_id);
 	if (ir == NULL) return;
 
-	if (ir->type == ITEM_TYPE_BLOCK) {
-		DrawTexturePro(
-			*textureAtlas,
-			br_get_block_texture_rect(ir->blockId, false, false),
-			(Rectangle) {
-				.x = x + (ITEM_SLOT_SIZE * 0.1f),
-				.y = y + (ITEM_SLOT_SIZE * 0.1f),
-				.width = ITEM_SLOT_SIZE * 0.8f,
-				.height = ITEM_SLOT_SIZE * 0.8f
-			},
-			Vector2Zero(),
-			0.0f,
-			WHITE
-		);
-	}
+	DrawTexturePro(
+		texture_atlas_get(),
+		texture_atlas_get_rect(ir->atlas_idx, false, false),
+		(Rectangle) {
+			.x = x + (ITEM_SLOT_SIZE * 0.1f),
+			.y = y + (ITEM_SLOT_SIZE * 0.1f),
+			.width = ITEM_SLOT_SIZE * 0.8f,
+			.height = ITEM_SLOT_SIZE * 0.8f
+		},
+		Vector2Zero(),
+		0.0f,
+		WHITE
+	);
 
 	if (is->amount > 1) {
 		char amountStr[4];
@@ -100,7 +99,7 @@ void draw_item(ItemSlot* is, int x, int y, Texture2D* textureAtlas) {
 	}
 }
 
-void item_container_draw(Texture2D* textureAtlas) {
+void item_container_draw() {
 	if (!openedContainer) return;
 
 	DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), (Color) { 0, 0, 0, 128 });
@@ -233,7 +232,7 @@ void item_container_draw(Texture2D* textureAtlas) {
 
 			DrawRectangleRec(slotRect, GRAY);
 
-			draw_item(&openedContainer->items[i], slotRect.x, slotRect.y, textureAtlas);
+			draw_item(&openedContainer->items[i], slotRect.x, slotRect.y);
 
 			if (isHovered) DrawRectangleRec(slotRect, (Color){ 255, 255, 255, 128 });
 		}
@@ -275,7 +274,7 @@ void item_container_draw(Texture2D* textureAtlas) {
 		}
 	}
 
-	draw_item(&grabbedItem, GetMouseX(), GetMouseY(), textureAtlas);
+	draw_item(&grabbedItem, GetMouseX(), GetMouseY());
 }
 
 void item_container_free(ItemContainer* ic)

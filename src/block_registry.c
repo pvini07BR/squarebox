@@ -118,61 +118,6 @@ BlockRegistry* br_get_block_registry(size_t idx) {
     return &blockRegistry[idx];
 }
 
-Rectangle br_get_block_texture_rect(size_t idx, bool flipH, bool flipV)
-{
-    if (idx <= 0 || idx > BLOCK_COUNT - 1) return (Rectangle) { 0, 0, 0, 0 };
-
-    size_t atlas_idx = blockRegistry[idx].atlas_idx;
-
-    size_t col = atlas_idx % ATLAS_COLUMNS;
-    size_t row = atlas_idx / ATLAS_COLUMNS;
-
-    float x = (float)(col * TILE_SIZE);
-    float y = (float)(row * TILE_SIZE);
-
-    float width = (float)TILE_SIZE * (flipH ? -1.0f : 1.0f);
-    float height = (float)TILE_SIZE * (flipV ? -1.0f : 1.0f);
-
-    return (Rectangle) {
-        .x = x,
-        .y = y,
-        .width = width,
-        .height = height
-    };
-}
-
-Rectangle br_get_block_uvs(size_t idx, bool flipH, bool flipV)
-{
-    if (idx <= 0 || idx > BLOCK_COUNT - 1) return (Rectangle) { 0, 0, 0, 0 };
-
-    size_t atlas_idx = blockRegistry[idx].atlas_idx;
-
-    size_t col = atlas_idx % ATLAS_COLUMNS;
-    size_t row = atlas_idx / ATLAS_COLUMNS;
-
-    float uv_unit_x = 1.0f / ATLAS_COLUMNS;
-    float uv_unit_y = 1.0f / ATLAS_ROWS;
-
-    float u0 = uv_unit_x * col;
-    float u1 = u0 + uv_unit_x;
-    float v0 = uv_unit_y * row;
-    float v1 = v0 + uv_unit_y;
-
-    if (flipH) {
-        float tmp = u0; u0 = u1; u1 = tmp;
-    }
-    if (flipV) {
-        float tmp = v0; v0 = v1; v1 = tmp;
-    }
-
-    return (Rectangle) {
-        .x = u0,
-            .y = v0,
-            .width = u1 - u0,
-            .height = v1 - v0
-    };
-}
-
 void block_registry_free() {
 	if (blockRegistry) free(blockRegistry);
 }

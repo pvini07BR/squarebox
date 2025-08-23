@@ -1,6 +1,7 @@
 ﻿#include "chunk.h"
 #include "defines.h"
 #include "block_registry.h"
+#include "texture_atlas.h"
 
 #include <math.h>
 #include <stdint.h>
@@ -418,7 +419,7 @@ void build_quad(Chunk* chunk, BlockInstance* blocks, Mesh* mesh, bool isWall, ui
     }
 
     set_quad_positions(mesh->vertices, x, y, flipTriangles);
-    set_quad_uvs(mesh->texcoords, x, y, br_get_block_uvs(blocks[i].id, flipH, flipV), flipTriangles, uvRotation);
+    set_quad_uvs(mesh->texcoords, x, y, texture_atlas_get_uv(brg->atlas_idx, flipH, flipV), flipTriangles, uvRotation);
     set_quad_colors(mesh->colors, x, y, colors, flipTriangles);
 }
 

@@ -23,7 +23,7 @@ void item_container_set_item(ItemContainer* ic, uint8_t row, uint8_t column, Ite
 void item_container_open(ItemContainer* ic);
 void item_container_close();
 bool item_container_is_open();
-void item_container_draw(Texture2D* textureAtlas);
+void item_container_draw();
 void item_container_free(ItemContainer* ic);
 
 #endif

@@ -27,8 +27,6 @@ typedef struct {
 
 void block_registry_init();
 BlockRegistry* br_get_block_registry(size_t idx);
-Rectangle br_get_block_texture_rect(size_t idx, bool flipH, bool flipV);
-Rectangle br_get_block_uvs(size_t idx, bool flipH, bool flipV);
 void block_registry_free();
 
 #endif

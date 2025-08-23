@@ -3,20 +3,14 @@
 
 #include <stdint.h>
 
-#define ITEM_COUNT 3
-
-typedef enum {
-	ITEM_TYPE_NORMAL,
-	ITEM_TYPE_BLOCK
-} ItemType;
+#define ITEM_COUNT 4
 
 typedef struct {
 	const char* name;
-	ItemType type;
-	union {
-		uint8_t atlas_idx;
-		uint8_t blockId;
-	};
+	uint8_t atlas_idx;
+	
+	// Set 0 if this item isn't going to place any blocks.
+	uint8_t blockId;
 } ItemRegistry;
 
 void item_registry_init();

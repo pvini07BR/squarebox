@@ -14,20 +14,26 @@ void item_registry_init() {
 	
 	itemRegistry[0] = (ItemRegistry){
 		.name = "No Item",
-		.type = ITEM_TYPE_NORMAL,
-		.atlas_idx = 0
+		.atlas_idx = 0,
+		.blockId = 0
 	};
 
 	itemRegistry[1] = (ItemRegistry){
 		.name = "Grass Block",
-		.type = ITEM_TYPE_BLOCK,
+		.atlas_idx = 0,
 		.blockId = 1
 	};
 
 	itemRegistry[2] = (ItemRegistry){
 		.name = "Dirt Block",
-		.type = ITEM_TYPE_BLOCK,
+		.atlas_idx = 1,
 		.blockId = 2
+	};
+
+	itemRegistry[3] = (ItemRegistry){
+		.name = "Test Item",
+		.atlas_idx = 8,
+		.blockId = 0
 	};
 }
 

@@ -1,10 +1,13 @@
 #include "texture_atlas.h"
 
-#include "defines.h"
-
 static Texture2D textureAtlas;
+size_t rows;
+size_t columns;
 
-void texture_atlas_load(const char* path) {
+void texture_atlas_load(const char* path, size_t r, size_t c) {
+    rows = r;
+    columns = c;
+
 	textureAtlas = LoadTexture(path);
 	SetTextureWrap(textureAtlas, TEXTURE_WRAP_CLAMP);
 }
@@ -13,30 +16,33 @@ Texture2D texture_atlas_get() { return textureAtlas; }
 
 Rectangle texture_atlas_get_rect(size_t idx, bool flipH, bool flipV)
 {
-    size_t col = idx % ATLAS_COLUMNS;
-    size_t row = idx / ATLAS_COLUMNS;
+    size_t col = idx % columns;
+    size_t row = idx / columns;
 
-    float x = (float)(col * TILE_SIZE);
-    float y = (float)(row * TILE_SIZE);
+    size_t tileWidth = (float)textureAtlas.width / columns;
+    size_t tileHeight = (float)textureAtlas.height / rows;
 
-    float width = (float)TILE_SIZE * (flipH ? -1.0f : 1.0f);
-    float height = (float)TILE_SIZE * (flipV ? -1.0f : 1.0f);
+    float x = (float)(col * tileWidth);
+    float y = (float)(row * tileHeight);
+
+    float width = (float)tileWidth * (flipH ? -1.0f : 1.0f);
+    float height = (float)tileHeight * (flipV ? -1.0f : 1.0f);
 
     return (Rectangle) {
         .x = x,
-            .y = y,
-            .width = width,
-            .height = height
+        .y = y,
+        .width = width,
+        .height = height
     };
 }
 
 Rectangle texture_atlas_get_uv(size_t idx, bool flipH, bool flipV)
 {
-    size_t col = idx % ATLAS_COLUMNS;
-    size_t row = idx / ATLAS_COLUMNS;
+    size_t col = idx % columns;
+    size_t row = idx / columns;
 
-    float uv_unit_x = 1.0f / ATLAS_COLUMNS;
-    float uv_unit_y = 1.0f / ATLAS_ROWS;
+    float uv_unit_x = 1.0f / columns;
+    float uv_unit_y = 1.0f / rows;
 
     float u0 = uv_unit_x * col;
     float u1 = u0 + uv_unit_x;

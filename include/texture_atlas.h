@@ -5,7 +5,7 @@
 
 #include <raylib.h>
 
-void texture_atlas_load(const char* path);
+void texture_atlas_load(const char* path, size_t r, size_t c);
 Texture2D texture_atlas_get();
 Rectangle texture_atlas_get_rect(size_t idx, bool flipH, bool flipV);
 Rectangle texture_atlas_get_uv(size_t idx, bool flipH, bool flipV);

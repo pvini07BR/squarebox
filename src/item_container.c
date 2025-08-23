@@ -73,6 +73,15 @@ void item_container_set_item(ItemContainer* ic, uint8_t row, uint8_t column, Ite
 	ic->items[i] = item;
 }
 
+Vector2 item_container_get_size(ItemContainer* ic)
+{
+	if (!ic) return Vector2Zero();
+	return (Vector2) {
+		.x = (ic->columns * (ITEM_SLOT_SIZE + ITEM_SLOT_GAP)) + ITEM_SLOT_GAP,
+		.y = (ic->rows * (ITEM_SLOT_SIZE + ITEM_SLOT_GAP)) + ITEM_SLOT_GAP
+	};
+}
+
 void item_container_open(ItemContainer* ic)
 {
 	if (!ic) return;
@@ -128,45 +137,39 @@ void draw_item(ItemSlot* is, int x, int y) {
 	}
 }
 
-void item_container_draw() {
-	if (!openedContainer) return;
-
-	DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), (Color) { 0, 0, 0, 128 });
-
-	Vector2 center = { GetScreenWidth() / 2.0f, GetScreenHeight() / 2.0f };
-
-	int width = (openedContainer->columns * (ITEM_SLOT_SIZE + ITEM_SLOT_GAP)) + ITEM_SLOT_GAP;
-	int height = (openedContainer->rows * (ITEM_SLOT_SIZE + ITEM_SLOT_GAP)) + ITEM_SLOT_GAP;
+void item_container_draw_specific(ItemContainer* ic, int x, int y) {
+	Vector2 size = item_container_get_size(ic);
 
 	DrawRectangle(
-		center.x - (width / 2),
-		center.y - (height / 2),
-		width,
-		height,
+		x,
+		y,
+		size.x,
+		size.y,
 		LIGHTGRAY
 	);
 
-	for (int r = 0; r < openedContainer->rows; r++) {
-		for (int c = 0; c < openedContainer->columns; c++) {
-			int i = c + (r * openedContainer->columns);
+	// Drawing slots, items and registering input
+	for (int r = 0; r < ic->rows; r++) {
+		for (int c = 0; c < ic->columns; c++) {
+			int i = c + (r * ic->columns);
 
 			Rectangle slotRect = {
-				.x = ((center.x - (width / 2)) + ITEM_SLOT_GAP) + (c * (ITEM_SLOT_SIZE + ITEM_SLOT_GAP)),
-				.y = ((center.y - (height / 2)) + ITEM_SLOT_GAP) + (r * (ITEM_SLOT_SIZE + ITEM_SLOT_GAP)),
+				.x = x + (c * (ITEM_SLOT_SIZE + ITEM_SLOT_GAP) + ITEM_SLOT_GAP),
+				.y = y + (r * (ITEM_SLOT_SIZE + ITEM_SLOT_GAP) + ITEM_SLOT_GAP),
 				.width = ITEM_SLOT_SIZE,
 				.height = ITEM_SLOT_SIZE
 			};
 
 			bool isHovered = CheckCollisionPointRec(GetMousePosition(), slotRect);
-			ItemRegistry* ir = ir_get_item_registry(openedContainer->items[i].item_id);
+			ItemRegistry* ir = ir_get_item_registry(ic->items[i].item_id);
 			if (isHovered) {
 				if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
 					// Swapping existing items
-					if (ir && grabbedItem.item_id != openedContainer->items[i].item_id) {
+					if (ir && grabbedItem.item_id != ic->items[i].item_id) {
 						lastSlotIdx = i;
 
-						uint8_t prev_slot_item_id = openedContainer->items[i].item_id;
-						uint8_t prev_slot_amount = openedContainer->items[i].amount;
+						uint8_t prev_slot_item_id = ic->items[i].item_id;
+						uint8_t prev_slot_amount = ic->items[i].amount;
 
 						uint8_t prev_grab_item_id = grabbedItem.item_id;
 						uint8_t prev_grab_amount = grabbedItem.amount;
@@ -174,14 +177,14 @@ void item_container_draw() {
 						grabbedItem.item_id = prev_slot_item_id;
 						grabbedItem.amount = prev_slot_amount;
 
-						openedContainer->items[i].item_id = prev_grab_item_id;
-						openedContainer->items[i].amount = prev_grab_amount;
+						ic->items[i].item_id = prev_grab_item_id;
+						ic->items[i].amount = prev_grab_amount;
 					}
 					// Adding an amount of items to a existing slot if the item IDs match
-					else if (ir && grabbedItem.item_id == openedContainer->items[i].item_id) {
+					else if (ir && grabbedItem.item_id == ic->items[i].item_id) {
 						lastSlotIdx = -1;
 
-						openedContainer->items[i].amount += grabbedItem.amount;
+						ic->items[i].amount += grabbedItem.amount;
 
 						grabbedItem.item_id = 0;
 						grabbedItem.amount = 0;
@@ -190,8 +193,8 @@ void item_container_draw() {
 					else if (!ir && grabbedItem.item_id > 0) {
 						lastSlotIdx = -1;
 
-						openedContainer->items[i].item_id = grabbedItem.item_id;
-						openedContainer->items[i].amount = grabbedItem.amount;
+						ic->items[i].item_id = grabbedItem.item_id;
+						ic->items[i].amount = grabbedItem.amount;
 
 						grabbedItem.item_id = 0;
 						grabbedItem.amount = 0;
@@ -200,11 +203,11 @@ void item_container_draw() {
 				if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {
 					if (ir) {
 						// Adding to existing item with the grabbed item
-						if (grabbedItem.item_id == openedContainer->items[i].item_id) {
+						if (grabbedItem.item_id == ic->items[i].item_id) {
 							if (grabbedItem.amount > 1) {
 								lastSlotIdx = i;
 								grabbedItem.amount--;
-								openedContainer->items[i].amount++;
+								ic->items[i].amount++;
 							}
 							else {
 								lastSlotIdx = -1;
@@ -212,25 +215,25 @@ void item_container_draw() {
 								grabbedItem.item_id = 0;
 								grabbedItem.amount = 0;
 
-								openedContainer->items[i].amount++;
+								ic->items[i].amount++;
 							}
 						}
 						// Dividing a stack of items into two
 						else if (grabbedItem.item_id <= 0) {
-							uint8_t amount = openedContainer->items[i].amount;
+							uint8_t amount = ic->items[i].amount;
 							lastSlotIdx = i;
 							if (amount > 1) {
-								grabbedItem.item_id = openedContainer->items[i].item_id;
+								grabbedItem.item_id = ic->items[i].item_id;
 								grabbedItem.amount = amount / 2;
 
-								openedContainer->items[i].amount = amount - grabbedItem.amount;
+								ic->items[i].amount = amount - grabbedItem.amount;
 							}
 							else {
-								grabbedItem.item_id = openedContainer->items[i].item_id;
-								grabbedItem.amount = openedContainer->items[i].amount;
+								grabbedItem.item_id = ic->items[i].item_id;
+								grabbedItem.amount = ic->items[i].amount;
 
-								openedContainer->items[i].item_id = 0;
-								openedContainer->items[i].amount = 0;
+								ic->items[i].item_id = 0;
+								ic->items[i].amount = 0;
 							}
 						}
 					}
@@ -240,16 +243,16 @@ void item_container_draw() {
 							if (grabbedItem.amount > 1) {
 								lastSlotIdx = i;
 
-								openedContainer->items[i].item_id = grabbedItem.item_id;
-								openedContainer->items[i].amount++;
+								ic->items[i].item_id = grabbedItem.item_id;
+								ic->items[i].amount++;
 
 								grabbedItem.amount--;
 							}
 							else {
 								lastSlotIdx = -1;
 
-								openedContainer->items[i].item_id = grabbedItem.item_id;
-								openedContainer->items[i].amount++;
+								ic->items[i].item_id = grabbedItem.item_id;
+								ic->items[i].amount++;
 
 								grabbedItem.item_id = 0;
 								grabbedItem.amount = 0;
@@ -261,47 +264,65 @@ void item_container_draw() {
 
 			DrawRectangleRec(slotRect, GRAY);
 
-			draw_item(&openedContainer->items[i], slotRect.x, slotRect.y);
+			draw_item(&ic->items[i], slotRect.x, slotRect.y);
 
-			if (isHovered) DrawRectangleRec(slotRect, (Color){ 255, 255, 255, 128 });
+			if (isHovered) DrawRectangleRec(slotRect, (Color) { 255, 255, 255, 128 });
 		}
 	}
 
-	for (int i = 0; i < (openedContainer->rows * openedContainer->columns); i++) {
-		int r = i / openedContainer->columns;
-		int c = i % openedContainer->columns;
+	// Drawing text
+	for (int i = 0; i < (ic->rows * ic->columns); i++) {
+		if (ic->items[i].item_id > 0) {
+			int r = i / ic->columns;
+			int c = i % ic->columns;
 
-		Rectangle slotRect = {
-			.x = ((center.x - (width / 2)) + ITEM_SLOT_GAP) + (c * (ITEM_SLOT_SIZE + ITEM_SLOT_GAP)),
-			.y = ((center.y - (height / 2)) + ITEM_SLOT_GAP) + (r * (ITEM_SLOT_SIZE + ITEM_SLOT_GAP)),
-			.width = ITEM_SLOT_SIZE,
-			.height = ITEM_SLOT_SIZE
-		};
+			Rectangle slotRect = {
+				.x = x + (c * (ITEM_SLOT_SIZE + ITEM_SLOT_GAP) + ITEM_SLOT_GAP),
+				.y = y + (r * (ITEM_SLOT_SIZE + ITEM_SLOT_GAP) + ITEM_SLOT_GAP),
+				.width = ITEM_SLOT_SIZE,
+				.height = ITEM_SLOT_SIZE
+			};
 
-		bool isHovered = CheckCollisionPointRec(GetMousePosition(), slotRect);
-		ItemRegistry* ir = ir_get_item_registry(openedContainer->items[i].item_id);
+			bool isHovered = CheckCollisionPointRec(GetMousePosition(), slotRect);
 
-		if (isHovered && ir) {
-			const int padding = 4;
-			Vector2 textSize = MeasureTextEx(GetFontDefault(), ir->name, 24.0f, 2.0f);
+			ItemRegistry* ir = ir_get_item_registry(ic->items[i].item_id);
 
-			DrawRectangle(
-				GetMouseX(),
-				GetMouseY() - textSize.y - padding,
-				textSize.x + (padding * 2),
-				textSize.y + (padding * 2),
-				(Color) { 0, 0, 0, 128 }
-			);
+			if (isHovered && ir) {
+				const int padding = 4;
+				Vector2 textSize = MeasureTextEx(GetFontDefault(), ir->name, 24.0f, 2.0f);
 
-			DrawText(
-				ir->name,
-				GetMouseX() + padding,
-				GetMouseY() - textSize.y,
-				24.0f,
-				WHITE
-			);
+				DrawRectangle(
+					GetMouseX(),
+					GetMouseY() - textSize.y - padding,
+					textSize.x + (padding * 2),
+					textSize.y + (padding * 2),
+					(Color) { 0, 0, 0, 128 }
+				);
+
+				DrawText(
+					ir->name,
+					GetMouseX() + padding,
+					GetMouseY() - textSize.y,
+					24.0f,
+					WHITE
+				);
+			}
 		}
 	}
+}
+
+void item_container_draw() {
+	if (!openedContainer) return;
+
+	DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), (Color) { 0, 0, 0, 128 });
+
+	Vector2 center = { GetScreenWidth() / 2.0f, GetScreenHeight() / 2.0f };
+
+	Vector2 openContSize = item_container_get_size(openedContainer);
+	Vector2 invSize = item_container_get_size(&inventory);
+
+	item_container_draw_specific(openedContainer, center.x - (openContSize.x / 2), center.y - openContSize.y);
+	item_container_draw_specific(&inventory, center.x - (invSize.x / 2), center.y);
 
 	draw_item(&grabbedItem, GetMouseX(), GetMouseY());
 }

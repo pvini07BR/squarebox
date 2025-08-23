@@ -23,6 +23,7 @@ typedef struct {
 void item_container_create(ItemContainer* ic, uint8_t rows, uint8_t columns);
 ItemSlot item_container_get_item(ItemContainer* ic, uint8_t row, uint8_t column);
 void item_container_set_item(ItemContainer* ic, uint8_t row, uint8_t column, ItemSlot item);
+Vector2 item_container_get_size(ItemContainer* ic);
 void item_container_open(ItemContainer* ic);
 void item_container_close();
 bool item_container_is_open();

@@ -400,6 +400,7 @@ void build_quad(Chunk* chunk, BlockInstance* blocks, Mesh* mesh, bool isWall, ui
 
 void chunk_genmesh(Chunk* chunk) {
     if (chunk == NULL) return;
+    if (!chunk->initializedMeshes) return;
 
     for (int i = 0; i < (CHUNK_VERTEX_COUNT * 3); i++) {
         chunk->wallMesh.vertices[i] = 0.0f;

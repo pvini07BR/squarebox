@@ -115,16 +115,18 @@ int main() {
                 if (hotbarIdx < 8 && scroll < 0) hotbarIdx++;
             }
 
-            if (IsKeyPressed(KEY_ONE)) hotbarIdx = 0;
-            if (IsKeyPressed(KEY_TWO)) hotbarIdx = 1;
-            if (IsKeyPressed(KEY_THREE)) hotbarIdx = 2;
-            if (IsKeyPressed(KEY_FOUR)) hotbarIdx = 3;
-            if (IsKeyPressed(KEY_FIVE)) hotbarIdx = 4;
-            if (IsKeyPressed(KEY_SIX)) hotbarIdx = 5;
-            if (IsKeyPressed(KEY_SEVEN)) hotbarIdx = 6;
-            if (IsKeyPressed(KEY_EIGHT)) hotbarIdx = 7;
-            if (IsKeyPressed(KEY_NINE)) hotbarIdx = 8;
-            if (IsKeyPressed(KEY_ZERO)) hotbarIdx = 9;
+            if (!seedEdit && !wallAOEdit && !wallBrightEdit) {
+                if (IsKeyPressed(KEY_ONE)) hotbarIdx = 0;
+                if (IsKeyPressed(KEY_TWO)) hotbarIdx = 1;
+                if (IsKeyPressed(KEY_THREE)) hotbarIdx = 2;
+                if (IsKeyPressed(KEY_FOUR)) hotbarIdx = 3;
+                if (IsKeyPressed(KEY_FIVE)) hotbarIdx = 4;
+                if (IsKeyPressed(KEY_SIX)) hotbarIdx = 5;
+                if (IsKeyPressed(KEY_SEVEN)) hotbarIdx = 6;
+                if (IsKeyPressed(KEY_EIGHT)) hotbarIdx = 7;
+                if (IsKeyPressed(KEY_NINE)) hotbarIdx = 8;
+                if (IsKeyPressed(KEY_ZERO)) hotbarIdx = 9;
+            }
 
             input = Vector2Normalize(input);
 
@@ -246,7 +248,7 @@ int main() {
         const Color selHotbarSlot = { 128, 128, 128, 128 };
 
         DrawRectangle(
-            center.x - (width / 2),
+            center.x - (width / 2.0f),
             center.y - height,
             width,
             height,
@@ -258,7 +260,7 @@ int main() {
                 int i = c + (r * get_inventory()->columns);
 
                 Rectangle slotRect = {
-                    .x = ((center.x - (width / 2)) + 4) + (c * (ITEM_SLOT_SIZE + 4)),
+                    .x = ((center.x - (width / 2.0f)) + 4) + (c * (ITEM_SLOT_SIZE + 4)),
                     .y = ((center.y - height) + 4) + (r * (ITEM_SLOT_SIZE + 4)),
                     .width = ITEM_SLOT_SIZE,
                     .height = ITEM_SLOT_SIZE

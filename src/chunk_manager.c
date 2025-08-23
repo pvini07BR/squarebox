@@ -14,15 +14,15 @@
 static Chunk* chunks = NULL;
 static Material chunkMaterial;
 static Texture2D lightMap;
-static Vector2i currentChunkPos;
+static Vector2i currentChunkPos = { 0, 0 };
 
 void chunk_manager_init() {
     chunks = (Chunk*)malloc(CHUNK_COUNT * sizeof(Chunk));
     chunkMaterial = LoadMaterialDefault();
     SetMaterialTexture(&chunkMaterial, MATERIAL_MAP_ALBEDO, texture_atlas_get());
 
-    for (int c = 0; c < CHUNK_COUNT; c++) chunks[c].initializedMeshes = false;
-    chunk_manager_relocate((Vector2i) { 0, 0 });
+    for (int i = 0; i < CHUNK_COUNT; i++) chunks[i].initializedMeshes = false;
+    chunk_manager_reload_chunks();
 }
 
 void chunk_manager_draw() {
@@ -76,8 +76,8 @@ void chunk_manager_reload_chunks()
 {
     for (int c = 0; c < CHUNK_COUNT; c++) {
         chunks[c].position = (Vector2i){ .x = INT_MAX, .y = INT_MAX };
+        if (chunks[c].initializedMeshes) chunk_free_meshes(&chunks[c]);
         chunks[c].initializedMeshes = false;
-        chunk_free_meshes(&chunks[c]);
     }
 
     chunk_manager_relocate(currentChunkPos);

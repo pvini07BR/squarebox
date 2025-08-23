@@ -1,6 +1,7 @@
 #ifndef ITEM_REGISTRY_H
 #define ITEM_REGISTRY_H
 
+#include <stddef.h>
 #include <stdint.h>
 
 #define ITEM_COUNT 10

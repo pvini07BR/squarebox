@@ -1,6 +1,8 @@
 #ifndef TEXTURE_ATLAS_H
 #define TEXTURE_ATLAS_H
 
+#include <stddef.h>
+
 #include <raylib.h>
 
 void texture_atlas_load(const char* path);

@@ -69,7 +69,7 @@ void item_container_create(ItemContainer* ic, const char* name, uint8_t rows, ui
 
 ItemSlot item_container_get_item(ItemContainer* ic, uint8_t row, uint8_t column)
 {
-	if (!ic) return;
+	if (!ic) return (ItemSlot) { 0, 0 };
 	if (row < 0 || row >= ic->rows || column < 0 || column >= ic->columns) return (ItemSlot) { 0, 0 };
 	int i = column + (row * ic->columns);
 	return ic->items[i];
@@ -130,8 +130,8 @@ void draw_item(ItemSlot* is, int x, int y) {
 		texture_atlas_get(),
 		texture_atlas_get_rect(ir->atlas_idx, false, false),
 		(Rectangle) {
-			.x = x + ((ITEM_SLOT_SIZE - TILE_SIZE) / 2),
-			.y = y + ((ITEM_SLOT_SIZE - TILE_SIZE) / 2),
+			.x = x + ((ITEM_SLOT_SIZE - TILE_SIZE) / 2.0f),
+			.y = y + ((ITEM_SLOT_SIZE - TILE_SIZE) / 2.0f),
 			.width = TILE_SIZE,
 			.height = TILE_SIZE
 		},

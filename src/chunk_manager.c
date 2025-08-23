@@ -229,15 +229,16 @@ void chunk_manager_set_block_safe(Vector2i position, BlockInstance blockValue, b
         if (chunk_get_block(chunk, relPos, isWall).id <= 0) {
             bool canPlace = false;
 
-            BlockInstance neighbors[4];
-            chunk_get_block_neighbors(
-                chunk,
-                relPos,
-                isWall,
-                neighbors
-            );
+            BlockInstance blockNeighbors[4];
+            BlockInstance wallNeighbors[4];
 
-            for (int i = 0; i < 4; i++) if (neighbors[i].id > 0) { canPlace = true; break; }
+            chunk_get_block_neighbors(chunk, relPos, false, blockNeighbors);
+            chunk_get_block_neighbors(chunk, relPos, true, wallNeighbors);
+
+            for (int i = 0; i < 4; i++) if (blockNeighbors[i].id > 0 || wallNeighbors[i].id > 0) { canPlace = true; break; }
+
+            if (!isWall && chunk_get_block(chunk, relPos, true).id > 0) canPlace = true;
+
             if (canPlace) {
                 chunk_set_block(chunk, relPos, blockValue, isWall);
                 chunk_manager_update_lighting();

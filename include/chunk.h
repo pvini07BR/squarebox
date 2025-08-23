@@ -10,6 +10,18 @@
 
 #define CHUNK_VERTEX_COUNT CHUNK_AREA * 6
 
+typedef enum {
+	NEIGHBOR_TOP = 0,
+	NEIGHBOR_RIGHT = 1,
+	NEIGHBOR_BOTTOM = 2,
+	NEIGHBOR_LEFT = 3,
+
+	NEIGHBOR_TOP_LEFT = 4,
+	NEIGHBOR_TOP_RIGHT = 5,
+	NEIGHBOR_BOTTOM_RIGHT = 6,
+	NEIGHBOR_BOTTOM_LEFT = 7
+} NeighborDirection;
+
 typedef struct {
     unsigned int x;
     unsigned int y;
@@ -82,5 +94,22 @@ uint8_t chunk_get_light_extrapolating(Chunk* chunk, Vector2i position);
 // and outputs to a BlockInstance array with 4 elements.
 // Uses the extrapolating function.
 void chunk_get_block_neighbors(Chunk* chunk, Vector2u position, bool isWall, BlockInstance output[4]);
+
+// Get the 8 neighbors in a specific relative position in the chunk,
+// and outputs to a BlockInstance array with 8 elements.
+// Uses the extrapolating function.
+// This is the version that gets the diagonal corners.
+void chunk_get_block_neighbors_with_corners(Chunk* chunk, Vector2u position, bool isWall, BlockInstance output[8]);
+
+// Get the 4 neighboring light values in a specific relative position in the chunk,
+// and outputs to a uint8_t array with 4 elements.
+// Uses the extrapolating function.
+void chunk_get_light_neighbors(Chunk* chunk, Vector2u position, uint8_t output[4]);
+
+// Get the 4 neighboring light values in a specific relative position in the chunk,
+// and outputs to a uint8_t array with 4 elements.
+// Uses the extrapolating function.
+// This is the version that gets the diagonal corners.
+void chunk_get_light_neighbors_with_corners(Chunk* chunk, Vector2u position, uint8_t output[8]);
 
 #endif

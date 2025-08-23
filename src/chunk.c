@@ -83,67 +83,60 @@ void set_quad_uvs(float* uvs, uint8_t bx, uint8_t by, Rectangle rect, bool flipT
     float u1 = rect.x + rect.width;
     float v1 = rect.y + rect.height;
 
-    // Definir UVs dos 4 cantos baseado na rotação
     float cornerUVs[4][2];
 
     switch (rotation) {
-    case 1: // 90° anti-horário
-        cornerUVs[0][0] = u1; cornerUVs[0][1] = v0; // superior esquerdo = superior direito original
-        cornerUVs[1][0] = u1; cornerUVs[1][1] = v1; // superior direito = inferior direito original
-        cornerUVs[2][0] = u0; cornerUVs[2][1] = v1; // inferior direito = inferior esquerdo original
-        cornerUVs[3][0] = u0; cornerUVs[3][1] = v0; // inferior esquerdo = superior esquerdo original
+    case 1: // 90°
+        cornerUVs[0][0] = u1; cornerUVs[0][1] = v0;
+        cornerUVs[1][0] = u1; cornerUVs[1][1] = v1;
+        cornerUVs[2][0] = u0; cornerUVs[2][1] = v1;
+        cornerUVs[3][0] = u0; cornerUVs[3][1] = v0;
         break;
 
     case 2: // 180°
-        cornerUVs[0][0] = u1; cornerUVs[0][1] = v1; // superior esquerdo = inferior direito original
-        cornerUVs[1][0] = u0; cornerUVs[1][1] = v1; // superior direito = inferior esquerdo original
-        cornerUVs[2][0] = u0; cornerUVs[2][1] = v0; // inferior direito = superior esquerdo original
-        cornerUVs[3][0] = u1; cornerUVs[3][1] = v0; // inferior esquerdo = superior direito original
+        cornerUVs[0][0] = u1; cornerUVs[0][1] = v1;
+        cornerUVs[1][0] = u0; cornerUVs[1][1] = v1;
+        cornerUVs[2][0] = u0; cornerUVs[2][1] = v0;
+        cornerUVs[3][0] = u1; cornerUVs[3][1] = v0;
         break;
 
-    case 3: // 270° anti-horário (90° horário)
-        cornerUVs[0][0] = u0; cornerUVs[0][1] = v1; // superior esquerdo = inferior esquerdo original
-        cornerUVs[1][0] = u0; cornerUVs[1][1] = v0; // superior direito = superior esquerdo original
-        cornerUVs[2][0] = u1; cornerUVs[2][1] = v0; // inferior direito = superior direito original
-        cornerUVs[3][0] = u1; cornerUVs[3][1] = v1; // inferior esquerdo = inferior direito original
+    case 3: // 270°
+        cornerUVs[0][0] = u0; cornerUVs[0][1] = v1;
+        cornerUVs[1][0] = u0; cornerUVs[1][1] = v0;
+        cornerUVs[2][0] = u1; cornerUVs[2][1] = v0;
+        cornerUVs[3][0] = u1; cornerUVs[3][1] = v1;
         break;
 
-    case 0: // sem rotação
+    case 0:
     default:
-        cornerUVs[0][0] = u0; cornerUVs[0][1] = v0; // superior esquerdo
-        cornerUVs[1][0] = u1; cornerUVs[1][1] = v0; // superior direito
-        cornerUVs[2][0] = u1; cornerUVs[2][1] = v1; // inferior direito
-        cornerUVs[3][0] = u0; cornerUVs[3][1] = v1; // inferior esquerdo
+        cornerUVs[0][0] = u0; cornerUVs[0][1] = v0;
+        cornerUVs[1][0] = u1; cornerUVs[1][1] = v0;
+        cornerUVs[2][0] = u1; cornerUVs[2][1] = v1;
+        cornerUVs[3][0] = u0; cornerUVs[3][1] = v1;
         break;
     }
 
     float verts[6][2];
 
     if (flipTriangles) {
-        // Triângulos invertidos horizontalmente
-        // Triângulo 1: superior esquerdo → superior direito → inferior esquerdo
-        // Triângulo 2: inferior esquerdo → inferior direito → superior direito
         float invertedVerts[6][2] = {
-            {cornerUVs[0][0], cornerUVs[0][1]}, // superior esquerdo
-            {cornerUVs[1][0], cornerUVs[1][1]}, // superior direito
-            {cornerUVs[3][0], cornerUVs[3][1]}, // inferior esquerdo
-            {cornerUVs[3][0], cornerUVs[3][1]}, // inferior esquerdo
-            {cornerUVs[2][0], cornerUVs[2][1]}, // inferior direito
-            {cornerUVs[1][0], cornerUVs[1][1]}, // superior direito
+            {cornerUVs[0][0], cornerUVs[0][1]},
+            {cornerUVs[1][0], cornerUVs[1][1]},
+            {cornerUVs[3][0], cornerUVs[3][1]},
+            {cornerUVs[3][0], cornerUVs[3][1]},
+            {cornerUVs[2][0], cornerUVs[2][1]},
+            {cornerUVs[1][0], cornerUVs[1][1]},
         };
         memcpy(verts, invertedVerts, sizeof(verts));
     }
     else {
-        // Triângulos normais
-        // Triângulo 1: superior esquerdo → superior direito → inferior direito
-        // Triângulo 2: superior esquerdo → inferior direito → inferior esquerdo
         float normalVerts[6][2] = {
-            {cornerUVs[0][0], cornerUVs[0][1]}, // superior esquerdo
-            {cornerUVs[1][0], cornerUVs[1][1]}, // superior direito
-            {cornerUVs[2][0], cornerUVs[2][1]}, // inferior direito
-            {cornerUVs[0][0], cornerUVs[0][1]}, // superior esquerdo
-            {cornerUVs[2][0], cornerUVs[2][1]}, // inferior direito
-            {cornerUVs[3][0], cornerUVs[3][1]}, // inferior esquerdo
+            {cornerUVs[0][0], cornerUVs[0][1]},
+            {cornerUVs[1][0], cornerUVs[1][1]},
+            {cornerUVs[2][0], cornerUVs[2][1]},
+            {cornerUVs[0][0], cornerUVs[0][1]},
+            {cornerUVs[2][0], cornerUVs[2][1]},
+            {cornerUVs[3][0], cornerUVs[3][1]},
         };
         memcpy(verts, normalVerts, sizeof(verts));
     }
@@ -316,17 +309,8 @@ void build_quad(Chunk* chunk, BlockInstance* blocks, Mesh* mesh, bool isWall, ui
             else cornerValues[i] = 0;
         }
     } else {
-        uint8_t neighbors[8] = {
-            chunk_get_light_extrapolating(chunk, (Vector2i) { x,     y - 1 }),   // Up
-            chunk_get_light_extrapolating(chunk, (Vector2i) { x + 1, y }),       // Right
-            chunk_get_light_extrapolating(chunk, (Vector2i) { x,     y + 1 }),   // Down
-            chunk_get_light_extrapolating(chunk, (Vector2i) { x - 1, y }),       // Left
-
-            chunk_get_light_extrapolating(chunk, (Vector2i) { x - 1, y - 1 }),   // Up left
-            chunk_get_light_extrapolating(chunk, (Vector2i) { x + 1, y - 1 }),   // Up right
-            chunk_get_light_extrapolating(chunk, (Vector2i) { x - 1, y + 1 }),   // Down left
-            chunk_get_light_extrapolating(chunk, (Vector2i) { x + 1, y + 1 }),   // Down right
-        };
+        uint8_t neighbors[8];
+        chunk_get_light_neighbors_with_corners(chunk, (Vector2u) { x, y }, neighbors);
 
         // 0 = Top Left
         // 1 = Top Right
@@ -334,10 +318,10 @@ void build_quad(Chunk* chunk, BlockInstance* blocks, Mesh* mesh, bool isWall, ui
         // 3 = Bottom Left
 
         int cornerNeighbors[4][3] = {
-            {3, 4, 0},  // Top Left: Left, Top-Left diagonal, Top
-            {1, 5, 0},  // Top Right: Right, Top-Right diagonal, Top  
-            {1, 7, 2},  // Bottom Right: Right, Bottom-Right diagonal, Bottom
-            {3, 6, 2}   // Bottom Left: Left, Bottom-Left diagonal, Bottom
+            {NEIGHBOR_LEFT, NEIGHBOR_TOP_LEFT, NEIGHBOR_TOP},           // Top Left
+            {NEIGHBOR_RIGHT, NEIGHBOR_TOP_RIGHT, NEIGHBOR_TOP},         // Top Right
+            {NEIGHBOR_RIGHT, NEIGHBOR_BOTTOM_RIGHT, NEIGHBOR_BOTTOM},   // Bottom Right
+            {NEIGHBOR_LEFT, NEIGHBOR_BOTTOM_LEFT, NEIGHBOR_BOTTOM}      // Bottom Left
         };
 
         for (int corner = 0; corner < 4; corner++) {
@@ -357,21 +341,11 @@ void build_quad(Chunk* chunk, BlockInstance* blocks, Mesh* mesh, bool isWall, ui
 
     // Wall "ambient occulsion" for walls only
     if (wallAmbientOcclusion && isWall) {
-        BlockInstance neighbors[8] = {
-            chunk_get_block_extrapolating(chunk, (Vector2i) { x,     y - 1 }, false),   // Top
-            chunk_get_block_extrapolating(chunk, (Vector2i) { x + 1, y }, false),       // Right
-            chunk_get_block_extrapolating(chunk, (Vector2i) { x,     y + 1 }, false),   // Bottom
-            chunk_get_block_extrapolating(chunk, (Vector2i) { x - 1, y }, false),       // Left
-
-            chunk_get_block_extrapolating(chunk, (Vector2i) { x - 1,  y - 1 }, false),  // Top Left
-            chunk_get_block_extrapolating(chunk, (Vector2i) { x + 1,  y - 1 }, false),  // Top Right
-            chunk_get_block_extrapolating(chunk, (Vector2i) { x - 1,  y + 1 }, false),  // Bottom Left
-            chunk_get_block_extrapolating(chunk, (Vector2i) { x + 1,  y + 1 }, false),  // Bottom Right
-        };
+        BlockInstance neighbors[8];
+        chunk_get_block_neighbors_with_corners(chunk, (Vector2u) { x, y }, false, neighbors);
 
         BlockRegistry* registries[8];
-        for (int i = 0; i < 8; i++)
-            registries[i] = br_get_block_registry(neighbors[i].id);
+        for (int i = 0; i < 8; i++) registries[i] = br_get_block_registry(neighbors[i].id);
 
         struct {
             int corners[2];
@@ -381,10 +355,11 @@ void build_quad(Chunk* chunk, BlockInstance* blocks, Mesh* mesh, bool isWall, ui
             {{1, 2}, false},    // Right
             {{2, 3}, false},    // Bottom
             {{0, 3}, false},    // Left
+
             {{0, -1}, true},    // Top Left
             {{1, -1}, false},   // Top Right
-            {{3, -1}, false},   // Bottom Left
-            {{2, -1}, true}     // Bottom Right
+            {{2, -1}, true},    // Bottom Right
+            {{3, -1}, false}    // Bottom Left
         };
 
         for (int dir = 0; dir < 8; dir++) {
@@ -584,8 +559,39 @@ uint8_t chunk_get_light_extrapolating(Chunk* chunk, Vector2i position)
 }
 
 void chunk_get_block_neighbors(Chunk* chunk, Vector2u position, bool isWall, BlockInstance output[4]) {
-    output[0] = chunk_get_block_extrapolating(chunk, (Vector2i) { position.x, position.y - 1 }, false);     // Top
-    output[1] = chunk_get_block_extrapolating(chunk, (Vector2i) { position.x + 1, position.y }, false);     // Right
-    output[2] = chunk_get_block_extrapolating(chunk, (Vector2i) { position.x, position.y + 1 }, false);     // Bottom
-    output[3] = chunk_get_block_extrapolating(chunk, (Vector2i) { position.x - 1, position.y }, false);     // Left
+    output[NEIGHBOR_TOP] = chunk_get_block_extrapolating(chunk, (Vector2i) { position.x, position.y - 1 }, isWall);
+    output[NEIGHBOR_RIGHT] = chunk_get_block_extrapolating(chunk, (Vector2i) { position.x + 1, position.y }, isWall);
+    output[NEIGHBOR_BOTTOM] = chunk_get_block_extrapolating(chunk, (Vector2i) { position.x, position.y + 1 }, isWall);
+    output[NEIGHBOR_LEFT] = chunk_get_block_extrapolating(chunk, (Vector2i) { position.x - 1, position.y }, isWall);
+}
+
+void chunk_get_block_neighbors_with_corners(Chunk* chunk, Vector2u position, bool isWall, BlockInstance output[8]) {
+    output[NEIGHBOR_TOP] = chunk_get_block_extrapolating(chunk, (Vector2i) { position.x, position.y - 1 }, isWall);
+    output[NEIGHBOR_RIGHT] = chunk_get_block_extrapolating(chunk, (Vector2i) { position.x + 1, position.y }, isWall);
+    output[NEIGHBOR_BOTTOM] = chunk_get_block_extrapolating(chunk, (Vector2i) { position.x, position.y + 1 }, isWall);
+    output[NEIGHBOR_LEFT] = chunk_get_block_extrapolating(chunk, (Vector2i) { position.x - 1, position.y }, isWall);
+
+    output[NEIGHBOR_TOP_LEFT] = chunk_get_block_extrapolating(chunk, (Vector2i) { position.x - 1, position.y - 1 }, isWall);
+    output[NEIGHBOR_TOP_RIGHT] = chunk_get_block_extrapolating(chunk, (Vector2i) { position.x + 1, position.y - 1 }, isWall);
+    output[NEIGHBOR_BOTTOM_RIGHT] = chunk_get_block_extrapolating(chunk, (Vector2i) { position.x + 1, position.y + 1 }, isWall);
+    output[NEIGHBOR_BOTTOM_LEFT] = chunk_get_block_extrapolating(chunk, (Vector2i) { position.x - 1, position.y + 1 }, isWall);
+}
+
+void chunk_get_light_neighbors(Chunk* chunk, Vector2u position, uint8_t output[4]) {
+    output[NEIGHBOR_TOP] = chunk_get_light_extrapolating(chunk, (Vector2i) { position.x, position.y - 1 });
+    output[NEIGHBOR_RIGHT] = chunk_get_light_extrapolating(chunk, (Vector2i) { position.x + 1, position.y });
+    output[NEIGHBOR_BOTTOM] = chunk_get_light_extrapolating(chunk, (Vector2i) { position.x, position.y + 1 });
+    output[NEIGHBOR_LEFT] = chunk_get_light_extrapolating(chunk, (Vector2i) { position.x - 1, position.y });
+}
+
+void chunk_get_light_neighbors_with_corners(Chunk* chunk, Vector2u position, uint8_t output[8]) {
+    output[NEIGHBOR_TOP] = chunk_get_light_extrapolating(chunk, (Vector2i) { position.x, position.y - 1 });
+    output[NEIGHBOR_RIGHT] = chunk_get_light_extrapolating(chunk, (Vector2i) { position.x + 1, position.y });
+    output[NEIGHBOR_BOTTOM] = chunk_get_light_extrapolating(chunk, (Vector2i) { position.x, position.y + 1 });
+    output[NEIGHBOR_LEFT] = chunk_get_light_extrapolating(chunk, (Vector2i) { position.x - 1, position.y });
+
+    output[NEIGHBOR_TOP_LEFT] = chunk_get_light_extrapolating(chunk, (Vector2i) { position.x - 1, position.y - 1 });
+    output[NEIGHBOR_TOP_RIGHT] = chunk_get_light_extrapolating(chunk, (Vector2i) { position.x + 1, position.y - 1 });
+    output[NEIGHBOR_BOTTOM_RIGHT] = chunk_get_light_extrapolating(chunk, (Vector2i) { position.x + 1, position.y + 1 });
+    output[NEIGHBOR_BOTTOM_LEFT] = chunk_get_light_extrapolating(chunk, (Vector2i) { position.x - 1, position.y + 1 });
 }

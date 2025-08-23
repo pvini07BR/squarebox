@@ -31,6 +31,42 @@ void item_registry_init() {
 	};
 
 	itemRegistry[3] = (ItemRegistry){
+		.name = "Stone Block",
+		.atlas_idx = 2,
+		.blockId = 3
+	};
+
+	itemRegistry[4] = (ItemRegistry){
+		.name = "Cobblestone",
+		.atlas_idx = 3,
+		.blockId = 4
+	};
+
+	itemRegistry[5] = (ItemRegistry){
+		.name = "Wooden Planks",
+		.atlas_idx = 4,
+		.blockId = 5
+	};
+
+	itemRegistry[6] = (ItemRegistry){
+		.name = "Wood Log",
+		.atlas_idx = 5,
+		.blockId = 6
+	};
+
+	itemRegistry[7] = (ItemRegistry){
+		.name = "Leaves",
+		.atlas_idx = 6,
+		.blockId = 7
+	};
+
+	itemRegistry[8] = (ItemRegistry){
+		.name = "Glass Block",
+		.atlas_idx = 7,
+		.blockId = 8
+	};
+
+	itemRegistry[9] = (ItemRegistry){
 		.name = "Test Item",
 		.atlas_idx = 8,
 		.blockId = 0

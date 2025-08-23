@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#define ITEM_COUNT 4
+#define ITEM_COUNT 10
 
 typedef struct {
 	const char* name;

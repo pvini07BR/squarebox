@@ -12,6 +12,10 @@
 #include "defines.h"
 
 const float TITLE_SIZE = 18.0f;
+const Color BG_COLOR = { 200, 200, 200, 255 };
+const Color SLOT_COLOR = { 130, 130, 130, 255 };
+const Color SLOT_HOVER_COLOR = { 255, 255, 255, 128 };
+const Color TITLE_COLOR = { 80, 80, 80, 255 };
 
 static ItemContainer* openedContainer = NULL;
 
@@ -23,7 +27,7 @@ static ItemContainer* lastContainer = NULL;
 static ItemContainer inventory;
 
 void init_inventory() {
-	item_container_create(&inventory, "Inventory", 1, 9);
+	item_container_create(&inventory, "Inventory", 1, 9, false);
 }
 
 ItemContainer* get_inventory()
@@ -51,12 +55,13 @@ void free_inventory()
 	item_container_free(&inventory);
 }
 
-void item_container_create(ItemContainer* ic, const char* name, uint8_t rows, uint8_t columns)
+void item_container_create(ItemContainer* ic, const char* name, uint8_t rows, uint8_t columns, bool immutable)
 {
 	if (!ic) return;
 	ic->name = name;
 	ic->rows = rows;
 	ic->columns = columns;
+	ic->immutable = immutable;
 	ic->items = calloc(ic->rows * ic->columns, sizeof(ItemSlot));
 	if (ic->items) for (int i = 0; i < (ic->rows * ic->columns); i++)
 		ic->items[i] = (ItemSlot){ 0, 0 };
@@ -101,16 +106,17 @@ void item_container_close() {
 	// If closing the item container while having a grabbed item,
 	// add it back to the slot it came from
 	if (lastContainer && lastSlotIdx >= 0) {
-		lastContainer->items[lastSlotIdx].item_id = grabbedItem.item_id;
-		lastContainer->items[lastSlotIdx].amount += grabbedItem.amount;
+		if (!lastContainer->immutable) {
+			lastContainer->items[lastSlotIdx].item_id = grabbedItem.item_id;
+			lastContainer->items[lastSlotIdx].amount += grabbedItem.amount;
+		}
 
 		grabbedItem.item_id = 0;
 		grabbedItem.amount = 0;
 
 		lastSlotIdx = -1;
+		lastContainer = NULL;
 	}
-
-	lastContainer = NULL;
 	openedContainer = NULL;
 }
 
@@ -158,7 +164,7 @@ void item_container_draw_specific(ItemContainer* ic, int x, int y) {
 		y,
 		size.x,
 		size.y,
-		LIGHTGRAY
+		BG_COLOR
 	);
 
 	DrawText(
@@ -166,7 +172,7 @@ void item_container_draw_specific(ItemContainer* ic, int x, int y) {
 		x + ITEM_SLOT_GAP,
 		y + ITEM_SLOT_GAP,
 		TITLE_SIZE,
-		DARKGRAY
+		TITLE_COLOR
 	);
 
 	// Drawing slots, items and registering input
@@ -183,7 +189,7 @@ void item_container_draw_specific(ItemContainer* ic, int x, int y) {
 
 			bool isHovered = CheckCollisionPointRec(GetMousePosition(), slotRect);
 			ItemRegistry* ir = ir_get_item_registry(ic->items[i].item_id);
-			if (isHovered) {
+			if (isHovered && !ic->immutable) {
 				if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
 					// Swapping existing items
 					if (ic->items[i].item_id > 0 && grabbedItem.item_id != ic->items[i].item_id) {
@@ -291,12 +297,28 @@ void item_container_draw_specific(ItemContainer* ic, int x, int y) {
 					}
 				}
 			}
+			// If the container is immutable, then just copy the item to the holding item
+			else if (isHovered && ic->immutable) {
+				if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+					if (ic->items[i].item_id > 0 && grabbedItem.item_id <= 0) {
+						lastContainer = ic;
+						lastSlotIdx = i;
 
-			DrawRectangleRec(slotRect, GRAY);
+						grabbedItem.item_id = ic->items[i].item_id;
+						grabbedItem.amount = ic->items[i].amount;
+					}
+					else if (grabbedItem.item_id > 0) {
+						grabbedItem.item_id = 0;
+						grabbedItem.amount = 0;
+					}
+				}
+			}
+
+			DrawRectangleRec(slotRect, SLOT_COLOR);
 
 			draw_item(&ic->items[i], slotRect.x, slotRect.y);
 
-			if (isHovered) DrawRectangleRec(slotRect, (Color) { 255, 255, 255, 128 });
+			if (isHovered) DrawRectangleRec(slotRect, SLOT_HOVER_COLOR);
 		}
 	}
 

@@ -24,6 +24,7 @@ extern unsigned int wallAOvalue;
 int main() {
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(1280, 720, "mijocraft");
+    SetExitKey(KEY_NULL);
 
     bool wall_mode = false;
     ItemContainer creativeMenu;
@@ -50,15 +51,12 @@ int main() {
     item_registry_init();
     chunk_manager_init();
 
-    item_container_create(&creativeMenu, "Creative Menu", 1, ITEM_COUNT - 1);
+    item_container_create(&creativeMenu, "Creative Menu", 1, ITEM_COUNT - 1, true);
     for (int i = 1; i < ITEM_COUNT; i++) {
         item_container_set_item(&creativeMenu, (i - 1) / creativeMenu.columns, (i - 1) % creativeMenu.columns, (ItemSlot){ i, 1 });
     }
 
     init_inventory();
-
-    inventory_set_item(0, 0, (ItemSlot) { 1, 69 });
-    inventory_set_item(0, 1, (ItemSlot) { 3, 2 });
 
     Camera2D camera = {
         .target =  { (CHUNK_WIDTH*TILE_SIZE)/2.0f, (CHUNK_WIDTH*TILE_SIZE)/2.0f },
@@ -78,7 +76,6 @@ int main() {
             .x = GetScreenWidth() / 2.0f, 
             .y = GetScreenHeight() / 2.0f
         };
-
 
         mouseWorldPos = GetScreenToWorld2D(GetMousePosition(), camera);
         mouseBlockPos = (Vector2i){
@@ -126,14 +123,10 @@ int main() {
             camera.target.y += input.y * speed * GetFrameTime();
         }
 
-        if (IsKeyPressed(KEY_E)) {
-            if (!item_container_is_open()) {
-                item_container_open(&creativeMenu);
-            }
-            else {
-                item_container_close();
-            }
-        }
+        if (IsKeyPressed(KEY_E) && !item_container_is_open())
+            item_container_open(&creativeMenu);
+        else if ((IsKeyPressed(KEY_E) || IsKeyPressed(KEY_ESCAPE) && item_container_is_open()))
+            item_container_close();
 
         Vector2i cameraChunkPos = {
             (int)floorf(camera.target.x / (CHUNK_WIDTH * TILE_SIZE)),

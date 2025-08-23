@@ -19,9 +19,10 @@ typedef struct {
 	ItemSlot* items;
 	uint8_t rows;
 	uint8_t columns;
+	bool immutable;
 } ItemContainer;
 
-void item_container_create(ItemContainer* ic, const char* name, uint8_t rows, uint8_t columns);
+void item_container_create(ItemContainer* ic, const char* name, uint8_t rows, uint8_t columns, bool immutable);
 ItemSlot item_container_get_item(ItemContainer* ic, uint8_t row, uint8_t column);
 void item_container_set_item(ItemContainer* ic, uint8_t row, uint8_t column, ItemSlot item);
 Vector2 item_container_get_size(ItemContainer* ic);

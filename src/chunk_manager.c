@@ -1,5 +1,6 @@
 ﻿#include "chunk_manager.h"
 #include "block_registry.h"
+#include "chunk.h"
 #include "texture_atlas.h"
 #include "defines.h"
 
@@ -238,6 +239,12 @@ void chunk_manager_set_block_safe(Vector2i position, BlockInstance blockValue, b
             for (int i = 0; i < 4; i++) if (blockNeighbors[i].id > 0 || wallNeighbors[i].id > 0) { canPlace = true; break; }
 
             if (!isWall && chunk_get_block(chunk, relPos, true).id > 0) canPlace = true;
+
+            BlockRegistry* br = br_get_block_registry(blockValue.id);
+            // If the block is log-like, then rotate it when there are blocks on the sides
+            if (br->flag == BLOCK_FLAG_LOG_LIKE) {
+                if (blockNeighbors[NEIGHBOR_RIGHT].id > 0 || blockNeighbors[NEIGHBOR_LEFT].id > 0) blockValue.state = 1;
+            }
 
             if (canPlace) {
                 chunk_set_block(chunk, relPos, blockValue, isWall);

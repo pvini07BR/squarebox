@@ -50,7 +50,7 @@ int main() {
     item_registry_init();
     chunk_manager_init();
 
-    item_container_create(&creativeMenu, 1, ITEM_COUNT-1);
+    item_container_create(&creativeMenu, "Creative Menu", 1, ITEM_COUNT - 1);
     for (int i = 1; i < ITEM_COUNT; i++) {
         item_container_set_item(&creativeMenu, (i - 1) / creativeMenu.columns, (i - 1) % creativeMenu.columns, (ItemSlot){ i, 1 });
     }

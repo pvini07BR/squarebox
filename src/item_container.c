@@ -11,6 +11,8 @@
 #include "texture_atlas.h"
 #include "defines.h"
 
+const float TITLE_SIZE = 18.0f;
+
 static ItemContainer* openedContainer = NULL;
 
 // Variables for holding items
@@ -21,7 +23,7 @@ static ItemContainer* lastContainer = NULL;
 static ItemContainer inventory;
 
 void init_inventory() {
-	item_container_create(&inventory, 1, 9);
+	item_container_create(&inventory, "Inventory", 1, 9);
 }
 
 ItemContainer* get_inventory()
@@ -49,9 +51,10 @@ void free_inventory()
 	item_container_free(&inventory);
 }
 
-void item_container_create(ItemContainer* ic, uint8_t rows, uint8_t columns)
+void item_container_create(ItemContainer* ic, const char* name, uint8_t rows, uint8_t columns)
 {
 	if (!ic) return;
+	ic->name = name;
 	ic->rows = rows;
 	ic->columns = columns;
 	ic->items = calloc(ic->rows * ic->columns, sizeof(ItemSlot));
@@ -79,9 +82,12 @@ void item_container_set_item(ItemContainer* ic, uint8_t row, uint8_t column, Ite
 Vector2 item_container_get_size(ItemContainer* ic)
 {
 	if (!ic) return Vector2Zero();
+
+	Vector2 titleSize = MeasureTextEx(GetFontDefault(), ic->name, TITLE_SIZE, 0.0f);
+
 	return (Vector2) {
 		.x = (ic->columns * (ITEM_SLOT_SIZE + ITEM_SLOT_GAP)) + ITEM_SLOT_GAP,
-		.y = (ic->rows * (ITEM_SLOT_SIZE + ITEM_SLOT_GAP)) + ITEM_SLOT_GAP
+		.y = (ic->rows * (ITEM_SLOT_SIZE + ITEM_SLOT_GAP)) + ITEM_SLOT_GAP + (titleSize.y + ITEM_SLOT_GAP)
 	};
 }
 
@@ -104,8 +110,10 @@ void item_container_close() {
 		lastSlotIdx = -1;
 	}
 
-	openedContainer = NULL; 
+	lastContainer = NULL;
+	openedContainer = NULL;
 }
+
 bool item_container_is_open() { return openedContainer != NULL; }
 
 void draw_item(ItemSlot* is, int x, int y) {
@@ -142,6 +150,8 @@ void draw_item(ItemSlot* is, int x, int y) {
 
 void item_container_draw_specific(ItemContainer* ic, int x, int y) {
 	Vector2 size = item_container_get_size(ic);
+	Vector2 titleSize = MeasureTextEx(GetFontDefault(), ic->name, TITLE_SIZE, 0.0f);
+	titleSize.y += ITEM_SLOT_GAP;
 
 	DrawRectangle(
 		x,
@@ -151,6 +161,14 @@ void item_container_draw_specific(ItemContainer* ic, int x, int y) {
 		LIGHTGRAY
 	);
 
+	DrawText(
+		ic->name,
+		x + ITEM_SLOT_GAP,
+		y + ITEM_SLOT_GAP,
+		TITLE_SIZE,
+		DARKGRAY
+	);
+
 	// Drawing slots, items and registering input
 	for (int r = 0; r < ic->rows; r++) {
 		for (int c = 0; c < ic->columns; c++) {
@@ -158,7 +176,7 @@ void item_container_draw_specific(ItemContainer* ic, int x, int y) {
 
 			Rectangle slotRect = {
 				.x = x + (c * (ITEM_SLOT_SIZE + ITEM_SLOT_GAP) + ITEM_SLOT_GAP),
-				.y = y + (r * (ITEM_SLOT_SIZE + ITEM_SLOT_GAP) + ITEM_SLOT_GAP),
+				.y = y + (r * (ITEM_SLOT_SIZE + ITEM_SLOT_GAP) + ITEM_SLOT_GAP) + titleSize.y,
 				.width = ITEM_SLOT_SIZE,
 				.height = ITEM_SLOT_SIZE
 			};
@@ -168,7 +186,7 @@ void item_container_draw_specific(ItemContainer* ic, int x, int y) {
 			if (isHovered) {
 				if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
 					// Swapping existing items
-					if (ir && grabbedItem.item_id != ic->items[i].item_id) {
+					if (ic->items[i].item_id > 0 && grabbedItem.item_id != ic->items[i].item_id) {
 						lastSlotIdx = i;
 						lastContainer = ic;
 
@@ -185,7 +203,7 @@ void item_container_draw_specific(ItemContainer* ic, int x, int y) {
 						ic->items[i].amount = prev_grab_amount;
 					}
 					// Adding an amount of items to a existing slot if the item IDs match
-					else if (ir && grabbedItem.item_id == ic->items[i].item_id) {
+					else if (ic->items[i].item_id > 0 && grabbedItem.item_id == ic->items[i].item_id) {
 						lastSlotIdx = -1;
 						lastContainer = NULL;
 
@@ -195,7 +213,7 @@ void item_container_draw_specific(ItemContainer* ic, int x, int y) {
 						grabbedItem.amount = 0;
 					}
 					// Putting the holding item on a empty slot
-					else if (!ir && grabbedItem.item_id > 0) {
+					else if (ic->items[i].item_id <= 0 && grabbedItem.item_id > 0) {
 						lastSlotIdx = -1;
 						lastContainer = NULL;
 
@@ -207,7 +225,7 @@ void item_container_draw_specific(ItemContainer* ic, int x, int y) {
 					}
 				}
 				if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {
-					if (ir) {
+					if (ic->items[i].item_id > 0) {
 						// Adding to existing item with the grabbed item
 						if (grabbedItem.item_id == ic->items[i].item_id) {
 							if (grabbedItem.amount > 1) {
@@ -290,7 +308,7 @@ void item_container_draw_specific(ItemContainer* ic, int x, int y) {
 
 			Rectangle slotRect = {
 				.x = x + (c * (ITEM_SLOT_SIZE + ITEM_SLOT_GAP) + ITEM_SLOT_GAP),
-				.y = y + (r * (ITEM_SLOT_SIZE + ITEM_SLOT_GAP) + ITEM_SLOT_GAP),
+				.y = y + (r * (ITEM_SLOT_SIZE + ITEM_SLOT_GAP) + ITEM_SLOT_GAP) + titleSize.y,
 				.width = ITEM_SLOT_SIZE,
 				.height = ITEM_SLOT_SIZE
 			};

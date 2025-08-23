@@ -5,7 +5,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define TILE_SIZE 32
 #define CHUNK_WIDTH 16
 #define CHUNK_AREA CHUNK_WIDTH*CHUNK_WIDTH
 

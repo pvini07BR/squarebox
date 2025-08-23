@@ -1,4 +1,5 @@
 ﻿#include "chunk.h"
+#include "defines.h"
 #include "block_registry.h"
 
 #include <math.h>

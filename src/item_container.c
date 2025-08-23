@@ -66,13 +66,13 @@ void item_container_close() {
 }
 bool item_container_is_open() { return openedContainer != NULL; }
 
-void draw_item(ItemSlot* is, int x, int y) {
+void draw_item(ItemSlot* is, int x, int y, Texture2D* textureAtlas) {
 	ItemRegistry* ir = ir_get_item_registry(is->item_id);
 	if (ir == NULL) return;
 
 	if (ir->type == ITEM_TYPE_BLOCK) {
 		DrawTexturePro(
-			*br_get_block_atlas(),
+			*textureAtlas,
 			br_get_block_texture_rect(ir->blockId, false, false),
 			(Rectangle) {
 				.x = x + (ITEM_SLOT_SIZE * 0.1f),
@@ -100,8 +100,7 @@ void draw_item(ItemSlot* is, int x, int y) {
 	}
 }
 
-void item_container_draw()
-{
+void item_container_draw(Texture2D* textureAtlas) {
 	if (!openedContainer) return;
 
 	DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), (Color) { 0, 0, 0, 128 });
@@ -234,7 +233,7 @@ void item_container_draw()
 
 			DrawRectangleRec(slotRect, GRAY);
 
-			draw_item(&openedContainer->items[i], slotRect.x, slotRect.y);
+			draw_item(&openedContainer->items[i], slotRect.x, slotRect.y, textureAtlas);
 
 			if (isHovered) DrawRectangleRec(slotRect, (Color){ 255, 255, 255, 128 });
 		}
@@ -276,7 +275,7 @@ void item_container_draw()
 		}
 	}
 
-	draw_item(&grabbedItem, GetMouseX(), GetMouseY());
+	draw_item(&grabbedItem, GetMouseX(), GetMouseY(), textureAtlas);
 }
 
 void item_container_free(ItemContainer* ic)

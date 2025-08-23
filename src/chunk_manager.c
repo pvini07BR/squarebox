@@ -1,6 +1,6 @@
 ﻿#include "chunk_manager.h"
-#include "chunk.h"
 #include "block_registry.h"
+#include "defines.h"
 
 #include <limits.h>
 #include <stdint.h>
@@ -15,10 +15,10 @@ static Material chunkMaterial;
 static Texture2D lightMap;
 static Vector2i currentChunkPos;
 
-void chunk_manager_init() {
+void chunk_manager_init(Texture2D* textureAtlas) {
     chunks = (Chunk*)malloc(CHUNK_COUNT * sizeof(Chunk));
     chunkMaterial = LoadMaterialDefault();
-    SetMaterialTexture(&chunkMaterial, MATERIAL_MAP_ALBEDO, *br_get_block_atlas());
+    SetMaterialTexture(&chunkMaterial, MATERIAL_MAP_ALBEDO, *textureAtlas);
 
     for (int c = 0; c < CHUNK_COUNT; c++) chunks[c].initializedMeshes = false;
     chunk_manager_relocate((Vector2i) { 0, 0 });

@@ -9,7 +9,7 @@
 
 #define CHUNK_COUNT CHUNK_VIEW_WIDTH*CHUNK_VIEW_HEIGHT
 
-void chunk_manager_init();
+void chunk_manager_init(Texture2D* textureAtlas);
 void chunk_manager_draw();
 void chunk_manager_free();
 void chunk_manager_reload_chunks();

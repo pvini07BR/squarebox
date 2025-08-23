@@ -8,6 +8,7 @@
 #define RAYGUI_IMPLEMENTATION
 #include "thirdparty/raygui.h"
 
+#include "defines.h"
 #include "chunk_manager.h"
 #include "block_registry.h"
 #include "item_registry.h"
@@ -43,9 +44,12 @@ int main() {
     
     Texture2D place_mode_icon = LoadTexture(ASSETS_PATH "place_modes.png");
 
-    block_registry_init();
-    item_registry_init();
-    chunk_manager_init();
+    Texture2D atlasTexture = LoadTexture(ASSETS_PATH "atlas.png");
+    SetTextureWrap(atlasTexture, TEXTURE_WRAP_CLAMP);
+
+    block_registry_init(&atlasTexture);
+    item_registry_init(&atlasTexture);
+    chunk_manager_init(&atlasTexture);
 
     item_container_create(&testContainer, 3, 9);
     item_container_set_item(&testContainer, 0, 0, (ItemSlot){ 1, 255 });
@@ -179,7 +183,7 @@ int main() {
 
         if (!item_container_is_open()) {
             DrawTexturePro(
-                *br_get_block_atlas(),
+                atlasTexture,
                 br_get_block_texture_rect(selected_block, false, false),
                 (Rectangle) {
                     .x = GetMouseX(),
@@ -235,7 +239,7 @@ int main() {
             interPanel.height = height + sum + 16;
         }
 
-        item_container_draw(&testContainer);
+        item_container_draw(&atlasTexture);
 
         EndDrawing();
     }
@@ -244,6 +248,7 @@ int main() {
     item_registry_free();
     chunk_manager_free();
     block_registry_free();
+    UnloadTexture(atlasTexture);
     CloseWindow();
     return 0;
 }

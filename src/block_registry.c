@@ -1,16 +1,13 @@
 #include "block_registry.h"
 
 #include <stdlib.h>
-#include <chunk.h>
 #include <stdio.h>
 
-static Texture2D blockAtlas;
+#include "defines.h"
+
 static BlockRegistry* blockRegistry = NULL;
 
 void block_registry_init() {
-    blockAtlas = LoadTexture(ASSETS_PATH "blocks.png");
-    SetTextureWrap(blockAtlas, TEXTURE_WRAP_CLAMP);
-
     blockRegistry = calloc(BLOCK_COUNT, sizeof(BlockRegistry));
     if (blockRegistry == NULL) {
         fprintf(stderr, "[ERROR] Could not allocate memory for the block registry.\n");
@@ -121,19 +118,26 @@ BlockRegistry* br_get_block_registry(size_t idx) {
     return &blockRegistry[idx];
 }
 
-Texture2D* br_get_block_atlas()
-{
-    return &blockAtlas;
-}
-
 Rectangle br_get_block_texture_rect(size_t idx, bool flipH, bool flipV)
 {
     if (idx <= 0 || idx > BLOCK_COUNT - 1) return (Rectangle) { 0, 0, 0, 0 };
-    return (Rectangle){
-        .x = (float)(blockRegistry[idx].atlas_idx) * (float)TILE_SIZE,
-        .y = 0.0f,
-        .width = (float)TILE_SIZE * (flipH ? -1.0f : 1.0f),
-        .height = (float)TILE_SIZE * (flipV ? -1.0f : 1.0f)
+
+    size_t atlas_idx = blockRegistry[idx].atlas_idx;
+
+    size_t col = atlas_idx % ATLAS_COLUMNS;
+    size_t row = atlas_idx / ATLAS_COLUMNS;
+
+    float x = (float)(col * TILE_SIZE);
+    float y = (float)(row * TILE_SIZE);
+
+    float width = (float)TILE_SIZE * (flipH ? -1.0f : 1.0f);
+    float height = (float)TILE_SIZE * (flipV ? -1.0f : 1.0f);
+
+    return (Rectangle) {
+        .x = x,
+        .y = y,
+        .width = width,
+        .height = height
     };
 }
 
@@ -141,33 +145,34 @@ Rectangle br_get_block_uvs(size_t idx, bool flipH, bool flipV)
 {
     if (idx <= 0 || idx > BLOCK_COUNT - 1) return (Rectangle) { 0, 0, 0, 0 };
 
-    float uv_unit = 1.0f / (BLOCK_ATLAS_SIZE - 1);
+    size_t atlas_idx = blockRegistry[idx].atlas_idx;
 
-    float u0 = uv_unit * blockRegistry[idx].atlas_idx;
-    float u1 = u0 + uv_unit;
-    float v0 = 0.0f;
-    float v1 = 1.0f;
+    size_t col = atlas_idx % ATLAS_COLUMNS;
+    size_t row = atlas_idx / ATLAS_COLUMNS;
+
+    float uv_unit_x = 1.0f / ATLAS_COLUMNS;
+    float uv_unit_y = 1.0f / ATLAS_ROWS;
+
+    float u0 = uv_unit_x * col;
+    float u1 = u0 + uv_unit_x;
+    float v0 = uv_unit_y * row;
+    float v1 = v0 + uv_unit_y;
 
     if (flipH) {
-        float tmp = u0;
-        u0 = u1;
-        u1 = tmp;
+        float tmp = u0; u0 = u1; u1 = tmp;
     }
     if (flipV) {
-        float tmp = v0;
-        v0 = v1;
-        v1 = tmp;
+        float tmp = v0; v0 = v1; v1 = tmp;
     }
 
     return (Rectangle) {
         .x = u0,
-        .y = v0,
-        .width = u1 - u0,
-        .height = v1 - v0
+            .y = v0,
+            .width = u1 - u0,
+            .height = v1 - v0
     };
 }
 
 void block_registry_free() {
-    UnloadTexture(blockAtlas);
 	if (blockRegistry) free(blockRegistry);
 }

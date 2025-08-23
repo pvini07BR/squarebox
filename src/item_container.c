@@ -27,7 +27,7 @@ static ItemContainer* lastContainer = NULL;
 static ItemContainer inventory;
 
 void init_inventory() {
-	item_container_create(&inventory, "Inventory", 1, 9, false);
+	item_container_create(&inventory, "Inventory", 1, 10, false);
 }
 
 ItemContainer* get_inventory()

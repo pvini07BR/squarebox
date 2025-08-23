@@ -115,6 +115,17 @@ int main() {
                 if (hotbarIdx < 8 && scroll < 0) hotbarIdx++;
             }
 
+            if (IsKeyPressed(KEY_ONE)) hotbarIdx = 0;
+            if (IsKeyPressed(KEY_TWO)) hotbarIdx = 1;
+            if (IsKeyPressed(KEY_THREE)) hotbarIdx = 2;
+            if (IsKeyPressed(KEY_FOUR)) hotbarIdx = 3;
+            if (IsKeyPressed(KEY_FIVE)) hotbarIdx = 4;
+            if (IsKeyPressed(KEY_SIX)) hotbarIdx = 5;
+            if (IsKeyPressed(KEY_SEVEN)) hotbarIdx = 6;
+            if (IsKeyPressed(KEY_EIGHT)) hotbarIdx = 7;
+            if (IsKeyPressed(KEY_NINE)) hotbarIdx = 8;
+            if (IsKeyPressed(KEY_ZERO)) hotbarIdx = 9;
+
             input = Vector2Normalize(input);
 
             float speed = 500.0;

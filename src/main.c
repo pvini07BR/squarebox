@@ -105,12 +105,15 @@ int main() {
             if (IsKeyDown(KEY_W) || IsKeyDown(KEY_UP)) input.y = -1.0f;
             else if (IsKeyDown(KEY_S) || IsKeyDown(KEY_DOWN)) input.y = 1.0f;
 
-            if (IsKeyPressed(KEY_EQUAL))camera.zoom *= 1.1f;
-            else if (IsKeyPressed(KEY_MINUS)) camera.zoom /= 1.1f;
-
             int scroll = GetMouseWheelMoveV().y;
-            if (hotbarIdx > 0 && scroll > 0) hotbarIdx--;
-            if (hotbarIdx < 8 && scroll < 0) hotbarIdx++;
+            if (IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_LEFT_SHIFT)) {
+                if (scroll > 0) camera.zoom *= 1.1f;
+                if (scroll < 0) camera.zoom /= 1.1f;
+            }
+            else {
+                if (hotbarIdx > 0 && scroll > 0) hotbarIdx--;
+                if (hotbarIdx < 8 && scroll < 0) hotbarIdx++;
+            }
 
             input = Vector2Normalize(input);
 
@@ -162,7 +165,7 @@ int main() {
 
         sprintf(buffer,
             "FPS: %d\n"
-            "Loaded chunk area: %dx%d\n"
+            "Loaded chunk area: %dx%d\nCamera Zoom: %f\n"
             "Mouse position: (%f, %f)\n"
             "Mouse block position: (%d, %d)\n"
             "Chunk position: (%d, %d)\n"
@@ -172,6 +175,7 @@ int main() {
             GetFPS(),
             CHUNK_VIEW_WIDTH,
             CHUNK_VIEW_HEIGHT,
+            camera.zoom,
             mouseWorldPos.x,
             mouseWorldPos.y,
             mouseBlockPos.x,

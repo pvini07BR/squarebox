@@ -12,8 +12,11 @@
 #include "defines.h"
 
 static ItemContainer* openedContainer = NULL;
+
+// Variables for holding items
 static ItemSlot grabbedItem = { 0, 0 };
 static int lastSlotIdx = -1;
+static ItemContainer* lastContainer = NULL;
 
 static ItemContainer inventory;
 
@@ -91,9 +94,9 @@ void item_container_open(ItemContainer* ic)
 void item_container_close() {
 	// If closing the item container while having a grabbed item,
 	// add it back to the slot it came from
-	if (lastSlotIdx >= 0) {
-		openedContainer->items[lastSlotIdx].item_id = grabbedItem.item_id;
-		openedContainer->items[lastSlotIdx].amount += grabbedItem.amount;
+	if (lastContainer && lastSlotIdx >= 0) {
+		lastContainer->items[lastSlotIdx].item_id = grabbedItem.item_id;
+		lastContainer->items[lastSlotIdx].amount += grabbedItem.amount;
 
 		grabbedItem.item_id = 0;
 		grabbedItem.amount = 0;
@@ -167,6 +170,7 @@ void item_container_draw_specific(ItemContainer* ic, int x, int y) {
 					// Swapping existing items
 					if (ir && grabbedItem.item_id != ic->items[i].item_id) {
 						lastSlotIdx = i;
+						lastContainer = ic;
 
 						uint8_t prev_slot_item_id = ic->items[i].item_id;
 						uint8_t prev_slot_amount = ic->items[i].amount;
@@ -183,6 +187,7 @@ void item_container_draw_specific(ItemContainer* ic, int x, int y) {
 					// Adding an amount of items to a existing slot if the item IDs match
 					else if (ir && grabbedItem.item_id == ic->items[i].item_id) {
 						lastSlotIdx = -1;
+						lastContainer = NULL;
 
 						ic->items[i].amount += grabbedItem.amount;
 
@@ -192,6 +197,7 @@ void item_container_draw_specific(ItemContainer* ic, int x, int y) {
 					// Putting the holding item on a empty slot
 					else if (!ir && grabbedItem.item_id > 0) {
 						lastSlotIdx = -1;
+						lastContainer = NULL;
 
 						ic->items[i].item_id = grabbedItem.item_id;
 						ic->items[i].amount = grabbedItem.amount;
@@ -206,11 +212,14 @@ void item_container_draw_specific(ItemContainer* ic, int x, int y) {
 						if (grabbedItem.item_id == ic->items[i].item_id) {
 							if (grabbedItem.amount > 1) {
 								lastSlotIdx = i;
+								lastContainer = ic;
+
 								grabbedItem.amount--;
 								ic->items[i].amount++;
 							}
 							else {
 								lastSlotIdx = -1;
+								lastContainer = NULL;
 
 								grabbedItem.item_id = 0;
 								grabbedItem.amount = 0;
@@ -222,6 +231,7 @@ void item_container_draw_specific(ItemContainer* ic, int x, int y) {
 						else if (grabbedItem.item_id <= 0) {
 							uint8_t amount = ic->items[i].amount;
 							lastSlotIdx = i;
+							lastContainer = ic;
 							if (amount > 1) {
 								grabbedItem.item_id = ic->items[i].item_id;
 								grabbedItem.amount = amount / 2;
@@ -242,6 +252,7 @@ void item_container_draw_specific(ItemContainer* ic, int x, int y) {
 						if (grabbedItem.item_id > 0) {
 							if (grabbedItem.amount > 1) {
 								lastSlotIdx = i;
+								lastContainer = ic;
 
 								ic->items[i].item_id = grabbedItem.item_id;
 								ic->items[i].amount++;
@@ -250,6 +261,7 @@ void item_container_draw_specific(ItemContainer* ic, int x, int y) {
 							}
 							else {
 								lastSlotIdx = -1;
+								lastContainer = NULL;
 
 								ic->items[i].item_id = grabbedItem.item_id;
 								ic->items[i].amount++;

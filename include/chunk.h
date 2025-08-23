@@ -78,4 +78,9 @@ BlockInstance chunk_get_block_extrapolating(Chunk* chunk, Vector2i position, boo
 // chunk.
 uint8_t chunk_get_light_extrapolating(Chunk* chunk, Vector2i position);
 
+// Get the 4 neighbors in a specific relative position in the chunk,
+// and outputs to a BlockInstance array with 4 elements.
+// Uses the extrapolating function.
+void chunk_get_block_neighbors(Chunk* chunk, Vector2u position, bool isWall, BlockInstance output[4]);
+
 #endif

@@ -83,7 +83,6 @@ void chunk_manager_reload_chunks()
     chunk_manager_relocate(currentChunkPos);
 }
 
-
 void chunk_manager_relocate(Vector2i newCenter) {
     currentChunkPos = newCenter;
 
@@ -212,6 +211,45 @@ void chunk_manager_update_lighting() {
     }
 
     for (int c = 0; c < CHUNK_COUNT; c++) chunk_genmesh(&chunks[c]);
+}
+
+void chunk_manager_set_block_safe(Vector2i position, BlockInstance blockValue, bool isWall) {
+    Vector2i chunkPos = {
+        (int)floorf((float)position.x / (float)CHUNK_WIDTH),
+        (int)floorf((float)position.y / (float)CHUNK_WIDTH)
+    };
+    Chunk* chunk = chunk_manager_get_chunk(chunkPos);
+
+    Vector2u relPos = {
+        .x = ((position.x % CHUNK_WIDTH) + CHUNK_WIDTH) % CHUNK_WIDTH,
+        .y = ((position.y % CHUNK_WIDTH) + CHUNK_WIDTH) % CHUNK_WIDTH
+    };
+
+    if (blockValue.id > 0) {
+        if (chunk_get_block(chunk, relPos, isWall).id <= 0) {
+            bool canPlace = false;
+
+            BlockInstance neighbors[4];
+            chunk_get_block_neighbors(
+                chunk,
+                relPos,
+                isWall,
+                neighbors
+            );
+
+            for (int i = 0; i < 4; i++) if (neighbors[i].id > 0) { canPlace = true; break; }
+            if (canPlace) {
+                chunk_set_block(chunk, relPos, blockValue, isWall);
+                chunk_manager_update_lighting();
+            }
+        }
+    }
+    else {
+        if (chunk_get_block(chunk, relPos, isWall).id > 0) {
+            chunk_set_block(chunk, relPos, blockValue, isWall);
+            chunk_manager_update_lighting();
+        }
+    }
 }
 
 Chunk* chunk_manager_get_chunk(Vector2i position) {

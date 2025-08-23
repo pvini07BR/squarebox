@@ -582,3 +582,10 @@ uint8_t chunk_get_light_extrapolating(Chunk* chunk, Vector2i position)
         return neighbor->light[relPos.x + (relPos.y * CHUNK_WIDTH)];
     }
 }
+
+void chunk_get_block_neighbors(Chunk* chunk, Vector2u position, bool isWall, BlockInstance output[4]) {
+    output[0] = chunk_get_block_extrapolating(chunk, (Vector2i) { position.x, position.y - 1 }, false);     // Top
+    output[1] = chunk_get_block_extrapolating(chunk, (Vector2i) { position.x + 1, position.y }, false);     // Right
+    output[2] = chunk_get_block_extrapolating(chunk, (Vector2i) { position.x, position.y + 1 }, false);     // Bottom
+    output[3] = chunk_get_block_extrapolating(chunk, (Vector2i) { position.x - 1, position.y }, false);     // Left
+}

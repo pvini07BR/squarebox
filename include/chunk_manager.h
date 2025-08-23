@@ -16,6 +16,11 @@ void chunk_manager_reload_chunks();
 void chunk_manager_relocate(Vector2i newCenter);
 void chunk_manager_update_lighting();
 
+// This version of set block checks for surroundings before placing anything,
+// and does not set a blockId to zero when its already zero.
+// Its for preventing unecessary light and mesh updates.
+void chunk_manager_set_block_safe(Vector2i position, BlockInstance blockValue, bool isWall);
+
 Chunk* chunk_manager_get_chunk(Vector2i position);
 // Position is in global block coordinates
 void chunk_manager_set_block(Vector2i position, BlockInstance blockValue, bool isWall);

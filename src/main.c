@@ -88,11 +88,11 @@ int main() {
 
             if (!mouseIsInUI) {
                 if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-                    chunk_manager_set_block(mouseBlockPos, (BlockInstance) { 0, 0 }, wall_mode);
+                    chunk_manager_set_block_safe(mouseBlockPos, (BlockInstance) { 0, 0 }, wall_mode);
                 else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {
                     ItemRegistry* itr = ir_get_item_registry(inventory_get_item(0, hotbarIdx).item_id);
                     if (itr->blockId > 0) {
-                        chunk_manager_set_block(mouseBlockPos, (BlockInstance) { itr->blockId, 0 }, wall_mode);
+                        chunk_manager_set_block_safe(mouseBlockPos, (BlockInstance) { itr->blockId, 0 }, wall_mode);
                     }
                 }
             }

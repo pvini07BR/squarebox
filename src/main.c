@@ -21,27 +21,26 @@ extern bool smoothLighting;
 extern unsigned int wallBrightness;
 extern unsigned int wallAOvalue;
 
-bool mouseIsInUI = false;
-
-bool seedEdit = false;
-bool wallBrightEdit = false;
-bool wallAOEdit = false;
-
-Rectangle interPanel = {
-    .x = 0,
-    .y = 0,
-    .width = 170,
-    .height = 32 * 3
-};
-
-ItemContainer testContainer;
-
 int main() {
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(1280, 720, "mijocraft");
 
-    uint8_t selected_block = 1;
     bool wall_mode = false;
+    ItemContainer creativeMenu;
+    uint8_t hotbarIdx = 0;
+
+    bool mouseIsInUI = false;
+
+    bool seedEdit = false;
+    bool wallBrightEdit = false;
+    bool wallAOEdit = false;
+
+    Rectangle interPanel = {
+        .x = 0,
+        .y = 0,
+        .width = 170,
+        .height = 32 * 3
+    };
     
     Texture2D place_mode_icon = LoadTexture(ASSETS_PATH "place_modes.png");
 
@@ -51,11 +50,15 @@ int main() {
     item_registry_init();
     chunk_manager_init();
 
-    item_container_create(&testContainer, 3, 9);
-    item_container_set_item(&testContainer, 0, 0, (ItemSlot){ 1, 255 });
-    item_container_set_item(&testContainer, 0, 1, (ItemSlot) { 2, 5, });
-    item_container_set_item(&testContainer, 0, 2, (ItemSlot) { 2, 5, });
-    item_container_set_item(&testContainer, 1, 2, (ItemSlot) { 3, 69, });
+    item_container_create(&creativeMenu, 1, ITEM_COUNT-1);
+    for (int i = 1; i < ITEM_COUNT; i++) {
+        item_container_set_item(&creativeMenu, (i - 1) / creativeMenu.columns, (i - 1) % creativeMenu.columns, (ItemSlot){ i, 1 });
+    }
+
+    init_inventory();
+
+    inventory_set_item(0, 0, (ItemSlot) { 1, 69 });
+    inventory_set_item(0, 1, (ItemSlot) { 3, 2 });
 
     Camera2D camera = {
         .target =  { (CHUNK_WIDTH*TILE_SIZE)/2.0f, (CHUNK_WIDTH*TILE_SIZE)/2.0f },
@@ -76,7 +79,6 @@ int main() {
             .y = GetScreenHeight() / 2.0f
         };
 
-        if (IsKeyPressed(KEY_TAB)) wall_mode = !wall_mode;
 
         mouseWorldPos = GetScreenToWorld2D(GetMousePosition(), camera);
         mouseBlockPos = (Vector2i){
@@ -84,46 +86,54 @@ int main() {
             (int)floorf((float)mouseWorldPos.y / (float)TILE_SIZE)
         };
 
-        if (!mouseIsInUI && !item_container_is_open()) {
-            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-                chunk_manager_set_block(mouseBlockPos, (BlockInstance) { 0, 0 }, wall_mode);
-            else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
-                chunk_manager_set_block(mouseBlockPos, (BlockInstance) { selected_block, 0 }, wall_mode);
+        if (!item_container_is_open()) {
+            if (IsKeyPressed(KEY_TAB)) wall_mode = !wall_mode;
+
+            if (!mouseIsInUI) {
+                if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+                    chunk_manager_set_block(mouseBlockPos, (BlockInstance) { 0, 0 }, wall_mode);
+                else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {
+                    ItemRegistry* itr = ir_get_item_registry(inventory_get_item(0, hotbarIdx).item_id);
+                    if (itr->blockId > 0) {
+                        chunk_manager_set_block(mouseBlockPos, (BlockInstance) { itr->blockId, 0 }, wall_mode);
+                    }
+                }
+            }
+
+            Vector2 input = { 0 };
+
+            if (IsKeyDown(KEY_A) || IsKeyDown(KEY_LEFT)) input.x = -1.0f;
+            else if (IsKeyDown(KEY_D) || IsKeyDown(KEY_RIGHT)) input.x = 1.0f;
+
+            if (IsKeyDown(KEY_W) || IsKeyDown(KEY_UP)) input.y = -1.0f;
+            else if (IsKeyDown(KEY_S) || IsKeyDown(KEY_DOWN)) input.y = 1.0f;
+
+            if (IsKeyPressed(KEY_EQUAL))camera.zoom *= 1.1f;
+            else if (IsKeyPressed(KEY_MINUS)) camera.zoom /= 1.1f;
+
+            int scroll = GetMouseWheelMoveV().y;
+            if (hotbarIdx > 0 && scroll > 0) hotbarIdx--;
+            if (hotbarIdx < 8 && scroll < 0) hotbarIdx++;
+
+            input = Vector2Normalize(input);
+
+            float speed = 500.0;
+            if (IsKeyDown(KEY_LEFT_SHIFT)) {
+                speed *= 4.0;
+            }
+
+            camera.target.x += input.x * speed * GetFrameTime();
+            camera.target.y += input.y * speed * GetFrameTime();
         }
-
-        Vector2 input = { 0 };
-
-        if (IsKeyDown(KEY_A) || IsKeyDown(KEY_LEFT)) input.x = -1.0f;
-        else if (IsKeyDown(KEY_D) || IsKeyDown(KEY_RIGHT)) input.x = 1.0f;
-
-        if (IsKeyDown(KEY_W) || IsKeyDown(KEY_UP)) input.y = -1.0f;
-        else if (IsKeyDown(KEY_S) || IsKeyDown(KEY_DOWN)) input.y = 1.0f;
-
-        if (IsKeyPressed(KEY_EQUAL))camera.zoom *= 1.1f;
-        else if (IsKeyPressed(KEY_MINUS)) camera.zoom /= 1.1f;
 
         if (IsKeyPressed(KEY_E)) {
             if (!item_container_is_open()) {
-                item_container_open(&testContainer);
+                item_container_open(&creativeMenu);
             }
             else {
                 item_container_close();
             }
         }
-
-        int scroll = GetMouseWheelMoveV().y;
-        if (selected_block > 1 && scroll < 0) selected_block--;
-        if (selected_block < 8 && scroll > 0) selected_block++;
-
-        input = Vector2Normalize(input);
-
-        float speed = 500.0;
-        if (IsKeyDown(KEY_LEFT_SHIFT)) {
-            speed *= 4.0;
-        }
-
-        camera.target.x += input.x * speed * GetFrameTime();
-        camera.target.y += input.y * speed * GetFrameTime();
 
         Vector2i cameraChunkPos = {
             (int)floorf(camera.target.x / (CHUNK_WIDTH * TILE_SIZE)),
@@ -163,7 +173,7 @@ int main() {
             "Mouse position: (%f, %f)\n"
             "Mouse block position: (%d, %d)\n"
             "Chunk position: (%d, %d)\n"
-            "Selected block: %s\n"
+            "Holding item: %s\n"
             "Wall mode: %s",
 
             GetFPS(),
@@ -175,7 +185,7 @@ int main() {
             mouseBlockPos.y,
             cameraChunkPos.x,
             cameraChunkPos.y,
-            br_get_block_registry(selected_block)->name,
+            ir_get_item_registry(inventory_get_item(0, hotbarIdx).item_id)->name,
             wall_mode ? "true" : "false"
         );
 
@@ -183,19 +193,21 @@ int main() {
         DrawText(buffer, 0, 0, 24, WHITE);
 
         if (!item_container_is_open()) {
-            DrawTexturePro(
-                texture_atlas_get(),
-                texture_atlas_get_rect(br_get_block_registry(selected_block)->atlas_idx, false, false),
-                (Rectangle) {
+            if (inventory_get_item(0, hotbarIdx).item_id > 0) {
+                DrawTexturePro(
+                    texture_atlas_get(),
+                    texture_atlas_get_rect(ir_get_item_registry(inventory_get_item(0, hotbarIdx).item_id)->atlas_idx, false, false),
+                    (Rectangle) {
                     .x = GetMouseX(),
-                    .y = GetMouseY(),
-                    .width = TILE_SIZE * 0.8f,
-                    .height = TILE_SIZE * 0.8f
+                        .y = GetMouseY(),
+                        .width = TILE_SIZE * 0.8f,
+                        .height = TILE_SIZE * 0.8f
                 },
-                Vector2Zero(),
-                0.0f,
-                WHITE
-            );
+                    Vector2Zero(),
+                    0.0f,
+                    WHITE
+                );
+            }
 
             DrawTexturePro(
                 place_mode_icon,
@@ -215,6 +227,39 @@ int main() {
                 0.0f,
                 WHITE
             );
+        }
+
+        Vector2 center = { GetScreenWidth() / 2.0f, GetScreenHeight()};
+
+        int width = (get_inventory()->columns * (ITEM_SLOT_SIZE + 4)) + 4;
+        int height = (get_inventory()->rows * (ITEM_SLOT_SIZE + 4)) + 4;
+
+        const Color hotbarBg = { 0, 0, 0, 128 };
+        const Color selHotbarSlot = { 128, 128, 128, 128 };
+
+        DrawRectangle(
+            center.x - (width / 2),
+            center.y - height,
+            width,
+            height,
+            hotbarBg
+        );
+
+        for (int r = 0; r < get_inventory()->rows; r++) {
+            for (int c = 0; c < get_inventory()->columns; c++) {
+                int i = c + (r * get_inventory()->columns);
+
+                Rectangle slotRect = {
+                    .x = ((center.x - (width / 2)) + 4) + (c * (ITEM_SLOT_SIZE + 4)),
+                    .y = ((center.y - height) + 4) + (r * (ITEM_SLOT_SIZE + 4)),
+                    .width = ITEM_SLOT_SIZE,
+                    .height = ITEM_SLOT_SIZE
+                };
+
+                DrawRectangleRec(slotRect, i == hotbarIdx ? selHotbarSlot : hotbarBg);
+
+                draw_item(&get_inventory()->items[i], slotRect.x, slotRect.y);
+            }
         }
 
         if (!item_container_is_open()) {
@@ -245,7 +290,8 @@ int main() {
         EndDrawing();
     }
     
-    item_container_free(&testContainer);
+    free_inventory();
+    item_container_free(&creativeMenu);
     item_registry_free();
     chunk_manager_free();
     block_registry_free();

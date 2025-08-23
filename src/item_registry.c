@@ -39,7 +39,7 @@ void item_registry_init() {
 
 ItemRegistry* ir_get_item_registry(size_t idx)
 {
-	if (idx <= 0 || idx > ITEM_COUNT - 1) return NULL;
+	if (idx < 0 || idx > ITEM_COUNT - 1) return NULL;
 	return &itemRegistry[idx];
 }
 

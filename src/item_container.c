@@ -9,13 +9,42 @@
 #include "block_registry.h"
 #include "item_registry.h"
 #include "texture_atlas.h"
-
-#define ITEM_SLOT_SIZE 32
-#define ITEM_SLOT_GAP 8
+#include "defines.h"
 
 static ItemContainer* openedContainer = NULL;
 static ItemSlot grabbedItem = { 0, 0 };
 static int lastSlotIdx = -1;
+
+static ItemContainer inventory;
+
+void init_inventory() {
+	item_container_create(&inventory, 1, 9);
+}
+
+ItemContainer* get_inventory()
+{
+	return &inventory;
+}
+
+void inventory_set_item(uint8_t row, uint8_t column, ItemSlot item)
+{
+	if (row < 0 || row >= inventory.rows || column < 0 || column >= inventory.columns) return;
+	if (item.amount <= 0) item.amount = 1;
+	int i = column + (row * inventory.columns);
+	inventory.items[i] = item;
+}
+
+ItemSlot inventory_get_item(uint8_t row, uint8_t column)
+{
+	if (row < 0 || row >= inventory.rows || column < 0 || column >= inventory.columns) return (ItemSlot){ 0, 0 };
+	int i = column + (row * inventory.columns);
+	return inventory.items[i];
+}
+
+void free_inventory()
+{
+	item_container_free(&inventory);
+}
 
 void item_container_create(ItemContainer* ic, uint8_t rows, uint8_t columns)
 {
@@ -27,12 +56,12 @@ void item_container_create(ItemContainer* ic, uint8_t rows, uint8_t columns)
 		ic->items[i] = (ItemSlot){ 0, 0 };
 }
 
-ItemSlot* item_container_get_item(ItemContainer* ic, uint8_t row, uint8_t column)
+ItemSlot item_container_get_item(ItemContainer* ic, uint8_t row, uint8_t column)
 {
 	if (!ic) return;
-	if (row < 0 || row >= ic->rows || column < 0 || column >= ic->columns) return NULL;
+	if (row < 0 || row >= ic->rows || column < 0 || column >= ic->columns) return (ItemSlot) { 0, 0 };
 	int i = column + (row * ic->columns);
-	return &ic->items[i];
+	return ic->items[i];
 }
 
 void item_container_set_item(ItemContainer* ic, uint8_t row, uint8_t column, ItemSlot item)
@@ -68,17 +97,17 @@ void item_container_close() {
 bool item_container_is_open() { return openedContainer != NULL; }
 
 void draw_item(ItemSlot* is, int x, int y) {
+	if (is->item_id <= 0) return;
 	ItemRegistry* ir = ir_get_item_registry(is->item_id);
-	if (ir == NULL) return;
 
 	DrawTexturePro(
 		texture_atlas_get(),
 		texture_atlas_get_rect(ir->atlas_idx, false, false),
 		(Rectangle) {
-			.x = x + (ITEM_SLOT_SIZE * 0.1f),
-			.y = y + (ITEM_SLOT_SIZE * 0.1f),
-			.width = ITEM_SLOT_SIZE * 0.8f,
-			.height = ITEM_SLOT_SIZE * 0.8f
+			.x = x + ((ITEM_SLOT_SIZE - TILE_SIZE) / 2),
+			.y = y + ((ITEM_SLOT_SIZE - TILE_SIZE) / 2),
+			.width = TILE_SIZE,
+			.height = TILE_SIZE
 		},
 		Vector2Zero(),
 		0.0f,

@@ -1,4 +1,5 @@
 ﻿#include "chunk.h"
+#include "container_vector.h"
 #include "defines.h"
 #include "block_registry.h"
 #include "texture_atlas.h"
@@ -224,6 +225,24 @@ void chunk_set_block(Chunk* chunk, Vector2u position, BlockInstance blockValue, 
     if (!chunk) return;
     if (position.x >= CHUNK_WIDTH || position.y >= CHUNK_WIDTH) return;
 
+    BlockRegistry* brg = br_get_block_registry(blockValue.id);
+
+    BlockInstance* inst = NULL;
+    if (!isWall) inst = &chunk->blocks[position.x + (position.y * CHUNK_WIDTH)];
+    else inst = &chunk->walls[position.x + (position.y * CHUNK_WIDTH)];
+
+    BlockRegistry* prev_brg = br_get_block_registry(inst->id);
+
+    // If the placed block holds a container, add new container to the
+    // container vector. If removing a existing container block, then
+    // remove the container.
+    if (inst->id <= 0 && brg->flag == BLOCK_FLAG_CONTAINER) {
+        blockValue.state = container_vector_add(&chunk->containerVec, "Chest", 3, 10, false);
+    } else if (prev_brg->flag == BLOCK_FLAG_CONTAINER && blockValue.id <= 0) {
+        container_vector_remove(&chunk->containerVec, inst->state);
+        inst->state = -1;
+    }
+
     if (!isWall)
         chunk->blocks[position.x + (position.y * CHUNK_WIDTH)] = blockValue;
     else
@@ -252,10 +271,10 @@ uint8_t chunk_get_light(Chunk* chunk, Vector2u position) {
     return chunk->light[position.x + (position.y * CHUNK_WIDTH)];
 }
 
-void chunk_init_meshes(Chunk* chunk)
+void chunk_init(Chunk* chunk)
 {
     if (chunk == NULL) return;
-    if (chunk->initializedMeshes == true) return;
+    if (chunk->initialized == true) return;
 
     chunk->wallMesh = (Mesh){ 0 };
     chunk->blockMesh = (Mesh){ 0 };
@@ -276,7 +295,9 @@ void chunk_init_meshes(Chunk* chunk)
     UploadMesh(&chunk->wallMesh, true);
     UploadMesh(&chunk->blockMesh, true);
 
-    chunk->initializedMeshes = true;
+    container_vector_init(&chunk->containerVec);
+
+    chunk->initialized = true;
 }
 
 void build_quad(Chunk* chunk, BlockInstance* blocks, Mesh* mesh, bool isWall, uint8_t x, uint8_t y, uint8_t brightness) {
@@ -309,38 +330,49 @@ void build_quad(Chunk* chunk, BlockInstance* blocks, Mesh* mesh, bool isWall, ui
             else cornerValues[i] = 0;
         }
     } else {
-        uint8_t neighbors[8];
-        chunk_get_light_neighbors_with_corners(chunk, (Vector2u) { x, y }, neighbors);
-
-        // 0 = Top Left
-        // 1 = Top Right
-        // 2 = Bottom Right
-        // 3 = Bottom Left
-
-        int cornerNeighbors[4][3] = {
-            {NEIGHBOR_LEFT, NEIGHBOR_TOP_LEFT, NEIGHBOR_TOP},           // Top Left
-            {NEIGHBOR_RIGHT, NEIGHBOR_TOP_RIGHT, NEIGHBOR_TOP},         // Top Right
-            {NEIGHBOR_RIGHT, NEIGHBOR_BOTTOM_RIGHT, NEIGHBOR_BOTTOM},   // Bottom Right
-            {NEIGHBOR_LEFT, NEIGHBOR_BOTTOM_LEFT, NEIGHBOR_BOTTOM}      // Bottom Left
-        };
-
-        for (int corner = 0; corner < 4; corner++) {
-            float lightSum = (float)chunk->light[i];
-            for (int n = 0; n < 3; n++) {
-                lightSum += (float)neighbors[cornerNeighbors[corner][n]];
-            }
-            float average = lightSum / 4.0f;
-
-            uint8_t lightValue = (uint8_t)((average / 15.0f) * 255.0f);
-
+        // Do not apply smooth lighting to blocks that emits light
+        if (brg->lightLevel > 0) {
+            uint8_t lightValue = (uint8_t)((chunk->light[i] / 15.0f) * 255.0f);
             uint8_t reduction = 255 - lightValue;
-            if (cornerValues[corner] > reduction) cornerValues[corner] -= reduction;
-            else cornerValues[corner] = 0;
+
+            for (int i = 0; i < 4; i++) {
+                if (cornerValues[i] > reduction) cornerValues[i] -= reduction;
+                else cornerValues[i] = 0;
+            }
+        } else {
+            uint8_t neighbors[8];
+            chunk_get_light_neighbors_with_corners(chunk, (Vector2u) { x, y }, neighbors);
+    
+            // 0 = Top Left
+            // 1 = Top Right
+            // 2 = Bottom Right
+            // 3 = Bottom Left
+    
+            int cornerNeighbors[4][3] = {
+                {NEIGHBOR_LEFT, NEIGHBOR_TOP_LEFT, NEIGHBOR_TOP},           // Top Left
+                {NEIGHBOR_RIGHT, NEIGHBOR_TOP_RIGHT, NEIGHBOR_TOP},         // Top Right
+                {NEIGHBOR_RIGHT, NEIGHBOR_BOTTOM_RIGHT, NEIGHBOR_BOTTOM},   // Bottom Right
+                {NEIGHBOR_LEFT, NEIGHBOR_BOTTOM_LEFT, NEIGHBOR_BOTTOM}      // Bottom Left
+            };
+    
+            for (int corner = 0; corner < 4; corner++) {
+                float lightSum = (float)chunk->light[i];
+                for (int n = 0; n < 3; n++) {
+                    lightSum += (float)neighbors[cornerNeighbors[corner][n]];
+                }
+                float average = lightSum / 4.0f;
+    
+                uint8_t lightValue = (uint8_t)((average / 15.0f) * 255.0f);
+    
+                uint8_t reduction = 255 - lightValue;
+                if (cornerValues[corner] > reduction) cornerValues[corner] -= reduction;
+                else cornerValues[corner] = 0;
+            }
         }
     }
 
     // Wall "ambient occulsion" for walls only
-    if (wallAmbientOcclusion && isWall) {
+    if (wallAmbientOcclusion && isWall && brg->lightLevel <= 0) {
         BlockInstance neighbors[8];
         chunk_get_block_neighbors_with_corners(chunk, (Vector2u) { x, y }, false, neighbors);
 
@@ -400,7 +432,7 @@ void build_quad(Chunk* chunk, BlockInstance* blocks, Mesh* mesh, bool isWall, ui
 
 void chunk_genmesh(Chunk* chunk) {
     if (chunk == NULL) return;
-    if (!chunk->initializedMeshes) return;
+    if (!chunk->initialized) return;
 
     for (int i = 0; i < (CHUNK_VERTEX_COUNT * 3); i++) {
         chunk->wallMesh.vertices[i] = 0.0f;
@@ -411,7 +443,10 @@ void chunk_genmesh(Chunk* chunk) {
         int x = i % CHUNK_WIDTH;
         int y = i / CHUNK_WIDTH;
 
-        build_quad(chunk, chunk->walls, &chunk->wallMesh, true, x, y, wallBrightness);
+        BlockRegistry* brg = br_get_block_registry(chunk->walls[i].id);
+
+        // Blocks that emit light will not be darkened when its placed as a wall.
+        build_quad(chunk, chunk->walls, &chunk->wallMesh, true, x, y, brg->lightLevel <= 0 ? wallBrightness : 255);
         build_quad(chunk, chunk->blocks, &chunk->blockMesh, false, x, y, 255);
     }
 
@@ -430,6 +465,12 @@ void chunk_free_meshes(Chunk* chunk)
 
     UnloadMesh(chunk->wallMesh);
     UnloadMesh(chunk->blockMesh);
+}
+
+void chunk_free_containers(Chunk* chunk) {
+    if (!chunk) return;
+
+    container_vector_free(&chunk->containerVec);
 }
 
 void chunk_regenerate(Chunk* chunk) {

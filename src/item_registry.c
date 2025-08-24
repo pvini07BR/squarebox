@@ -67,8 +67,20 @@ void item_registry_init() {
 	};
 
 	itemRegistry[9] = (ItemRegistry){
-		.name = "Test Item",
+		.name = "Lamp Block",
 		.atlas_idx = 8,
+		.blockId = 9
+	};
+
+	itemRegistry[10] = (ItemRegistry){
+		.name = "Chest",
+		.atlas_idx = 9,
+		.blockId = 10
+	};
+
+	itemRegistry[11] = (ItemRegistry){
+		.name = "Test Item",
+		.atlas_idx = 10,
 		.blockId = 0
 	};
 }

@@ -45,7 +45,7 @@ int main() {
     
     Texture2D place_mode_icon = LoadTexture(ASSETS_PATH "place_modes.png");
 
-    texture_atlas_load(ASSETS_PATH "atlas.png", 2, 8);
+    texture_atlas_load(ASSETS_PATH "atlas.png", 2, 10);
 
     block_registry_init();
     item_registry_init();
@@ -90,9 +90,11 @@ int main() {
                 if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
                     chunk_manager_set_block_safe(mouseBlockPos, (BlockInstance) { 0, 0 }, wall_mode);
                 else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {
-                    ItemRegistry* itr = ir_get_item_registry(inventory_get_item(0, hotbarIdx).item_id);
-                    if (itr->blockId > 0) {
-                        chunk_manager_set_block_safe(mouseBlockPos, (BlockInstance) { itr->blockId, 0 }, wall_mode);
+                    if (!chunk_manager_interact(mouseBlockPos, wall_mode)) {
+                        ItemRegistry* itr = ir_get_item_registry(inventory_get_item(0, hotbarIdx).item_id);
+                        if (itr->blockId > 0) {
+                            chunk_manager_set_block_safe(mouseBlockPos, (BlockInstance) { itr->blockId, 0 }, wall_mode);
+                        }
                     }
                 }
             }

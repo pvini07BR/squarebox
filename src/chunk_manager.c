@@ -1,11 +1,14 @@
 ﻿#include "chunk_manager.h"
 #include "block_registry.h"
 #include "chunk.h"
+#include "container_vector.h"
+#include "item_container.h"
 #include "texture_atlas.h"
 #include "defines.h"
 
 #include <limits.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 #include <raylib.h>
@@ -22,7 +25,7 @@ void chunk_manager_init() {
     chunkMaterial = LoadMaterialDefault();
     SetMaterialTexture(&chunkMaterial, MATERIAL_MAP_ALBEDO, texture_atlas_get());
 
-    for (int i = 0; i < CHUNK_COUNT; i++) chunks[i].initializedMeshes = false;
+    for (int i = 0; i < CHUNK_COUNT; i++) chunks[i].initialized = false;
     chunk_manager_reload_chunks();
 }
 
@@ -67,7 +70,10 @@ void chunk_manager_draw() {
 void chunk_manager_free() {
     UnloadTexture(lightMap);
     if (chunks) {
-        for (int c = 0; c < CHUNK_COUNT; c++) chunk_free_meshes(&chunks[c]);
+        for (int c = 0; c < CHUNK_COUNT; c++) {
+            chunk_free_meshes(&chunks[c]);
+            chunk_free_containers(&chunks[c]);
+        }
         free(chunks);
         chunks = NULL;
     }
@@ -77,8 +83,11 @@ void chunk_manager_reload_chunks()
 {
     for (int c = 0; c < CHUNK_COUNT; c++) {
         chunks[c].position = (Vector2i){ .x = INT_MAX, .y = INT_MAX };
-        if (chunks[c].initializedMeshes) chunk_free_meshes(&chunks[c]);
-        chunks[c].initializedMeshes = false;
+        if (chunks[c].initialized) {
+            chunk_free_meshes(&chunks[c]);
+            chunk_free_containers(&chunks[c]);
+        }
+        chunks[c].initialized = false;
     }
 
     chunk_manager_relocate(currentChunkPos);
@@ -120,16 +129,17 @@ void chunk_manager_relocate(Vector2i newCenter) {
         tempChunks[i].neighbors.downRight = NULL;
 
         if (!found) {
-            tempChunks[i].initializedMeshes = false;
+            tempChunks[i].initialized = false;
             tempChunks[i].position = newPos;
-            chunk_init_meshes(&tempChunks[i]);
+            chunk_init(&tempChunks[i]);
             chunk_regenerate(&tempChunks[i]);
         }
     }
 
     for (int i = 0; i < CHUNK_COUNT; i++) {
-        if (!chunkUsed[i] && chunks[i].initializedMeshes) {
+        if (!chunkUsed[i] && chunks[i].initialized) {
             chunk_free_meshes(&chunks[i]);
+            chunk_free_containers(&chunks[i]);
         }
     }
 
@@ -212,6 +222,33 @@ void chunk_manager_update_lighting() {
     }
 
     for (int c = 0; c < CHUNK_COUNT; c++) chunk_genmesh(&chunks[c]);
+}
+
+bool chunk_manager_interact(Vector2i position, bool isWall) {
+    Vector2i chunkPos = {
+        (int)floorf((float)position.x / (float)CHUNK_WIDTH),
+        (int)floorf((float)position.y / (float)CHUNK_WIDTH)
+    };
+    Chunk* chunk = chunk_manager_get_chunk(chunkPos);
+
+    Vector2u relPos = {
+        .x = ((position.x % CHUNK_WIDTH) + CHUNK_WIDTH) % CHUNK_WIDTH,
+        .y = ((position.y % CHUNK_WIDTH) + CHUNK_WIDTH) % CHUNK_WIDTH
+    };
+
+    BlockInstance inst = chunk_get_block(chunk, relPos, isWall);
+    BlockRegistry* brg = br_get_block_registry(inst.id);
+
+    // Open container if the selected block holds a container
+    if (brg->flag == BLOCK_FLAG_CONTAINER) {
+        if (inst.state >= 0) {
+            item_container_open(container_vector_get(&chunk->containerVec, inst.state));
+            printf("%d\n", inst.state);
+            return true;
+        }
+    }
+
+    return false;
 }
 
 void chunk_manager_set_block_safe(Vector2i position, BlockInstance blockValue, bool isWall) {

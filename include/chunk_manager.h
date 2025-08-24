@@ -16,6 +16,9 @@ void chunk_manager_reload_chunks();
 void chunk_manager_relocate(Vector2i newCenter);
 void chunk_manager_update_lighting();
 
+// Returns true when a interaction occurred, false when not.
+bool chunk_manager_interact(Vector2i position, bool isWall);
+
 // This version of set block checks for surroundings before placing anything,
 // and does not set a blockId to zero when its already zero.
 // Its for preventing unecessary light and mesh updates.

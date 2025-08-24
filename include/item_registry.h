@@ -4,7 +4,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define ITEM_COUNT 10
+#define ITEM_COUNT 12
 
 typedef struct {
 	const char* name;

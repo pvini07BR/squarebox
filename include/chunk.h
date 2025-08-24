@@ -1,9 +1,12 @@
 #ifndef CHUNK_H
 #define CHUNK_H
 
-#include "raylib.h"
 #include <stdbool.h>
 #include <stdint.h>
+
+#include <raylib.h>
+
+#include "container_vector.h"
 
 #define CHUNK_WIDTH 16
 #define CHUNK_AREA CHUNK_WIDTH*CHUNK_WIDTH
@@ -50,7 +53,7 @@ typedef struct {
 	// Member variable used for block states.
 	// Its usage depends on what flag is set
 	// for a specific block.
-	uint8_t state;
+	size_t state;
 } BlockInstance;
 
 typedef struct {
@@ -59,17 +62,19 @@ typedef struct {
 	BlockInstance blocks[CHUNK_AREA];
 	BlockInstance walls[CHUNK_AREA];
     uint8_t light[CHUNK_AREA];
+	ContainerVector containerVec;
 	ChunkNeighbors neighbors;
-	bool initializedMeshes;
+	bool initialized;
 	Mesh blockMesh;
 	Mesh wallMesh;
 } Chunk;
 
-void chunk_init_meshes(Chunk* chunk);
+void chunk_init(Chunk* chunk);
 void chunk_regenerate(Chunk* chunk);
 void chunk_genmesh(Chunk* chunk);
 void chunk_draw(Chunk* chunk, Material* material);
 void chunk_free_meshes(Chunk* chunk);
+void chunk_free_containers(Chunk* chunk);
 
 void chunk_fill_light(Chunk* chunk, Vector2u startPoint, uint8_t newLightValue);
 

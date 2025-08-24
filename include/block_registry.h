@@ -1,8 +1,7 @@
 #ifndef BLOCK_REGISTRY_H
 #define BLOCK_REGISTRY_H
 
-#define BLOCK_COUNT 9
-#define BLOCK_ATLAS_SIZE 9
+#define BLOCK_COUNT 11
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -12,7 +11,8 @@
 
 typedef enum {
 	BLOCK_FLAG_NONE,
-	BLOCK_FLAG_LOG_LIKE
+	BLOCK_FLAG_LOG_LIKE,
+	BLOCK_FLAG_CONTAINER
 } BlockFlag;
 
 typedef struct {

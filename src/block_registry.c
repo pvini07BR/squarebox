@@ -111,10 +111,32 @@ void block_registry_init() {
         .flipH = false,
         .flipV = false
     };
+
+    blockRegistry[9] = (BlockRegistry){
+        .name = "Lamp Block",
+        .atlas_idx = 8,
+        .lightLevel = 15,
+        .flag = BLOCK_FLAG_NONE,
+        .transparent = false,
+        .solid = true,
+        .flipH = false,
+        .flipV = false
+    };
+
+    blockRegistry[10] = (BlockRegistry){
+        .name = "Chest",
+        .atlas_idx = 9,
+        .lightLevel = 0,
+        .flag = BLOCK_FLAG_CONTAINER,
+        .transparent = false,
+        .solid = true,
+        .flipH = false,
+        .flipV = false
+    };
 }
 
 BlockRegistry* br_get_block_registry(size_t idx) {
-    if (idx > BLOCK_ATLAS_SIZE - 1) return NULL;
+    if (idx > BLOCK_COUNT - 1) return NULL;
     return &blockRegistry[idx];
 }
 

@@ -58,6 +58,7 @@ bool tryStackItems(ItemSlot* target, ItemSlot* source) {
 }
 
 ItemSlot* findStackableSlot(ItemContainer* container, uint8_t item_id) {
+	if (!container) return NULL;
 	for (int j = 0; j < (container->rows * container->columns); j++) {
 		if (container->items[j].item_id == item_id && container->items[j].amount < MAX_STACK) {
 			return &container->items[j];
@@ -73,6 +74,25 @@ ItemSlot* findEmptySlot(ItemContainer* container) {
 		}
 	}
 	return NULL;
+}
+
+void distribute_item(ItemSlot* item, ItemContainer* container) {
+	while (item->amount > 0) {
+		ItemSlot* stackable = findStackableSlot(container, item->item_id);
+		if (stackable) {
+			bool fullyStacked = tryStackItems(stackable, item);
+			if (fullyStacked) break; // All items were moved
+		}
+		else {
+			// No more stackable slots, try to place in empty slot
+			ItemSlot* empty = findEmptySlot(container);
+			if (empty) {
+				*empty = *item;
+				clearItem(item);
+			}
+			break;
+		}
+	}
 }
 
 void init_inventory() {
@@ -153,25 +173,10 @@ void item_container_open(ItemContainer* ic)
 
 void item_container_close() {
 	// If closing the item container while having a grabbed item,
-	// add it back to the slot it came from
+	// add it to the container before closing it.
 	if (lastContainer) {
 		if (!lastContainer->immutable) {
-			while (holdingItem.amount > 0) {
-				ItemSlot* stackable = findStackableSlot(lastContainer, holdingItem.item_id);
-				if (stackable) {
-					bool fullyStacked = tryStackItems(stackable, &holdingItem);
-					if (fullyStacked) break; // All items were moved
-				}
-				else {
-					// No more stackable slots, try to place in empty slot
-					ItemSlot* empty = findEmptySlot(lastContainer);
-					if (empty) {
-						*empty = holdingItem;
-						clearItem(&holdingItem);
-					}
-					break;
-				}
-			}
+			distribute_item(&holdingItem, lastContainer);
 		}
 		else {
 			clearItem(&holdingItem);
@@ -305,22 +310,7 @@ void item_container_draw_specific(ItemContainer* ic, int x, int y) {
 
 					if (!otherContainer->immutable) {
 						// Try to stack with all existing items that have space
-						while (curItem->amount > 0) {
-							ItemSlot* stackable = findStackableSlot(otherContainer, curItem->item_id);
-							if (stackable) {
-								bool fullyStacked = tryStackItems(stackable, curItem);
-								if (fullyStacked) break; // All items were moved
-							}
-							else {
-								// No more stackable slots, try to place in empty slot
-								ItemSlot* empty = findEmptySlot(otherContainer);
-								if (empty) {
-									*empty = *curItem;
-									clearItem(curItem);
-								}
-								break; // Either placed or no more slots available
-							}
-						}
+						distribute_item(curItem, otherContainer);
 					}
 					else clearItem(curItem);
 				}

@@ -28,7 +28,7 @@ int main() {
 
     bool wall_mode = false;
     ItemContainer creativeMenu;
-    uint8_t hotbarIdx = 0;
+    int8_t hotbarIdx = 0;
 
     bool mouseIsInUI = false;
 
@@ -113,8 +113,11 @@ int main() {
                 if (scroll < 0) camera.zoom /= 1.1f;
             }
             else {
-                if (hotbarIdx > 0 && scroll > 0) hotbarIdx--;
-                if (hotbarIdx < 8 && scroll < 0) hotbarIdx++;
+                if (scroll > 0) hotbarIdx--;
+                if (scroll < 0) hotbarIdx++;
+
+                if (hotbarIdx < 0) hotbarIdx = 9;
+                if (hotbarIdx > 9) hotbarIdx = 0;
             }
 
             if (!seedEdit && !wallAOEdit && !wallBrightEdit) {

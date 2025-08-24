@@ -20,11 +20,60 @@ const Color TITLE_COLOR = { 80, 80, 80, 255 };
 static ItemContainer* openedContainer = NULL;
 
 // Variables for holding items
-static ItemSlot grabbedItem = { 0, 0 };
-static int lastSlotIdx = -1;
+static ItemSlot holdingItem = { 0, 0 };
 static ItemContainer* lastContainer = NULL;
 
 static ItemContainer inventory;
+
+void swapItems(ItemSlot* a, ItemSlot* b) {
+	ItemSlot temp = *a;
+	*a = *b;
+	*b = temp;
+}
+
+void clearItem(ItemSlot* item) {
+	item->item_id = item->amount = 0;
+}
+
+void setLastAction(ItemContainer* container) {
+	lastContainer = container;
+}
+
+void clearLastAction() {
+	setLastAction(NULL);
+}
+
+bool tryStackItems(ItemSlot* target, ItemSlot* source) {
+	unsigned int total = target->amount + source->amount;
+	if (total <= MAX_STACK) {
+		target->amount = total;
+		clearItem(source);
+		return true;
+	}
+	else {
+		target->amount = MAX_STACK;
+		source->amount = total - MAX_STACK;
+		return false;
+	}
+}
+
+ItemSlot* findStackableSlot(ItemContainer* container, uint8_t item_id) {
+	for (int j = 0; j < (container->rows * container->columns); j++) {
+		if (container->items[j].item_id == item_id && container->items[j].amount < MAX_STACK) {
+			return &container->items[j];
+		}
+	}
+	return NULL;
+}
+
+ItemSlot* findEmptySlot(ItemContainer* container) {
+	for (int j = 0; j < (container->rows * container->columns); j++) {
+		if (container->items[j].item_id <= 0) {
+			return &container->items[j];
+		}
+	}
+	return NULL;
+}
 
 void init_inventory() {
 	item_container_create(&inventory, "Inventory", 1, 10, false);
@@ -105,22 +154,70 @@ void item_container_open(ItemContainer* ic)
 void item_container_close() {
 	// If closing the item container while having a grabbed item,
 	// add it back to the slot it came from
-	if (lastContainer && lastSlotIdx >= 0) {
+	if (lastContainer) {
 		if (!lastContainer->immutable) {
-			lastContainer->items[lastSlotIdx].item_id = grabbedItem.item_id;
-			lastContainer->items[lastSlotIdx].amount += grabbedItem.amount;
+			while (holdingItem.amount > 0) {
+				ItemSlot* stackable = findStackableSlot(lastContainer, holdingItem.item_id);
+				if (stackable) {
+					bool fullyStacked = tryStackItems(stackable, &holdingItem);
+					if (fullyStacked) break; // All items were moved
+				}
+				else {
+					// No more stackable slots, try to place in empty slot
+					ItemSlot* empty = findEmptySlot(lastContainer);
+					if (empty) {
+						*empty = holdingItem;
+						clearItem(&holdingItem);
+					}
+					break;
+				}
+			}
 		}
-
-		grabbedItem.item_id = 0;
-		grabbedItem.amount = 0;
-
-		lastSlotIdx = -1;
-		lastContainer = NULL;
+		else {
+			clearItem(&holdingItem);
+		}
 	}
+
+	lastContainer = NULL;
 	openedContainer = NULL;
 }
 
 bool item_container_is_open() { return openedContainer != NULL; }
+
+void handleNormalClick(ItemSlot* curItem, int i, ItemContainer* ic) {
+	if (holdingItem.item_id != curItem->item_id) {
+		// Different items - swap or copy
+		if (!ic->immutable) {
+			setLastAction(ic);
+			swapItems(&holdingItem, curItem);
+		}
+		else {
+			if (holdingItem.item_id <= 0) {
+				setLastAction(ic);
+				holdingItem = *curItem;
+			}
+			else {
+				clearLastAction();
+				clearItem(&holdingItem);
+			}
+		}
+	}
+	else {
+		// Same items - stack
+		if (!ic->immutable) {
+			if (tryStackItems(curItem, &holdingItem)) {
+				clearLastAction();
+			}
+			else {
+				setLastAction(ic);
+			}
+		}
+		else {
+			// Immutable - just increment
+			if (holdingItem.amount < MAX_STACK) holdingItem.amount++;
+		}
+	}
+}
 
 void draw_item(ItemSlot* is, int x, int y) {
 	if (is->item_id <= 0) return;
@@ -176,158 +273,119 @@ void item_container_draw_specific(ItemContainer* ic, int x, int y) {
 	);
 
 	// Drawing slots, items and registering input
-	for (int r = 0; r < ic->rows; r++) {
-		for (int c = 0; c < ic->columns; c++) {
-			int i = c + (r * ic->columns);
+	for (int i = 0; i < (ic->rows * ic->columns); i++) {
+		int r = i / ic->columns;
+		int c = i % ic->columns;
 
-			Rectangle slotRect = {
-				.x = x + (c * (ITEM_SLOT_SIZE + ITEM_SLOT_GAP) + ITEM_SLOT_GAP),
-				.y = y + (r * (ITEM_SLOT_SIZE + ITEM_SLOT_GAP) + ITEM_SLOT_GAP) + titleSize.y,
-				.width = ITEM_SLOT_SIZE,
-				.height = ITEM_SLOT_SIZE
-			};
+		Rectangle slotRect = {
+			.x = x + (c * (ITEM_SLOT_SIZE + ITEM_SLOT_GAP) + ITEM_SLOT_GAP),
+			.y = y + (r * (ITEM_SLOT_SIZE + ITEM_SLOT_GAP) + ITEM_SLOT_GAP) + titleSize.y,
+			.width = ITEM_SLOT_SIZE,
+			.height = ITEM_SLOT_SIZE
+		};
 
-			bool isHovered = CheckCollisionPointRec(GetMousePosition(), slotRect);
-			ItemRegistry* ir = ir_get_item_registry(ic->items[i].item_id);
-			if (isHovered && !ic->immutable) {
-				if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-					// Swapping existing items
-					if (ic->items[i].item_id > 0 && grabbedItem.item_id != ic->items[i].item_id) {
-						lastSlotIdx = i;
-						lastContainer = ic;
+		DrawRectangleRec(slotRect, SLOT_COLOR);
+		draw_item(&ic->items[i], slotRect.x, slotRect.y);
 
-						uint8_t prev_slot_item_id = ic->items[i].item_id;
-						uint8_t prev_slot_amount = ic->items[i].amount;
+		// Why continue if not being hovered?
+		if (!CheckCollisionPointRec(GetMousePosition(), slotRect)) continue;
 
-						uint8_t prev_grab_item_id = grabbedItem.item_id;
-						uint8_t prev_grab_amount = grabbedItem.amount;
+		DrawRectangleRec(slotRect, SLOT_HOVER_COLOR);
 
-						grabbedItem.item_id = prev_slot_item_id;
-						grabbedItem.amount = prev_slot_amount;
+		ItemSlot* curItem = &ic->items[i];
+		ItemRegistry* curItemReg = ir_get_item_registry(curItem->item_id);
 
-						ic->items[i].item_id = prev_grab_item_id;
-						ic->items[i].amount = prev_grab_amount;
+		if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+			if (!IsKeyDown(KEY_LEFT_SHIFT)) {
+				handleNormalClick(curItem, i, ic);
+			}
+			else {
+				if (!ic->immutable) {
+					ItemContainer* otherContainer = ic == openedContainer ? &inventory : openedContainer;
+
+					if (!otherContainer->immutable) {
+						// Try to stack with all existing items that have space
+						while (curItem->amount > 0) {
+							ItemSlot* stackable = findStackableSlot(otherContainer, curItem->item_id);
+							if (stackable) {
+								bool fullyStacked = tryStackItems(stackable, curItem);
+								if (fullyStacked) break; // All items were moved
+							}
+							else {
+								// No more stackable slots, try to place in empty slot
+								ItemSlot* empty = findEmptySlot(otherContainer);
+								if (empty) {
+									*empty = *curItem;
+									clearItem(curItem);
+								}
+								break; // Either placed or no more slots available
+							}
+						}
 					}
-					// Adding an amount of items to a existing slot if the item IDs match
-					else if (ic->items[i].item_id > 0 && grabbedItem.item_id == ic->items[i].item_id) {
-						lastSlotIdx = -1;
-						lastContainer = NULL;
-
-						ic->items[i].amount += grabbedItem.amount;
-
-						grabbedItem.item_id = 0;
-						grabbedItem.amount = 0;
-					}
-					// Putting the holding item on a empty slot
-					else if (ic->items[i].item_id <= 0 && grabbedItem.item_id > 0) {
-						lastSlotIdx = -1;
-						lastContainer = NULL;
-
-						ic->items[i].item_id = grabbedItem.item_id;
-						ic->items[i].amount = grabbedItem.amount;
-
-						grabbedItem.item_id = 0;
-						grabbedItem.amount = 0;
-					}
+					else clearItem(curItem);
 				}
-				if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {
-					if (ic->items[i].item_id > 0) {
-						// Adding to existing item with the grabbed item
-						if (grabbedItem.item_id == ic->items[i].item_id) {
-							if (grabbedItem.amount > 1) {
-								lastSlotIdx = i;
-								lastContainer = ic;
-
-								grabbedItem.amount--;
-								ic->items[i].amount++;
-							}
-							else {
-								lastSlotIdx = -1;
-								lastContainer = NULL;
-
-								grabbedItem.item_id = 0;
-								grabbedItem.amount = 0;
-
-								ic->items[i].amount++;
-							}
-						}
-						// Dividing a stack of items into two
-						else if (grabbedItem.item_id <= 0) {
-							uint8_t amount = ic->items[i].amount;
-							lastSlotIdx = i;
-							lastContainer = ic;
-							if (amount > 1) {
-								grabbedItem.item_id = ic->items[i].item_id;
-								grabbedItem.amount = amount / 2;
-
-								ic->items[i].amount = amount - grabbedItem.amount;
-							}
-							else {
-								grabbedItem.item_id = ic->items[i].item_id;
-								grabbedItem.amount = ic->items[i].amount;
-
-								ic->items[i].item_id = 0;
-								ic->items[i].amount = 0;
-							}
-						}
+				else {
+					// Immutable container with shift
+					if (holdingItem.item_id <= 0) {
+						setLastAction(ic);
+						holdingItem.item_id = curItem->item_id;
+						holdingItem.amount = MAX_STACK;
 					}
 					else {
-						// Adding to an empty slot with the grabbed item
-						if (grabbedItem.item_id > 0) {
-							if (grabbedItem.amount > 1) {
-								lastSlotIdx = i;
-								lastContainer = ic;
-
-								ic->items[i].item_id = grabbedItem.item_id;
-								ic->items[i].amount++;
-
-								grabbedItem.amount--;
-							}
-							else {
-								lastSlotIdx = -1;
-								lastContainer = NULL;
-
-								ic->items[i].item_id = grabbedItem.item_id;
-								ic->items[i].amount++;
-
-								grabbedItem.item_id = 0;
-								grabbedItem.amount = 0;
-							}
+						if (holdingItem.item_id <= 0) {
+							setLastAction(ic);
+							holdingItem = *curItem;
+						}
+						else {
+							clearLastAction();
+							clearItem(&holdingItem);
 						}
 					}
 				}
 			}
-			// If the container is immutable, then just copy the item to the holding item
-			else if (isHovered && ic->immutable) {
-				if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-					if (ic->items[i].item_id > 0) {
-						if (grabbedItem.item_id <= 0) {
-							lastContainer = ic;
-							lastSlotIdx = i;
-							
-							grabbedItem.item_id = ic->items[i].item_id;
-							grabbedItem.amount = ic->items[i].amount;
-						} else if (grabbedItem.item_id == ic->items[i].item_id) {
-							lastContainer = ic;
-							lastSlotIdx = i;
-
-							grabbedItem.amount += ic->items[i].amount;
-						} else if (grabbedItem.item_id != ic->items[i].item_id) {
-							lastContainer = NULL;
-							lastSlotIdx = -1;
-
-							grabbedItem.item_id = 0;
-							grabbedItem.amount = 0;
+		}
+		else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {
+			if (!IsKeyDown(KEY_LEFT_SHIFT)) {
+				if (!ic->immutable) {
+					// Add holding item to slot if holding something
+					if (holdingItem.item_id > 0) {
+						if (holdingItem.item_id == curItem->item_id) {
+							if (curItem->amount < MAX_STACK) {
+								curItem->amount++;
+								if (holdingItem.amount > 1) holdingItem.amount--;
+								else {
+									clearLastAction();
+									clearItem(&holdingItem);
+								}
+							}
 						}
+						else {
+							if (curItem->item_id <= 0) {
+								curItem->item_id = holdingItem.item_id;
+								curItem->amount = 1;
+								if (holdingItem.amount > 1) holdingItem.amount--;
+								else {
+									clearLastAction();
+									clearItem(&holdingItem);
+								}
+							}
+							else swapItems(&holdingItem, curItem);
+						}
+					}
+					// Split the stack in the current slot in half when not
+					// holding anything
+					else {
+						setLastAction(ic);
+						holdingItem.item_id = curItem->item_id;
+						holdingItem.amount = curItem->amount / 2;
+						curItem->amount = curItem->amount - holdingItem.amount;
 					}
 				}
 			}
-
-			DrawRectangleRec(slotRect, SLOT_COLOR);
-
-			draw_item(&ic->items[i], slotRect.x, slotRect.y);
-
-			if (isHovered) DrawRectangleRec(slotRect, SLOT_HOVER_COLOR);
+			else {
+				// Shift + right click = same as normal left click
+				handleNormalClick(curItem, i, ic);
+			}
 		}
 	}
 
@@ -385,11 +443,14 @@ void item_container_draw() {
 	item_container_draw_specific(openedContainer, center.x - (openContSize.x / 2), center.y - openContSize.y);
 	item_container_draw_specific(&inventory, center.x - (invSize.x / 2), center.y);
 
-	draw_item(&grabbedItem, GetMouseX(), GetMouseY());
+	draw_item(&holdingItem, GetMouseX(), GetMouseY());
 }
 
 void item_container_free(ItemContainer* ic)
 {
 	if (!ic) return;
-	if (ic->items) free(ic->items);
+	if (ic->items) {
+		free(ic->items);
+		ic->items = NULL;
+	}
 }

@@ -9,6 +9,8 @@
 #define ITEM_SLOT_SIZE 42
 #define ITEM_SLOT_GAP 8
 
+#define MAX_STACK 64
+
 typedef struct {
 	uint8_t item_id;
 	uint8_t amount;

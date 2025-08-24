@@ -8,7 +8,6 @@
 
 #include <limits.h>
 #include <stdint.h>
-#include <stdio.h>
 #include <stdlib.h>
 
 #include <raylib.h>
@@ -243,7 +242,6 @@ bool chunk_manager_interact(Vector2i position, bool isWall) {
     if (brg->flag == BLOCK_FLAG_CONTAINER) {
         if (inst.state >= 0) {
             item_container_open(container_vector_get(&chunk->containerVec, inst.state));
-            printf("%d\n", inst.state);
             return true;
         }
     }

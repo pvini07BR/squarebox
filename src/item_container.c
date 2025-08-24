@@ -300,16 +300,25 @@ void item_container_draw_specific(ItemContainer* ic, int x, int y) {
 			// If the container is immutable, then just copy the item to the holding item
 			else if (isHovered && ic->immutable) {
 				if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-					if (ic->items[i].item_id > 0 && grabbedItem.item_id <= 0) {
-						lastContainer = ic;
-						lastSlotIdx = i;
+					if (ic->items[i].item_id > 0) {
+						if (grabbedItem.item_id <= 0) {
+							lastContainer = ic;
+							lastSlotIdx = i;
+							
+							grabbedItem.item_id = ic->items[i].item_id;
+							grabbedItem.amount = ic->items[i].amount;
+						} else if (grabbedItem.item_id == ic->items[i].item_id) {
+							lastContainer = ic;
+							lastSlotIdx = i;
 
-						grabbedItem.item_id = ic->items[i].item_id;
-						grabbedItem.amount = ic->items[i].amount;
-					}
-					else if (grabbedItem.item_id > 0) {
-						grabbedItem.item_id = 0;
-						grabbedItem.amount = 0;
+							grabbedItem.amount += ic->items[i].amount;
+						} else if (grabbedItem.item_id != ic->items[i].item_id) {
+							lastContainer = NULL;
+							lastSlotIdx = -1;
+
+							grabbedItem.item_id = 0;
+							grabbedItem.amount = 0;
+						}
 					}
 				}
 			}

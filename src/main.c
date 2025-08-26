@@ -213,19 +213,7 @@ int main() {
 
         if (!item_container_is_open()) {
             if (inventory_get_item(0, hotbarIdx).item_id > 0) {
-                DrawTexturePro(
-                    texture_atlas_get(),
-                    texture_atlas_get_rect(ir_get_item_registry(inventory_get_item(0, hotbarIdx).item_id)->atlas_idx, false, false),
-                    (Rectangle) {
-                    .x = GetMouseX(),
-                        .y = GetMouseY(),
-                        .width = TILE_SIZE * 0.8f,
-                        .height = TILE_SIZE * 0.8f
-                },
-                    Vector2Zero(),
-                    0.0f,
-                    WHITE
-                );
+                draw_item(inventory_get_item(0, hotbarIdx), GetMouseX(), GetMouseY(), 0, 0.8f, false);
             }
 
             DrawTexturePro(
@@ -277,7 +265,7 @@ int main() {
 
                 DrawRectangleRec(slotRect, i == hotbarIdx ? selHotbarSlot : hotbarBg);
 
-                draw_item(&get_inventory()->items[i], slotRect.x, slotRect.y);
+                draw_item(get_inventory()->items[i], slotRect.x, slotRect.y, ((ITEM_SLOT_SIZE - TILE_SIZE) / 2.0f), 1.0f, true);
             }
         }
 

@@ -37,7 +37,7 @@ void item_registry_init() {
 	itemRegistry[3] = (ItemRegistry){
 		.name = "Stone Block",
 		.atlas_idx = 2,
-		.model_idx = 0,
+		.model_idx = 2,
 		.blockId = 3
 	};
 

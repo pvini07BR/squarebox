@@ -225,37 +225,24 @@ void handleNormalClick(ItemSlot* curItem, int i, ItemContainer* ic) {
 	}
 }
 
-void draw_item(ItemSlot* is, int x, int y) {
-	if (is->item_id <= 0) return;
-	ItemRegistry* ir = ir_get_item_registry(is->item_id);
+void draw_item(ItemSlot is, int x, int y, int padding, float scale, bool drawAmount) {
+	if (is.item_id <= 0) return;
+	ItemRegistry* ir = ir_get_item_registry(is.item_id);
 
 	rlDrawRenderBatchActive();
+
+	Matrix translationMatrix = MatrixTranslate(x + padding, y + padding, 0.0f);
+	Matrix scaleMatrix = MatrixScale(scale, scale, 0.0f);
 
 	DrawMesh(
 		ir->mesh,
 		texture_atlas_get_material(),
-		MatrixTranslate(x + ((ITEM_SLOT_SIZE - TILE_SIZE) / 2.0f), y + ((ITEM_SLOT_SIZE - TILE_SIZE) / 2.0f), 0.0f)
+		MatrixMultiply(scaleMatrix, translationMatrix)
 	);
 
-	/*
-	DrawTexturePro(
-		texture_atlas_get(),
-		texture_atlas_get_rect(ir->atlas_idx, false, false),
-		(Rectangle) {
-			.x = x + ((ITEM_SLOT_SIZE - TILE_SIZE) / 2.0f),
-			.y = y + ((ITEM_SLOT_SIZE - TILE_SIZE) / 2.0f),
-			.width = TILE_SIZE,
-			.height = TILE_SIZE
-		},
-		Vector2Zero(),
-		0.0f,
-		WHITE
-	);
-	*/
-
-	if (is->amount > 1) {
+	if (is.amount > 1 && drawAmount) {
 		char amountStr[4];
-		sprintf(amountStr, "%d", is->amount);
+		sprintf(amountStr, "%d", is.amount);
 		Vector2 textSize = MeasureTextEx(GetFontDefault(), amountStr, 18.0f, 0.0f);
 
 		DrawText(amountStr,
@@ -303,7 +290,7 @@ void item_container_draw_specific(ItemContainer* ic, int x, int y) {
 		};
 
 		DrawRectangleRec(slotRect, SLOT_COLOR);
-		draw_item(&ic->items[i], slotRect.x, slotRect.y);
+		draw_item(ic->items[i], slotRect.x, slotRect.y, ((ITEM_SLOT_SIZE - TILE_SIZE) / 2.0f), 1.0f, true);
 
 		// Why continue if not being hovered?
 		if (!CheckCollisionPointRec(GetMousePosition(), slotRect)) continue;
@@ -446,7 +433,7 @@ void item_container_draw() {
 	item_container_draw_specific(openedContainer, center.x - (openContSize.x / 2), center.y - openContSize.y);
 	item_container_draw_specific(&inventory, center.x - (invSize.x / 2), center.y);
 
-	draw_item(&holdingItem, GetMouseX(), GetMouseY());
+	draw_item(holdingItem, GetMouseX(), GetMouseY(), ((ITEM_SLOT_SIZE - TILE_SIZE) / 2.0f), 1.0f, true);
 }
 
 void item_container_free(ItemContainer* ic)

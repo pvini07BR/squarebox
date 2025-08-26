@@ -93,24 +93,89 @@ void block_models_build_mesh(Mesh* output, size_t modelIdx, size_t atlasIdx, boo
 	UploadMesh(output, false);
 }
 
-void bm_set_block_model(size_t* offsets, Mesh* mesh, Vector2u position, Color color, size_t modelIdx, size_t atlasIdx)
+void bm_set_block_model(size_t* offsets, Mesh* mesh, Vector2u position, Color color, size_t modelIdx, size_t atlasIdx, bool flipUV_H, bool flipUV_V, int rotation, bool rotateUVs)
 {
-	if (position.x < 0 || position.x >= CHUNK_WIDTH || position.y < 0 || position.y >= CHUNK_WIDTH) return;
-	if (modelIdx < 0 || modelIdx >= MODEL_COUNT) return;
+	if (position.x >= CHUNK_WIDTH || position.y >= CHUNK_WIDTH) return;
+	if (modelIdx >= MODEL_COUNT) return;
 	if (!mesh) return;
+
+	// normalize rotation to 0..3
+	int rot = rotation & 3;
 
 	int i = position.x + (position.y * CHUNK_WIDTH);
 	int vertexOffset = offsets[i];
 
-	Rectangle uvRect = texture_atlas_get_uv(atlasIdx, false, false);
+	Rectangle uvRect = texture_atlas_get_uv(atlasIdx, flipUV_H, flipUV_V);
+
+	// centro do tile em coordenadas do mundo/local
+	const float tileHalf = (float)TILE_SIZE * 0.5f;
+	const float baseX = (float)position.x * (float)TILE_SIZE;
+	const float baseY = (float)position.y * (float)TILE_SIZE;
 
 	for (int v = 0; v < models[modelIdx].vertexCount; v++) {
-		mesh->vertices[(vertexOffset + v) * 3 + 0] = models[modelIdx].vertices[v].x + (position.x * TILE_SIZE);
-		mesh->vertices[(vertexOffset + v) * 3 + 1] = models[modelIdx].vertices[v].y + (position.y * TILE_SIZE);
+		// posição original (assumida em 0..TILE_SIZE)
+		float vx = models[modelIdx].vertices[v].x;
+		float vy = models[modelIdx].vertices[v].y;
+
+		// mover para centro, rotacionar, mover de volta
+		float lx = vx - tileHalf;
+		float ly = vy - tileHalf;
+		float rx, ry;
+
+		switch (rot) {
+		default:
+		case 0: // 0°
+			rx = lx; ry = ly;
+			break;
+		case 1: // 90° CCW
+			rx = -ly; ry = lx;
+			break;
+		case 2: // 180°
+			rx = -lx; ry = -ly;
+			break;
+		case 3: // 270° CCW
+			rx = ly; ry = -lx;
+			break;
+		}
+
+		mesh->vertices[(vertexOffset + v) * 3 + 0] = baseX + tileHalf + rx;
+		mesh->vertices[(vertexOffset + v) * 3 + 1] = baseY + tileHalf + ry;
 		mesh->vertices[(vertexOffset + v) * 3 + 2] = 0.0f;
 
-		mesh->texcoords[(vertexOffset + v) * 2 + 0] = uvRect.x + models[modelIdx].vertices[v].u * uvRect.width;
-		mesh->texcoords[(vertexOffset + v) * 2 + 1] = uvRect.y + models[modelIdx].vertices[v].v * uvRect.height;
+		if (rotateUVs) {
+			float u = models[modelIdx].vertices[v].u;
+			float vuv = models[modelIdx].vertices[v].v;
+
+			float lu = u - 0.5f;
+			float lv = vuv - 0.5f;
+			float ru, rv;
+
+			switch (rot) {
+			default:
+			case 0:	// 0° CCW
+				ru = lu; rv = lv;
+				break;
+			case 1: // 90° CCW
+				ru = -lv; rv = lu;
+				break;
+			case 2:	// 180° CCW
+				ru = -lu; rv = -lv;
+				break;
+			case 3: // 270° CCW
+				ru = lv; rv = -lu;
+				break;
+			}
+
+			float finalU = uvRect.x + (0.5f + ru) * uvRect.width;
+			float finalV = uvRect.y + (0.5f + rv) * uvRect.height;
+
+			mesh->texcoords[(vertexOffset + v) * 2 + 0] = finalU;
+			mesh->texcoords[(vertexOffset + v) * 2 + 1] = finalV;
+		}
+		else {
+			mesh->texcoords[(vertexOffset + v) * 2 + 0] = uvRect.x + models[modelIdx].vertices[v].u * uvRect.width;
+			mesh->texcoords[(vertexOffset + v) * 2 + 1] = uvRect.y + models[modelIdx].vertices[v].v * uvRect.height;
+		}
 
 		mesh->colors[(vertexOffset + v) * 4 + 0] = color.r;
 		mesh->colors[(vertexOffset + v) * 4 + 1] = color.g;

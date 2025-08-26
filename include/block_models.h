@@ -22,7 +22,7 @@ typedef struct {
 void block_models_init();
 int block_models_get_vertex_count(size_t model_idx);
 void block_models_build_mesh(Mesh* output, size_t modelIdx, size_t atlasIdx, bool flipH, bool flipV);
-void bm_set_block_model(size_t* offsets, Mesh* mesh, Vector2u position, Color color, size_t modelIdx, size_t atlasIdx);
+void bm_set_block_model(size_t* offsets, Mesh* mesh, Vector2u position, Color color, size_t modelIdx, size_t atlasIdx, bool flipUV_H, bool flipUV_V, int rotation, bool rotateUVs);
 void block_models_free();
 
 #endif

@@ -203,7 +203,8 @@ void chunk_manager_update_lighting() {
             int x = i % CHUNK_WIDTH;
             int y = i / CHUNK_WIDTH;
 
-            if ((bbr->flags & BLOCK_FLAG_TRANSPARENT) && (wbr->flags & BLOCK_FLAG_TRANSPARENT)) {
+            // Any model index greater than 0 is not considered a full block, so it lets light slip through
+            if ((bbr->flags & BLOCK_FLAG_TRANSPARENT || bbr->model_idx > 0) && (wbr->flags & BLOCK_FLAG_TRANSPARENT || wbr->model_idx > 0)) {
                 chunk_fill_light(&chunks[c], (Vector2u) { x, y }, 15);
             }
             else if (bbr->lightLevel > 0 || wbr->lightLevel > 0) {
@@ -267,12 +268,6 @@ void chunk_manager_set_block_safe(Vector2i position, BlockInstance blockValue, b
             for (int i = 0; i < 4; i++) if (blockNeighbors[i].id > 0 || wallNeighbors[i].id > 0) { canPlace = true; break; }
 
             if (!isWall && chunk_get_block(chunk, relPos, true).id > 0) canPlace = true;
-
-            BlockRegistry* br = br_get_block_registry(blockValue.id);
-            // If the block is log-like, then rotate it when there are blocks on the sides
-            if (br->trait == BLOCK_TRAIT_ROTATES) {
-                if (blockNeighbors[NEIGHBOR_RIGHT].id > 0 || blockNeighbors[NEIGHBOR_LEFT].id > 0) blockValue.state = 1;
-            }
 
             if (canPlace) {
                 chunk_set_block(chunk, relPos, blockValue, isWall);

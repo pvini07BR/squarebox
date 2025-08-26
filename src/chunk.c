@@ -24,153 +24,13 @@ bool smoothLighting = true;
 unsigned int wallBrightness = 128;
 unsigned int wallAOvalue = 64;
 
+// Any model index greater than 0 is not considered a full block, so it lets light slip through
 #define BLOCK_IS_SOLID_DARK(i) \
-    (!(registries[i]->flags & BLOCK_FLAG_TRANSPARENT) && (registries[i]->lightLevel <= 0))
+    (!(registries[i]->flags & BLOCK_FLAG_TRANSPARENT) && (registries[i]->model_idx <= 0) && (registries[i]->lightLevel <= 0))
 
 unsigned int posmod(int v, int m) {
     int r = v % m;
     return (unsigned int)(r < 0 ? r + m : r);
-}
-
-void set_quad_positions(float* positions, uint8_t bx, uint8_t by, bool flipTriangles) {
-    float x = bx * TILE_SIZE;
-    float y = by * TILE_SIZE;
-
-    size_t i = bx + (by * CHUNK_WIDTH);
-    size_t voffset = i * 6 * 3;
-
-    float x0 = x;
-    float y0 = y;
-    float x1 = x + TILE_SIZE;
-    float y1 = y + TILE_SIZE;
-
-    float verts[6][3];
-
-    if (flipTriangles) {
-        float invertedVerts[6][3] = {
-            {x0, y0, 0.0f},
-            {x1, y0, 0.0f},
-            {x0, y1, 0.0f},
-            {x0, y1, 0.0f},
-            {x1, y1, 0.0f},
-            {x1, y0, 0.0f},
-        };
-        memcpy(verts, invertedVerts, sizeof(verts));
-    }
-    else {
-        float normalVerts[6][3] = {
-            {x0, y0, 0.0f},
-            {x1, y0, 0.0f},
-            {x1, y1, 0.0f},
-            {x0, y0, 0.0f},
-            {x1, y1, 0.0f},
-            {x0, y1, 0.0f},
-        };
-        memcpy(verts, normalVerts, sizeof(verts));
-    }
-
-    for (size_t v = 0; v < 6; v++) {
-        positions[voffset + v * 3 + 0] = verts[v][0];
-        positions[voffset + v * 3 + 1] = verts[v][1];
-        positions[voffset + v * 3 + 2] = verts[v][2];
-    }
-}
-
-void set_quad_uvs(float* uvs, uint8_t bx, uint8_t by, Rectangle rect, bool flipTriangles, uint8_t rotation) {
-    size_t i = bx + (by * CHUNK_WIDTH);
-    size_t voffset = i * 6 * 2;
-
-    float u0 = rect.x;
-    float v0 = rect.y;
-    float u1 = rect.x + rect.width;
-    float v1 = rect.y + rect.height;
-
-    float cornerUVs[4][2];
-
-    switch (rotation) {
-    case 1: // 90°
-        cornerUVs[0][0] = u1; cornerUVs[0][1] = v0;
-        cornerUVs[1][0] = u1; cornerUVs[1][1] = v1;
-        cornerUVs[2][0] = u0; cornerUVs[2][1] = v1;
-        cornerUVs[3][0] = u0; cornerUVs[3][1] = v0;
-        break;
-
-    case 2: // 180°
-        cornerUVs[0][0] = u1; cornerUVs[0][1] = v1;
-        cornerUVs[1][0] = u0; cornerUVs[1][1] = v1;
-        cornerUVs[2][0] = u0; cornerUVs[2][1] = v0;
-        cornerUVs[3][0] = u1; cornerUVs[3][1] = v0;
-        break;
-
-    case 3: // 270°
-        cornerUVs[0][0] = u0; cornerUVs[0][1] = v1;
-        cornerUVs[1][0] = u0; cornerUVs[1][1] = v0;
-        cornerUVs[2][0] = u1; cornerUVs[2][1] = v0;
-        cornerUVs[3][0] = u1; cornerUVs[3][1] = v1;
-        break;
-
-    case 0:
-    default:
-        cornerUVs[0][0] = u0; cornerUVs[0][1] = v0;
-        cornerUVs[1][0] = u1; cornerUVs[1][1] = v0;
-        cornerUVs[2][0] = u1; cornerUVs[2][1] = v1;
-        cornerUVs[3][0] = u0; cornerUVs[3][1] = v1;
-        break;
-    }
-
-    float verts[6][2];
-
-    if (flipTriangles) {
-        float invertedVerts[6][2] = {
-            {cornerUVs[0][0], cornerUVs[0][1]},
-            {cornerUVs[1][0], cornerUVs[1][1]},
-            {cornerUVs[3][0], cornerUVs[3][1]},
-            {cornerUVs[3][0], cornerUVs[3][1]},
-            {cornerUVs[2][0], cornerUVs[2][1]},
-            {cornerUVs[1][0], cornerUVs[1][1]},
-        };
-        memcpy(verts, invertedVerts, sizeof(verts));
-    }
-    else {
-        float normalVerts[6][2] = {
-            {cornerUVs[0][0], cornerUVs[0][1]},
-            {cornerUVs[1][0], cornerUVs[1][1]},
-            {cornerUVs[2][0], cornerUVs[2][1]},
-            {cornerUVs[0][0], cornerUVs[0][1]},
-            {cornerUVs[2][0], cornerUVs[2][1]},
-            {cornerUVs[3][0], cornerUVs[3][1]},
-        };
-        memcpy(verts, normalVerts, sizeof(verts));
-    }
-
-    for (size_t v = 0; v < 6; v++) {
-        uvs[voffset + v * 2 + 0] = verts[v][0];
-        uvs[voffset + v * 2 + 1] = verts[v][1];
-    }
-}
-
-void set_quad_colors(unsigned char* colors, uint8_t bx, uint8_t by, Color corners[4], bool flipTriangles) {
-    size_t i = bx + (by * CHUNK_WIDTH);
-    size_t voffset = i * 6 * 4;
-
-    int indices[6];
-
-    if (flipTriangles) {
-        int invertedIndices[6] = { 0, 1, 3, 3, 2, 1 };
-        memcpy(indices, invertedIndices, sizeof(indices));
-    }
-    else {
-        int normalIndices[6] = { 0, 1, 2, 0, 2, 3 };
-        memcpy(indices, normalIndices, sizeof(indices));
-    }
-
-    for (size_t v = 0; v < 6; v++) {
-        Color c = corners[indices[v]];
-        colors[voffset + v * 4 + 0] = c.r;
-        colors[voffset + v * 4 + 1] = c.g;
-        colors[voffset + v * 4 + 2] = c.b;
-        colors[voffset + v * 4 + 3] = 255;
-    }
 }
 
 void chunk_fill_light(Chunk* chunk, Vector2u startPoint, uint8_t newLightValue) {
@@ -187,7 +47,8 @@ void chunk_fill_light(Chunk* chunk, Vector2u startPoint, uint8_t newLightValue) 
     uint8_t decayAmount = 1;
 
     BlockRegistry* br = br_get_block_registry(chunk_get_block(chunk, startPoint, false).id);
-    if (!(br->flags & BLOCK_FLAG_TRANSPARENT)) decayAmount = 4;
+    // Any model index greater than 0 is not considered a full block, so it lets light slip through
+    if (!(br->flags & BLOCK_FLAG_TRANSPARENT) && br->model_idx <= 0) decayAmount = 4;
 
     Vector2i neighbors[] = {
         { -1, 0 }, { 1, 0 }, { 0, 1 }, { 0, -1 }
@@ -332,6 +193,7 @@ void build_quad(Chunk* chunk, size_t* offsets, BlockInstance* blocks, Mesh* mesh
 
     bool flipTriangles = false;
 
+    // Calculating brightness based on light values
     if (!smoothLighting) {
         uint8_t lightValue = (uint8_t)((chunk->light[i] / 15.0f) * 255.0f);
         uint8_t reduction = 255 - lightValue;
@@ -430,10 +292,10 @@ void build_quad(Chunk* chunk, size_t* offsets, BlockInstance* blocks, Mesh* mesh
     }
 
     // Block state rendering
-    uint8_t uvRotation = 0;
+    uint8_t rotation = 0;
 
     if (brg->trait == BLOCK_TRAIT_ROTATES) {
-        uvRotation = blocks[i].state;
+        rotation = blocks[i].state;
     }
 
     Color color = {
@@ -443,7 +305,7 @@ void build_quad(Chunk* chunk, size_t* offsets, BlockInstance* blocks, Mesh* mesh
         .a = (colors[0].a + colors[1].a + colors[2].a + colors[3].a) / 4
     };
 
-    bm_set_block_model(offsets, mesh, (Vector2u) { x, y }, color, brg->model_idx, brg->atlas_idx);
+    bm_set_block_model(offsets, mesh, (Vector2u) { x, y }, color, brg->model_idx, brg->atlas_idx, flipH, flipV, rotation, brg->model_idx > 0);
 }
 
 void chunk_genmesh(Chunk* chunk) {

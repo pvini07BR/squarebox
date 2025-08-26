@@ -112,6 +112,24 @@ void block_registry_init() {
         .flags = BLOCK_FLAG_SOLID,
         .lightLevel = 0,
     };
+
+    blockRegistry[11] = (BlockRegistry){
+        .name = "Cobblestone Slab",
+        .atlas_idx = 3,
+        .model_idx = 1,
+        .trait = BLOCK_TRAIT_ROTATES,
+        .flags = BLOCK_FLAG_SOLID,
+        .lightLevel = 0,
+    };
+
+    blockRegistry[12] = (BlockRegistry){
+        .name = "Cobblestone Stairs",
+        .atlas_idx = 3,
+        .model_idx = 2,
+        .trait = BLOCK_TRAIT_ROTATES,
+        .flags = BLOCK_FLAG_SOLID,
+        .lightLevel = 0,
+    };
 }
 
 BlockRegistry* br_get_block_registry(size_t idx) {

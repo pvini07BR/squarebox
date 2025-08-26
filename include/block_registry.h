@@ -1,7 +1,7 @@
 #ifndef BLOCK_REGISTRY_H
 #define BLOCK_REGISTRY_H
 
-#define BLOCK_COUNT 11
+#define BLOCK_COUNT 13
 
 #include <stdbool.h>
 #include <stdint.h>

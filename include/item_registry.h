@@ -6,7 +6,7 @@
 
 #include <raylib.h>
 
-#define ITEM_COUNT 12
+#define ITEM_COUNT 14
 
 typedef struct {
 	const char* name;

@@ -30,6 +30,7 @@ int main() {
     bool wall_mode = false;
     ItemContainer creativeMenu;
     int8_t hotbarIdx = 0;
+    int8_t blockState = 0;
 
     bool mouseIsInUI = false;
 
@@ -97,7 +98,12 @@ int main() {
                     if (!chunk_manager_interact(mouseBlockPos, wall_mode)) {
                         ItemRegistry* itr = ir_get_item_registry(inventory_get_item(0, hotbarIdx).item_id);
                         if (itr->blockId > 0) {
-                            chunk_manager_set_block_safe(mouseBlockPos, (BlockInstance) { itr->blockId, 0 }, wall_mode);
+                            BlockRegistry* br = br_get_block_registry(itr->blockId);
+                            BlockInstance inst = {
+                                .id = itr->blockId,
+                                .state = blockState
+                            };
+                            chunk_manager_set_block_safe(mouseBlockPos, inst, wall_mode);
                         }
                     }
                 }
@@ -117,8 +123,12 @@ int main() {
                 if (scroll < 0) camera.zoom /= 1.1f;
             }
             else {
-                if (scroll > 0) hotbarIdx--;
-                if (scroll < 0) hotbarIdx++;
+                if (scroll > 0) {
+                    hotbarIdx--; blockState = 0;
+                }
+                if (scroll < 0) {
+                    hotbarIdx++; blockState = 0;
+                }
 
                 if (hotbarIdx < 0) hotbarIdx = 9;
                 if (hotbarIdx > 9) hotbarIdx = 0;
@@ -153,6 +163,24 @@ int main() {
         else if ((IsKeyPressed(KEY_E) || IsKeyPressed(KEY_ESCAPE) && item_container_is_open()))
             item_container_close();
 
+        ItemRegistry* ir = ir_get_item_registry(inventory_get_item(0, hotbarIdx).item_id);
+        if (ir->blockId > 0) {
+            BlockRegistry* br = br_get_block_registry(ir->blockId);
+            if (br->trait == BLOCK_TRAIT_ROTATES) {
+                if (IsKeyPressed(KEY_Z)) blockState--;
+                if (IsKeyPressed(KEY_X)) blockState++;
+
+                if (blockState < 0) blockState = 3;
+                if (blockState > 3) blockState = 0;
+            }
+            else {
+                blockState = 0;
+            }
+        }
+        else {
+            blockState = 0;
+        }
+
         Vector2i cameraChunkPos = {
             (int)floorf(camera.target.x / (CHUNK_WIDTH * TILE_SIZE)),
             (int)floorf(camera.target.y / (CHUNK_WIDTH * TILE_SIZE))
@@ -170,6 +198,34 @@ int main() {
         chunk_manager_draw();
 
         if (!item_container_is_open()) {
+            // Draw block model if it is rotatable
+            ItemRegistry* ir = ir_get_item_registry(inventory_get_item(0, hotbarIdx).item_id);
+            if (ir->blockId > 0) {
+                BlockRegistry* br = br_get_block_registry(ir->blockId);
+                if (br->trait == BLOCK_TRAIT_ROTATES) {
+                    float half = TILE_SIZE / 2.0f;
+
+                    Matrix transMatrix = MatrixTranslate(mouseBlockPos.x * TILE_SIZE, mouseBlockPos.y * TILE_SIZE, 0.0f);
+                    Matrix translateMinusCenter = MatrixTranslate(-half, -half, 0.0f);
+                    Matrix translateCenter = MatrixTranslate(half, half, 0.0f);
+                    Matrix rotMatrix = MatrixRotateZ(blockState * (PI / 2.0f));
+
+                    Matrix m = MatrixMultiply(
+                        MatrixMultiply(
+                            MatrixMultiply(translateMinusCenter, rotMatrix),
+                            translateCenter
+                        ),
+                        transMatrix
+                    );
+
+                    DrawMesh(
+                        ir->mesh,
+                        texture_atlas_get_material(),
+                        m
+                    );
+                }
+            }
+
             float cos = 47.5f * cosf(GetTime() * 4.0f) + 79.5f;
 
             DrawRectangle(

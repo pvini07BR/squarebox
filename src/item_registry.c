@@ -140,6 +140,27 @@ void item_registry_init() {
 		.blockId = BLOCK_WOODEN_PLANKS_STAIRS
 	};
 
+	itemRegistry[ITEM_STONE_NUB] = (ItemRegistry){
+		.name = "Stone Nub",
+		.atlas_idx = 2,
+		.model_idx = BLOCK_MODEL_NUB,
+		.blockId = BLOCK_STONE_NUB
+	};
+
+	itemRegistry[ITEM_COBBLESTONE_NUB] = (ItemRegistry){
+		.name = "Cobblestone Nub",
+		.atlas_idx = 3,
+		.model_idx = BLOCK_MODEL_NUB,
+		.blockId = BLOCK_COBBLESTONE_NUB
+	};
+
+	itemRegistry[ITEM_WOODEN_PLANKS_NUB] = (ItemRegistry){
+		.name = "Wooden Planks Nub",
+		.atlas_idx = 4,
+		.model_idx = BLOCK_MODEL_NUB,
+		.blockId = BLOCK_WOODEN_PLANKS_NUB
+	};
+
 	for (int i = 0; i < ITEM_COUNT; i++) {
 		itemRegistry[i].mesh = (Mesh){ 0 };
 		block_models_build_mesh(&itemRegistry[i].mesh, itemRegistry[i].model_idx, itemRegistry[i].atlas_idx, false, false);

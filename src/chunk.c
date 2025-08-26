@@ -24,9 +24,8 @@ bool smoothLighting = true;
 unsigned int wallBrightness = 128;
 unsigned int wallAOvalue = 64;
 
-// Any model index greater than 0 is not considered a full block, so it lets light slip through
 #define BLOCK_IS_SOLID_DARK(i) \
-    (!(registries[i]->flags & BLOCK_FLAG_TRANSPARENT) && (registries[i]->model_idx <= 0) && (registries[i]->lightLevel <= 0))
+    (!(registries[i]->flags & BLOCK_FLAG_TRANSPARENT) && (registries[i]->lightLevel <= 0))
 
 unsigned int posmod(int v, int m) {
     int r = v % m;
@@ -298,14 +297,7 @@ void build_quad(Chunk* chunk, size_t* offsets, BlockInstance* blocks, Mesh* mesh
         rotation = blocks[i].state;
     }
 
-    Color color = {
-        .r = (colors[0].r + colors[1].r + colors[2].r + colors[3].r) / 4,
-        .g = (colors[0].g + colors[1].g + colors[2].g + colors[3].g) / 4,
-        .b = (colors[0].b + colors[1].b + colors[2].b + colors[3].b) / 4,
-        .a = (colors[0].a + colors[1].a + colors[2].a + colors[3].a) / 4
-    };
-
-    bm_set_block_model(offsets, mesh, (Vector2u) { x, y }, color, brg->model_idx, brg->atlas_idx, flipH, flipV, rotation, brg->model_idx > 0);
+    bm_set_block_model(offsets, mesh, (Vector2u) { x, y }, colors, brg->model_idx, brg->atlas_idx, flipH, flipV, rotation, brg->model_idx > 0);
 }
 
 void chunk_genmesh(Chunk* chunk) {

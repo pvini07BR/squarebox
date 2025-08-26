@@ -157,6 +157,30 @@ void block_registry_init() {
         .flags = BLOCK_FLAG_SOLID,
         .lightLevel = 0,
     };
+
+    blockRegistry[BLOCK_STONE_NUB] = (BlockRegistry){
+        .atlas_idx = 2,
+        .model_idx = BLOCK_MODEL_NUB,
+        .trait = BLOCK_TRAIT_ROTATES,
+        .flags = BLOCK_FLAG_SOLID,
+        .lightLevel = 0,
+    };
+
+    blockRegistry[BLOCK_COBBLESTONE_NUB] = (BlockRegistry){
+        .atlas_idx = 3,
+        .model_idx = BLOCK_MODEL_NUB,
+        .trait = BLOCK_TRAIT_ROTATES,
+        .flags = BLOCK_FLAG_SOLID,
+        .lightLevel = 0,
+    };
+
+    blockRegistry[BLOCK_WOODEN_PLANKS_NUB] = (BlockRegistry){
+        .atlas_idx = 4,
+        .model_idx = BLOCK_MODEL_NUB,
+        .trait = BLOCK_TRAIT_ROTATES,
+        .flags = BLOCK_FLAG_SOLID,
+        .lightLevel = 0,
+    };
 }
 
 BlockRegistry* br_get_block_registry(size_t idx) {

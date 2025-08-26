@@ -55,6 +55,20 @@ void block_models_init() {
 	models[BLOCK_MODEL_STAIRS].vertices[9] =  (Vertex2D){ TILE_SIZE / 2.0f, TILE_SIZE / 2.0f, 0.5f, 0.5f };
 	models[BLOCK_MODEL_STAIRS].vertices[10] = (Vertex2D){ TILE_SIZE,        0,                1.0f, 0.0f };
 	models[BLOCK_MODEL_STAIRS].vertices[11] = (Vertex2D){ TILE_SIZE,        TILE_SIZE / 2.0f, 1.0f, 0.5f };
+
+	// Nub model
+	models[BLOCK_MODEL_NUB] = (BlockModel){
+		.vertexCount = 6,
+		.vertices = malloc(sizeof(Vertex2D) * 6)
+	};
+
+	models[BLOCK_MODEL_NUB].vertices[0] = (Vertex2D){ TILE_SIZE / 2.0f, TILE_SIZE / 2.0f, 0.5f, 0.5f };
+	models[BLOCK_MODEL_NUB].vertices[1] = (Vertex2D){ TILE_SIZE,        TILE_SIZE,        1.0f, 1.0f };
+	models[BLOCK_MODEL_NUB].vertices[2] = (Vertex2D){ TILE_SIZE / 2.0f, TILE_SIZE,        0.5f, 1.0f };
+
+	models[BLOCK_MODEL_NUB].vertices[3] = (Vertex2D){ TILE_SIZE / 2.0f, TILE_SIZE / 2.0f, 0.5f, 0.5f };
+	models[BLOCK_MODEL_NUB].vertices[4] = (Vertex2D){ TILE_SIZE,        TILE_SIZE,        1.0f, 1.0f };
+	models[BLOCK_MODEL_NUB].vertices[5] = (Vertex2D){ TILE_SIZE,        TILE_SIZE / 2.0f, 1.0f, 0.5f };
 }
 
 int block_models_get_vertex_count(size_t model_idx)
@@ -93,7 +107,7 @@ void block_models_build_mesh(Mesh* output, size_t modelIdx, size_t atlasIdx, boo
 	UploadMesh(output, false);
 }
 
-void bm_set_block_model(size_t* offsets, Mesh* mesh, Vector2u position, Color color, size_t modelIdx, size_t atlasIdx, bool flipUV_H, bool flipUV_V, int rotation, bool rotateUVs)
+void bm_set_block_model(size_t* offsets, Mesh* mesh, Vector2u position, Color colors[4], size_t modelIdx, size_t atlasIdx, bool flipUV_H, bool flipUV_V, int rotation, bool rotateUVs)
 {
 	if (position.x >= CHUNK_WIDTH || position.y >= CHUNK_WIDTH) return;
 	if (modelIdx >= BLOCK_MODEL_COUNT) return;
@@ -177,10 +191,35 @@ void bm_set_block_model(size_t* offsets, Mesh* mesh, Vector2u position, Color co
 			mesh->texcoords[(vertexOffset + v) * 2 + 1] = uvRect.y + models[modelIdx].vertices[v].v * uvRect.height;
 		}
 
-		mesh->colors[(vertexOffset + v) * 4 + 0] = color.r;
-		mesh->colors[(vertexOffset + v) * 4 + 1] = color.g;
-		mesh->colors[(vertexOffset + v) * 4 + 2] = color.b;
-		mesh->colors[(vertexOffset + v) * 4 + 3] = color.a;
+		int colorIdx = 0;
+		if (modelIdx != BLOCK_MODEL_STAIRS) {
+			if (v == 0) colorIdx = 0;	// Top left
+			if (v == 1) colorIdx = 2;	// Bottom right
+			if (v == 2) colorIdx = 3;	// Bottom left
+			if (v == 3) colorIdx = 0;	// Top left
+			if (v == 4) colorIdx = 2;	// Bottom right
+			if (v == 5) colorIdx = 1;	// Top right
+		}
+		else {
+			if (v == 0) colorIdx = 0;	// Bottom quad top left
+			if (v == 1) colorIdx = 2;	// Bottom quad top right
+			if (v == 2) colorIdx = 3;	// Bottom quad bottom left
+			if (v == 3) colorIdx = 3;	// Bottom quad bottom left
+			if (v == 4) colorIdx = 2;	// Bottom quad top right
+			if (v == 5) colorIdx = 2;	// Bottom quad bottom right
+
+			if (v == 6) colorIdx = 0;	// Upper quad top left
+			if (v == 7) colorIdx = 1;	// Upper quad top right
+			if (v == 8) colorIdx = 0;	// Upper quad bottom left
+			if (v == 9) colorIdx = 0;	// Upper quad bottom left
+			if (v == 10) colorIdx = 1;  // Upper quad top right
+			if (v == 11) colorIdx = 2;	// Upper quad bottom right
+		}
+
+		mesh->colors[(vertexOffset + v) * 4 + 0] = colors[colorIdx].r;
+		mesh->colors[(vertexOffset + v) * 4 + 1] = colors[colorIdx].g;
+		mesh->colors[(vertexOffset + v) * 4 + 2] = colors[colorIdx].b;
+		mesh->colors[(vertexOffset + v) * 4 + 3] = colors[colorIdx].a;
 	}
 }
 

@@ -24,7 +24,10 @@ void chunk_manager_init() {
     chunkMaterial = LoadMaterialDefault();
     SetMaterialTexture(&chunkMaterial, MATERIAL_MAP_ALBEDO, texture_atlas_get());
 
-    for (int i = 0; i < CHUNK_COUNT; i++) chunks[i].initialized = false;
+    for (int c = 0; c < CHUNK_COUNT; c++) {
+        chunk_init(&chunks[c]);
+        chunks[c].position = (Vector2i){ INT_MAX, INT_MAX };
+    }
     chunk_manager_reload_chunks();
 }
 
@@ -70,8 +73,7 @@ void chunk_manager_free() {
     UnloadTexture(lightMap);
     if (chunks) {
         for (int c = 0; c < CHUNK_COUNT; c++) {
-            chunk_free_meshes(&chunks[c]);
-            chunk_free_containers(&chunks[c]);
+            chunk_free(&chunks[c]);
         }
         free(chunks);
         chunks = NULL;
@@ -82,11 +84,7 @@ void chunk_manager_reload_chunks()
 {
     for (int c = 0; c < CHUNK_COUNT; c++) {
         chunks[c].position = (Vector2i){ .x = INT_MAX, .y = INT_MAX };
-        if (chunks[c].initialized) {
-            chunk_free_meshes(&chunks[c]);
-            chunk_free_containers(&chunks[c]);
-        }
-        chunks[c].initialized = false;
+        chunk_free(&chunks[c]);
     }
 
     chunk_manager_relocate(currentChunkPos);
@@ -128,7 +126,6 @@ void chunk_manager_relocate(Vector2i newCenter) {
         tempChunks[i].neighbors.downRight = NULL;
 
         if (!found) {
-            tempChunks[i].initialized = false;
             tempChunks[i].position = newPos;
             chunk_init(&tempChunks[i]);
             chunk_regenerate(&tempChunks[i]);
@@ -136,9 +133,8 @@ void chunk_manager_relocate(Vector2i newCenter) {
     }
 
     for (int i = 0; i < CHUNK_COUNT; i++) {
-        if (!chunkUsed[i] && chunks[i].initialized) {
-            chunk_free_meshes(&chunks[i]);
-            chunk_free_containers(&chunks[i]);
+        if (!chunkUsed[i]) {
+            chunk_free(&chunks[i]);
         }
     }
 

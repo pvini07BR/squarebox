@@ -14,6 +14,7 @@
 #include "block_registry.h"
 #include "item_registry.h"
 #include "item_container.h"
+#include "block_models.h"
 
 extern int seed;
 extern bool wallAmbientOcclusion;
@@ -49,6 +50,8 @@ int main() {
 
     block_registry_init();
     item_registry_init();
+    block_models_init();
+
     chunk_manager_init();
 
     item_container_create(&creativeMenu, "Creative Menu", 1, ITEM_COUNT - 1, true);
@@ -70,6 +73,9 @@ int main() {
     Vector2i currentChunkPos = { 0, 0 };
 
     char buffer[1024];
+
+    Material meshMaterial = LoadMaterialDefault();
+    SetMaterialTexture(&meshMaterial, MATERIAL_MAP_ALBEDO, texture_atlas_get());
 
     while (!WindowShouldClose()) {
         camera.offset = (Vector2){
@@ -310,6 +316,7 @@ int main() {
     item_registry_free();
     chunk_manager_free();
     block_registry_free();
+    block_models_free();
     texture_atlas_free();
     CloseWindow();
     return 0;

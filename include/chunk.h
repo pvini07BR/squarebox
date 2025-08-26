@@ -62,9 +62,11 @@ typedef struct {
 	BlockInstance blocks[CHUNK_AREA];
 	BlockInstance walls[CHUNK_AREA];
     uint8_t light[CHUNK_AREA];
+	size_t blockOffsets[CHUNK_AREA];
+	size_t wallOffsets[CHUNK_AREA];
 	ContainerVector containerVec;
 	ChunkNeighbors neighbors;
-	bool initialized;
+	bool initializedMeshes;
 	Mesh blockMesh;
 	Mesh wallMesh;
 } Chunk;
@@ -73,8 +75,7 @@ void chunk_init(Chunk* chunk);
 void chunk_regenerate(Chunk* chunk);
 void chunk_genmesh(Chunk* chunk);
 void chunk_draw(Chunk* chunk, Material* material);
-void chunk_free_meshes(Chunk* chunk);
-void chunk_free_containers(Chunk* chunk);
+void chunk_free(Chunk* chunk);
 
 void chunk_fill_light(Chunk* chunk, Vector2u startPoint, uint8_t newLightValue);
 

@@ -17,6 +17,7 @@ void block_registry_init() {
     blockRegistry[0] = (BlockRegistry){
         .name = "Air",
         .atlas_idx = 0,
+        .model_idx = 0,
         .lightLevel = 0,
         .flag = BLOCK_FLAG_NONE,
         .transparent = true,
@@ -28,6 +29,7 @@ void block_registry_init() {
     blockRegistry[1] = (BlockRegistry){
         .name = "Grass Block",
         .atlas_idx = 0,
+        .model_idx = 0,
         .lightLevel = 0,
         .flag = BLOCK_FLAG_NONE,
         .transparent = false,
@@ -39,6 +41,7 @@ void block_registry_init() {
     blockRegistry[2] = (BlockRegistry){
         .name = "Dirt Block",
         .atlas_idx = 1,
+        .model_idx = 0,
         .lightLevel = 0,
         .flag = BLOCK_FLAG_NONE,
         .transparent = false,
@@ -50,6 +53,7 @@ void block_registry_init() {
     blockRegistry[3] = (BlockRegistry){
         .name = "Stone Block",
         .atlas_idx = 2,
+        .model_idx = 0,
         .lightLevel = 0,
         .flag = BLOCK_FLAG_NONE,
         .transparent = false,
@@ -61,6 +65,7 @@ void block_registry_init() {
     blockRegistry[4] = (BlockRegistry){
         .name = "Cobblestone",
         .atlas_idx = 3,
+        .model_idx = 0,
         .lightLevel = 0,
         .transparent = false,
         .solid = true,
@@ -71,6 +76,7 @@ void block_registry_init() {
     blockRegistry[5] = (BlockRegistry){
         .name = "Wooden Planks",
         .atlas_idx = 4,
+        .model_idx = 0,
         .lightLevel = 0,
         .flag = BLOCK_FLAG_NONE,
         .transparent = false,
@@ -82,6 +88,7 @@ void block_registry_init() {
     blockRegistry[6] = (BlockRegistry){
         .name = "Wood Log",
         .atlas_idx = 5,
+        .model_idx = 0,
         .lightLevel = 0,
         .flag = BLOCK_FLAG_LOG_LIKE,
         .transparent = false,
@@ -93,6 +100,7 @@ void block_registry_init() {
     blockRegistry[7] = (BlockRegistry){
         .name = "Leaves",
         .atlas_idx = 6,
+        .model_idx = 0,
         .lightLevel = 0,
         .flag = BLOCK_FLAG_NONE,
         .transparent = true,
@@ -104,6 +112,7 @@ void block_registry_init() {
     blockRegistry[8] = (BlockRegistry){
         .name = "Glass Block",
         .atlas_idx = 7,
+        .model_idx = 0,
         .lightLevel = 0,
         .flag = BLOCK_FLAG_NONE,
         .transparent = true,
@@ -115,6 +124,7 @@ void block_registry_init() {
     blockRegistry[9] = (BlockRegistry){
         .name = "Lamp Block",
         .atlas_idx = 8,
+        .model_idx = 0,
         .lightLevel = 15,
         .flag = BLOCK_FLAG_NONE,
         .transparent = false,
@@ -126,6 +136,7 @@ void block_registry_init() {
     blockRegistry[10] = (BlockRegistry){
         .name = "Chest",
         .atlas_idx = 9,
+        .model_idx = 0,
         .lightLevel = 0,
         .flag = BLOCK_FLAG_CONTAINER,
         .transparent = false,

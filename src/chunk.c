@@ -3,6 +3,7 @@
 #include "defines.h"
 #include "block_registry.h"
 #include "texture_atlas.h"
+#include "block_models.h"
 
 #include <math.h>
 #include <stdint.h>
@@ -271,36 +272,46 @@ uint8_t chunk_get_light(Chunk* chunk, Vector2u position) {
     return chunk->light[position.x + (position.y * CHUNK_WIDTH)];
 }
 
-void chunk_init(Chunk* chunk)
-{
-    if (chunk == NULL) return;
-    if (chunk->initialized == true) return;
+void reset_meshes(Chunk* chunk, int blockVertexCount, int wallVertexCount) {
+    if (!chunk) return;
+
+    if (chunk->initializedMeshes == true) {
+        UnloadMesh(chunk->blockMesh);
+        UnloadMesh(chunk->wallMesh);
+        chunk->initializedMeshes = false;
+    }
 
     chunk->wallMesh = (Mesh){ 0 };
     chunk->blockMesh = (Mesh){ 0 };
 
-    chunk->wallMesh.triangleCount = chunk->blockMesh.triangleCount = CHUNK_AREA * 2;
-    chunk->wallMesh.vertexCount = chunk->wallMesh.triangleCount * 3;
-    chunk->blockMesh.vertexCount = chunk->blockMesh.triangleCount * 3;
+    chunk->blockMesh.vertexCount = blockVertexCount;
+    chunk->wallMesh.vertexCount = wallVertexCount;
 
-    chunk->wallMesh.vertices = (float*)MemAlloc(CHUNK_VERTEX_COUNT * 3 * sizeof(float));
-    chunk->blockMesh.vertices = (float*)MemAlloc(CHUNK_VERTEX_COUNT * 3 * sizeof(float));
+    chunk->blockMesh.triangleCount = blockVertexCount * 3;
+    chunk->wallMesh.triangleCount = wallVertexCount * 3;
 
-    chunk->wallMesh.texcoords = (float*)MemAlloc(CHUNK_VERTEX_COUNT * 2 * sizeof(float));
-    chunk->blockMesh.texcoords = (float*)MemAlloc(CHUNK_VERTEX_COUNT * 2 * sizeof(float));
+    chunk->blockMesh.vertices = (float*)MemAlloc(blockVertexCount * 3 * sizeof(float));
+    chunk->wallMesh.vertices = (float*)MemAlloc(wallVertexCount * 3 * sizeof(float));
 
-    chunk->wallMesh.colors = (unsigned char*)MemAlloc(CHUNK_VERTEX_COUNT * 4 * sizeof(unsigned char));
-    chunk->blockMesh.colors = (unsigned char*)MemAlloc(CHUNK_VERTEX_COUNT * 4 * sizeof(unsigned char));
+    chunk->blockMesh.texcoords = (float*)MemAlloc(blockVertexCount * 2 * sizeof(float));
+    chunk->wallMesh.texcoords = (float*)MemAlloc(wallVertexCount * 2 * sizeof(float));
 
-    UploadMesh(&chunk->wallMesh, true);
-    UploadMesh(&chunk->blockMesh, true);
+    chunk->blockMesh.colors = (unsigned char*)MemAlloc(blockVertexCount * 4 * sizeof(unsigned char));
+    chunk->wallMesh.colors = (unsigned char*)MemAlloc(wallVertexCount * 4 * sizeof(unsigned char));
+
+    chunk->initializedMeshes = true;
+}
+
+void chunk_init(Chunk* chunk)
+{
+    if (chunk == NULL) return;
 
     container_vector_init(&chunk->containerVec);
 
-    chunk->initialized = true;
+    chunk->initializedMeshes = false;
 }
 
-void build_quad(Chunk* chunk, BlockInstance* blocks, Mesh* mesh, bool isWall, uint8_t x, uint8_t y, uint8_t brightness) {
+void build_quad(Chunk* chunk, size_t* offsets, BlockInstance* blocks, Mesh* mesh, bool isWall, uint8_t x, uint8_t y, uint8_t brightness) {
     int i = x + (y * CHUNK_WIDTH);
     if (blocks[i].id <= 0) return;
     
@@ -425,19 +436,33 @@ void build_quad(Chunk* chunk, BlockInstance* blocks, Mesh* mesh, bool isWall, ui
         uvRotation = blocks[i].state;
     }
 
-    set_quad_positions(mesh->vertices, x, y, flipTriangles);
-    set_quad_uvs(mesh->texcoords, x, y, texture_atlas_get_uv(brg->atlas_idx, flipH, flipV), flipTriangles, uvRotation);
-    set_quad_colors(mesh->colors, x, y, colors, flipTriangles);
+    Color color = {
+        .r = (colors[0].r + colors[1].r + colors[2].r + colors[3].r) / 4,
+        .g = (colors[0].g + colors[1].g + colors[2].g + colors[3].g) / 4,
+        .b = (colors[0].b + colors[1].b + colors[2].b + colors[3].b) / 4,
+        .a = (colors[0].a + colors[1].a + colors[2].a + colors[3].a) / 4
+    };
+
+    bm_set_block_model(offsets, mesh, (Vector2u) { x, y }, color, brg->model_idx, brg->atlas_idx);
 }
 
 void chunk_genmesh(Chunk* chunk) {
     if (chunk == NULL) return;
-    if (!chunk->initialized) return;
 
-    for (int i = 0; i < (CHUNK_VERTEX_COUNT * 3); i++) {
-        chunk->wallMesh.vertices[i] = 0.0f;
-        chunk->blockMesh.vertices[i] = 0.0f;
+    int blockVertexCount = 0;
+    int wallVertexCount = 0;
+
+    for (int i = 0; i < CHUNK_AREA; i++) {
+        BlockRegistry* rg = br_get_block_registry(chunk->blocks[i].id);
+        chunk->blockOffsets[i] = blockVertexCount;
+        blockVertexCount += block_models_get_vertex_count(rg->model_idx);
+
+        rg = br_get_block_registry(chunk->walls[i].id);
+        chunk->wallOffsets[i] = wallVertexCount;
+        wallVertexCount += block_models_get_vertex_count(rg->model_idx);
     }
+
+    reset_meshes(chunk, blockVertexCount, wallVertexCount);
 
     for (int i = 0; i < CHUNK_AREA; i++) {
         int x = i % CHUNK_WIDTH;
@@ -446,29 +471,48 @@ void chunk_genmesh(Chunk* chunk) {
         BlockRegistry* brg = br_get_block_registry(chunk->walls[i].id);
 
         // Blocks that emit light will not be darkened when its placed as a wall.
-        build_quad(chunk, chunk->walls, &chunk->wallMesh, true, x, y, brg->lightLevel <= 0 ? wallBrightness : 255);
-        build_quad(chunk, chunk->blocks, &chunk->blockMesh, false, x, y, 255);
+        build_quad(chunk, chunk->wallOffsets, chunk->walls, &chunk->wallMesh, true, x, y, brg->lightLevel <= 0 ? wallBrightness : 255);
+        build_quad(chunk, chunk->blockOffsets, chunk->blocks, &chunk->blockMesh, false, x, y, 255);
+
+        /*
+        if (chunk->blocks[i].id > 0) {
+            BlockRegistry* rg = br_get_block_registry(chunk->blocks[i].id);
+            bm_set_block_model(
+                chunk->blockOffsets,
+                &chunk->blockMesh,
+                (Vector2u){ x, y },
+                WHITE,
+                rg->model_idx,
+                rg->atlas_idx
+            );
+        }
+
+        if (chunk->walls[i].id > 0) {
+            BlockRegistry* rg = br_get_block_registry(chunk->walls[i].id);
+            bm_set_block_model(
+                chunk->wallOffsets,
+                &chunk->wallMesh,
+                (Vector2u) { x, y },
+                GRAY,
+                rg->model_idx,
+                rg->atlas_idx
+            );
+        }
+        */
     }
 
-    UpdateMeshBuffer(chunk->wallMesh, 0, chunk->wallMesh.vertices, chunk->wallMesh.vertexCount * 3 * sizeof(float), 0);
-    UpdateMeshBuffer(chunk->wallMesh, 1, chunk->wallMesh.texcoords, chunk->wallMesh.vertexCount * 2 * sizeof(float), 0);
-    UpdateMeshBuffer(chunk->wallMesh, 3, chunk->wallMesh.colors, chunk->wallMesh.vertexCount * 4 * sizeof(unsigned char), 0);
-
-    UpdateMeshBuffer(chunk->blockMesh, 0, chunk->blockMesh.vertices, chunk->blockMesh.vertexCount * 3 * sizeof(float), 0);
-    UpdateMeshBuffer(chunk->blockMesh, 1, chunk->blockMesh.texcoords, chunk->blockMesh.vertexCount * 2 * sizeof(float), 0);
-    UpdateMeshBuffer(chunk->blockMesh, 3, chunk->blockMesh.colors, chunk->blockMesh.vertexCount * 4 * sizeof(unsigned char), 0);
+    UploadMesh(&chunk->blockMesh, false);
+    UploadMesh(&chunk->wallMesh, false);
 }
 
-void chunk_free_meshes(Chunk* chunk)
+void chunk_free(Chunk* chunk)
 {
     if (!chunk) return;
-
-    UnloadMesh(chunk->wallMesh);
-    UnloadMesh(chunk->blockMesh);
-}
-
-void chunk_free_containers(Chunk* chunk) {
-    if (!chunk) return;
+    if (chunk->initializedMeshes) {
+        UnloadMesh(chunk->wallMesh);
+        UnloadMesh(chunk->blockMesh);
+        chunk->initializedMeshes = false;
+    }
 
     container_vector_free(&chunk->containerVec);
 }
@@ -529,8 +573,10 @@ void chunk_draw(Chunk* chunk, Material* material) {
         0.0f
     );
 
-    DrawMesh(chunk->wallMesh, *material, MatrixIdentity());
-    DrawMesh(chunk->blockMesh, *material, MatrixIdentity());
+    if (chunk->initializedMeshes) {
+        DrawMesh(chunk->wallMesh, *material, MatrixIdentity());
+        DrawMesh(chunk->blockMesh, *material, MatrixIdentity());
+    }
 
     rlPopMatrix();
 }

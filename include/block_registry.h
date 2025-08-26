@@ -17,7 +17,8 @@ typedef enum {
 
 typedef struct {
 	const char* name;
-	uint8_t atlas_idx;
+	size_t atlas_idx;
+	size_t model_idx;
 	uint8_t lightLevel;
 	BlockFlag flag;
 	bool transparent;

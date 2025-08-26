@@ -1,13 +1,33 @@
 #ifndef BLOCK_REGISTRY_H
 #define BLOCK_REGISTRY_H
 
-#define BLOCK_COUNT 13
-
 #include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
 
 #include <raylib.h>
+
+typedef enum {
+	BLOCK_AIR,
+	BLOCK_GRASS_BLOCK,
+	BLOCK_DIRT,
+	BLOCK_STONE,
+	BLOCK_COBBLESTONE,
+	BLOCK_WOODEN_PLANKS,
+	BLOCK_WOOD_LOG,
+	BLOCK_LEAVES,
+	BLOCK_GLASS,
+	BLOCK_LAMP,
+	BLOCK_CHEST,
+	BLOCK_DIRT_SLAB,
+	BLOCK_STONE_SLAB,
+	BLOCK_COBBLESTONE_SLAB,
+	BLOCK_WOODEN_PLANKS_SLAB,
+	BLOCK_STONE_STAIRS,
+	BLOCK_COBBLESTONE_STAIRS,
+	BLOCK_WOODEN_PLANKS_STAIRS,
+	BLOCK_COUNT
+} BlockEnum;
 
 typedef enum {
 	// No trait is assigned to that block.
@@ -38,7 +58,6 @@ typedef enum {
 // It is used through a index on the static registry array
 // to obtain the necessary details.
 typedef struct {
-	const char* name;
 	// Index in the atlas texture to use.
 	// See texture_atlas.c.
 	size_t atlas_idx;

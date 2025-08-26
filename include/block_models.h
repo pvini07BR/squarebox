@@ -7,7 +7,12 @@
 
 #include <raylib.h>
 
-#define MODEL_COUNT 3
+typedef enum {
+    BLOCK_MODEL_QUAD,
+    BLOCK_MODEL_SLAB,
+    BLOCK_MODEL_STAIRS,
+    BLOCK_MODEL_COUNT
+} BlockModelEnum;
 
 typedef struct {
     float x, y;

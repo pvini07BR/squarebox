@@ -14,118 +14,145 @@ void block_registry_init() {
         return;
     };
 
-    blockRegistry[0] = (BlockRegistry){
-        .name = "Air",
+    blockRegistry[BLOCK_AIR] = (BlockRegistry){
         .atlas_idx = 0,
-        .model_idx = 0,
+        .model_idx = BLOCK_MODEL_QUAD,
         .trait = BLOCK_TRAIT_NONE,
         .flags = BLOCK_FLAG_TRANSPARENT,
         .lightLevel = 0,
     };
 
-    blockRegistry[1] = (BlockRegistry){
-        .name = "Grass Block",
+    blockRegistry[BLOCK_GRASS_BLOCK] = (BlockRegistry){
         .atlas_idx = 0,
-        .model_idx = 0,
+        .model_idx = BLOCK_MODEL_QUAD,
         .trait = BLOCK_TRAIT_NONE,
         .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FLIP_H,
         .lightLevel = 0,
     };
 
-    blockRegistry[2] = (BlockRegistry){
-        .name = "Dirt Block",
+    blockRegistry[BLOCK_DIRT] = (BlockRegistry){
         .atlas_idx = 1,
-        .model_idx = 0,
+        .model_idx = BLOCK_MODEL_QUAD,
         .trait = BLOCK_TRAIT_NONE,
         .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FLIP_H | BLOCK_FLAG_FLIP_V,
         .lightLevel = 0,
     };
 
-    blockRegistry[3] = (BlockRegistry){
-        .name = "Stone Block",
+    blockRegistry[BLOCK_STONE] = (BlockRegistry){
         .atlas_idx = 2,
-        .model_idx = 0,
+        .model_idx = BLOCK_MODEL_QUAD,
         .trait = BLOCK_TRAIT_NONE,
         .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FLIP_H,
         .lightLevel = 0,
     };
 
-    blockRegistry[4] = (BlockRegistry){
-        .name = "Cobblestone",
+    blockRegistry[BLOCK_COBBLESTONE] = (BlockRegistry){
         .atlas_idx = 3,
-        .model_idx = 0,
+        .model_idx = BLOCK_MODEL_QUAD,
         .trait = BLOCK_TRAIT_NONE,
         .flags = BLOCK_FLAG_SOLID,
         .lightLevel = 0,
     };
 
-    blockRegistry[5] = (BlockRegistry){
-        .name = "Wooden Planks",
+    blockRegistry[BLOCK_WOODEN_PLANKS] = (BlockRegistry){
         .atlas_idx = 4,
-        .model_idx = 0,
+        .model_idx = BLOCK_MODEL_QUAD,
         .trait = BLOCK_TRAIT_NONE,
         .flags = BLOCK_FLAG_SOLID,
         .lightLevel = 0,
     };
 
-    blockRegistry[6] = (BlockRegistry){
-        .name = "Wood Log",
+    blockRegistry[BLOCK_WOOD_LOG] = (BlockRegistry){
         .atlas_idx = 5,
-        .model_idx = 0,
+        .model_idx = BLOCK_MODEL_QUAD,
         .trait = BLOCK_TRAIT_ROTATES,
         .flags = BLOCK_FLAG_SOLID,
         .lightLevel = 0,
     };
 
-    blockRegistry[7] = (BlockRegistry){
-        .name = "Leaves",
+    blockRegistry[BLOCK_LEAVES] = (BlockRegistry){
         .atlas_idx = 6,
-        .model_idx = 0,
+        .model_idx = BLOCK_MODEL_QUAD,
         .trait = BLOCK_TRAIT_NONE,
         .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_TRANSPARENT | BLOCK_FLAG_FLIP_H | BLOCK_FLAG_FLIP_V,
         .lightLevel = 0,
     };
 
-    blockRegistry[8] = (BlockRegistry){
-        .name = "Glass Block",
+    blockRegistry[BLOCK_GLASS] = (BlockRegistry){
         .atlas_idx = 7,
-        .model_idx = 0,
+        .model_idx = BLOCK_MODEL_QUAD,
         .trait = BLOCK_TRAIT_NONE,
         .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_TRANSPARENT,
         .lightLevel = 0,
     };
 
-    blockRegistry[9] = (BlockRegistry){
-        .name = "Lamp Block",
+    blockRegistry[BLOCK_LAMP] = (BlockRegistry){
         .atlas_idx = 8,
-        .model_idx = 0,
+        .model_idx = BLOCK_MODEL_QUAD,
         .trait = BLOCK_TRAIT_NONE,
         .flags = BLOCK_FLAG_SOLID,
         .lightLevel = 15,
     };
 
-    blockRegistry[10] = (BlockRegistry){
-        .name = "Chest",
+    blockRegistry[BLOCK_CHEST] = (BlockRegistry){
         .atlas_idx = 9,
-        .model_idx = 0,
+        .model_idx = BLOCK_MODEL_QUAD,
         .trait = BLOCK_TRAIT_CONTAINER,
         .flags = BLOCK_FLAG_SOLID,
         .lightLevel = 0,
     };
 
-    blockRegistry[11] = (BlockRegistry){
-        .name = "Cobblestone Slab",
+    blockRegistry[BLOCK_DIRT_SLAB] = (BlockRegistry){
+        .atlas_idx = 1,
+        .model_idx = BLOCK_MODEL_SLAB,
+        .trait = BLOCK_TRAIT_ROTATES,
+        .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FLIP_H | BLOCK_FLAG_FLIP_V,
+        .lightLevel = 0,
+    };
+
+    blockRegistry[BLOCK_STONE_SLAB] = (BlockRegistry){
+        .atlas_idx = 2,
+        .model_idx = BLOCK_MODEL_SLAB,
+        .trait = BLOCK_TRAIT_ROTATES,
+        .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FLIP_H,
+        .lightLevel = 0,
+    };
+
+    blockRegistry[BLOCK_COBBLESTONE_SLAB] = (BlockRegistry){
         .atlas_idx = 3,
-        .model_idx = 1,
+        .model_idx = BLOCK_MODEL_SLAB,
         .trait = BLOCK_TRAIT_ROTATES,
         .flags = BLOCK_FLAG_SOLID,
         .lightLevel = 0,
     };
 
-    blockRegistry[12] = (BlockRegistry){
-        .name = "Cobblestone Stairs",
+    blockRegistry[BLOCK_WOODEN_PLANKS_SLAB] = (BlockRegistry){
+        .atlas_idx = 4,
+        .model_idx = BLOCK_MODEL_SLAB,
+        .trait = BLOCK_TRAIT_ROTATES,
+        .flags = BLOCK_FLAG_SOLID,
+        .lightLevel = 0,
+    };
+
+    blockRegistry[BLOCK_STONE_STAIRS] = (BlockRegistry){
+        .atlas_idx = 2,
+        .model_idx = BLOCK_MODEL_STAIRS,
+        .trait = BLOCK_TRAIT_ROTATES,
+        .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FLIP_H,
+        .lightLevel = 0,
+    };
+
+    blockRegistry[BLOCK_COBBLESTONE_STAIRS] = (BlockRegistry){
         .atlas_idx = 3,
-        .model_idx = 2,
+        .model_idx = BLOCK_MODEL_STAIRS,
+        .trait = BLOCK_TRAIT_ROTATES,
+        .flags = BLOCK_FLAG_SOLID,
+        .lightLevel = 0,
+    };
+
+    blockRegistry[BLOCK_WOODEN_PLANKS_STAIRS] = (BlockRegistry){
+        .atlas_idx = 4,
+        .model_idx = BLOCK_MODEL_STAIRS,
         .trait = BLOCK_TRAIT_ROTATES,
         .flags = BLOCK_FLAG_SOLID,
         .lightLevel = 0,

@@ -5,67 +5,67 @@
 
 #include <stdlib.h>
 
-static BlockModel models[MODEL_COUNT];
+static BlockModel models[BLOCK_MODEL_COUNT];
 
 void block_models_init() {
 	// Common block quad model
-	models[0] = (BlockModel) {
+	models[BLOCK_MODEL_QUAD] = (BlockModel) {
 		.vertexCount = 6,
 		.vertices = malloc(sizeof(Vertex2D) * 6)
 	};
-	models[0].vertices[0] = (Vertex2D){ 0,         0,         0, 0 };
-	models[0].vertices[1] = (Vertex2D){ TILE_SIZE, TILE_SIZE, 1, 1 };
-	models[0].vertices[2] = (Vertex2D){ 0,         TILE_SIZE, 0, 1 };
+	models[BLOCK_MODEL_QUAD].vertices[0] = (Vertex2D){ 0,         0,         0, 0 };
+	models[BLOCK_MODEL_QUAD].vertices[1] = (Vertex2D){ TILE_SIZE, TILE_SIZE, 1, 1 };
+	models[BLOCK_MODEL_QUAD].vertices[2] = (Vertex2D){ 0,         TILE_SIZE, 0, 1 };
 	
-	models[0].vertices[3] = (Vertex2D){ 0,         0,         0, 0 };
-	models[0].vertices[4] = (Vertex2D){ TILE_SIZE, TILE_SIZE, 1, 1 };
-	models[0].vertices[5] = (Vertex2D){ TILE_SIZE, 0,         1, 0 };
+	models[BLOCK_MODEL_QUAD].vertices[3] = (Vertex2D){ 0,         0,         0, 0 };
+	models[BLOCK_MODEL_QUAD].vertices[4] = (Vertex2D){ TILE_SIZE, TILE_SIZE, 1, 1 };
+	models[BLOCK_MODEL_QUAD].vertices[5] = (Vertex2D){ TILE_SIZE, 0,         1, 0 };
 
 	// Slab model
-	models[1] = (BlockModel){
+	models[BLOCK_MODEL_SLAB] = (BlockModel){
 		.vertexCount = 6,
 		.vertices = malloc(sizeof(Vertex2D) * 6)
 	};
-	models[1].vertices[0] = (Vertex2D){ 0,                  TILE_SIZE / 2.0f, 0.0f, 0.5f };
-	models[1].vertices[1] = (Vertex2D){ TILE_SIZE,          TILE_SIZE,        1.0f, 1.0f };
-	models[1].vertices[2] = (Vertex2D){ 0,                  TILE_SIZE,        0.0f, 1.0f };
+	models[BLOCK_MODEL_SLAB].vertices[0] = (Vertex2D){ 0,                  TILE_SIZE / 2.0f, 0.0f, 0.5f };
+	models[BLOCK_MODEL_SLAB].vertices[1] = (Vertex2D){ TILE_SIZE,          TILE_SIZE,        1.0f, 1.0f };
+	models[BLOCK_MODEL_SLAB].vertices[2] = (Vertex2D){ 0,                  TILE_SIZE,        0.0f, 1.0f };
 		   													           
-	models[1].vertices[3] = (Vertex2D){ 0,                  TILE_SIZE / 2.0f, 0.0f, 0.5f };
-	models[1].vertices[4] = (Vertex2D){ TILE_SIZE,          TILE_SIZE,        1.0f, 1.0f };
-	models[1].vertices[5] = (Vertex2D){ TILE_SIZE,          TILE_SIZE / 2.0f, 1.0f, 0.5f };
+	models[BLOCK_MODEL_SLAB].vertices[3] = (Vertex2D){ 0,                  TILE_SIZE / 2.0f, 0.0f, 0.5f };
+	models[BLOCK_MODEL_SLAB].vertices[4] = (Vertex2D){ TILE_SIZE,          TILE_SIZE,        1.0f, 1.0f };
+	models[BLOCK_MODEL_SLAB].vertices[5] = (Vertex2D){ TILE_SIZE,          TILE_SIZE / 2.0f, 1.0f, 0.5f };
 
 	// Stairs model
-	models[2] = (BlockModel){
+	models[BLOCK_MODEL_STAIRS] = (BlockModel){
 		.vertexCount = 12,
 		.vertices = malloc(sizeof(Vertex2D) * 12)
 	};
 
-	models[2].vertices[0] =  (Vertex2D){ 0,                TILE_SIZE / 2.0f, 0.0f, 0.5f };
-	models[2].vertices[1] =  (Vertex2D){ TILE_SIZE,        TILE_SIZE / 2.0f, 1.0f, 0.5f };
-	models[2].vertices[2] =  (Vertex2D){ 0,                TILE_SIZE,        0.0f, 1.0f };
-							 					          
-	models[2].vertices[3] =  (Vertex2D){ 0,                TILE_SIZE,        0.0f, 1.0f };
-	models[2].vertices[4] =  (Vertex2D){ TILE_SIZE,        TILE_SIZE / 2.0f, 1.0f, 0.5f };
-	models[2].vertices[5] =  (Vertex2D){ TILE_SIZE,        TILE_SIZE,        1.0f, 1.0f };
-							 
-	models[2].vertices[6] =  (Vertex2D){ TILE_SIZE / 2.0f, 0,                0.5f, 0.0f };
-	models[2].vertices[7] =  (Vertex2D){ TILE_SIZE,        0,                1.0f, 0.0f };
-	models[2].vertices[8] =  (Vertex2D){ TILE_SIZE / 2.0f, TILE_SIZE / 2.0f, 0.5f, 0.5f };
-
-	models[2].vertices[9] =  (Vertex2D){ TILE_SIZE / 2.0f, TILE_SIZE / 2.0f, 0.5f, 0.5f };
-	models[2].vertices[10] = (Vertex2D){ TILE_SIZE,        0,                1.0f, 0.0f };
-	models[2].vertices[11] = (Vertex2D){ TILE_SIZE,        TILE_SIZE / 2.0f, 1.0f, 0.5f };
+	models[BLOCK_MODEL_STAIRS].vertices[0] =  (Vertex2D){ 0,                TILE_SIZE / 2.0f, 0.0f, 0.5f };
+	models[BLOCK_MODEL_STAIRS].vertices[1] =  (Vertex2D){ TILE_SIZE,        TILE_SIZE / 2.0f, 1.0f, 0.5f };
+	models[BLOCK_MODEL_STAIRS].vertices[2] =  (Vertex2D){ 0,                TILE_SIZE,        0.0f, 1.0f };
+					 					          
+	models[BLOCK_MODEL_STAIRS].vertices[3] =  (Vertex2D){ 0,                TILE_SIZE,        0.0f, 1.0f };
+	models[BLOCK_MODEL_STAIRS].vertices[4] =  (Vertex2D){ TILE_SIZE,        TILE_SIZE / 2.0f, 1.0f, 0.5f };
+	models[BLOCK_MODEL_STAIRS].vertices[5] =  (Vertex2D){ TILE_SIZE,        TILE_SIZE,        1.0f, 1.0f };
+					 
+	models[BLOCK_MODEL_STAIRS].vertices[6] =  (Vertex2D){ TILE_SIZE / 2.0f, 0,                0.5f, 0.0f };
+	models[BLOCK_MODEL_STAIRS].vertices[7] =  (Vertex2D){ TILE_SIZE,        0,                1.0f, 0.0f };
+	models[BLOCK_MODEL_STAIRS].vertices[8] =  (Vertex2D){ TILE_SIZE / 2.0f, TILE_SIZE / 2.0f, 0.5f, 0.5f };
+		   
+	models[BLOCK_MODEL_STAIRS].vertices[9] =  (Vertex2D){ TILE_SIZE / 2.0f, TILE_SIZE / 2.0f, 0.5f, 0.5f };
+	models[BLOCK_MODEL_STAIRS].vertices[10] = (Vertex2D){ TILE_SIZE,        0,                1.0f, 0.0f };
+	models[BLOCK_MODEL_STAIRS].vertices[11] = (Vertex2D){ TILE_SIZE,        TILE_SIZE / 2.0f, 1.0f, 0.5f };
 }
 
 int block_models_get_vertex_count(size_t model_idx)
 {
-	if (model_idx < 0 || model_idx >= MODEL_COUNT) return 0;
+	if (model_idx < 0 || model_idx >= BLOCK_MODEL_COUNT) return 0;
 	return models[model_idx].vertexCount;
 }
 
 void block_models_build_mesh(Mesh* output, size_t modelIdx, size_t atlasIdx, bool flipH, bool flipV) {
 	if (output == NULL) return;
-	if (modelIdx >= MODEL_COUNT) return;
+	if (modelIdx >= BLOCK_MODEL_COUNT) return;
 
 	// Calcula UV base do atlas
 	Rectangle uvRect = texture_atlas_get_uv(atlasIdx, flipH, flipV);
@@ -96,7 +96,7 @@ void block_models_build_mesh(Mesh* output, size_t modelIdx, size_t atlasIdx, boo
 void bm_set_block_model(size_t* offsets, Mesh* mesh, Vector2u position, Color color, size_t modelIdx, size_t atlasIdx, bool flipUV_H, bool flipUV_V, int rotation, bool rotateUVs)
 {
 	if (position.x >= CHUNK_WIDTH || position.y >= CHUNK_WIDTH) return;
-	if (modelIdx >= MODEL_COUNT) return;
+	if (modelIdx >= BLOCK_MODEL_COUNT) return;
 	if (!mesh) return;
 
 	// normalize rotation to 0..3
@@ -185,7 +185,7 @@ void bm_set_block_model(size_t* offsets, Mesh* mesh, Vector2u position, Color co
 }
 
 void block_models_free() {
-	for (int i = 0; i < MODEL_COUNT; i++) {
+	for (int i = 0; i < BLOCK_MODEL_COUNT; i++) {
 		if (models[i].vertices) free(models[i].vertices);
 	}
 }

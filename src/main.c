@@ -56,7 +56,7 @@ int main() {
 
     chunk_manager_init();
 
-    item_container_create(&creativeMenu, "Creative Menu", 1, ITEM_COUNT - 1, true);
+    item_container_create(&creativeMenu, "Creative Menu", 2, 10, true);
     for (int i = 1; i < ITEM_COUNT; i++) {
         item_container_set_item(&creativeMenu, (i - 1) / creativeMenu.columns, (i - 1) % creativeMenu.columns, (ItemSlot){ i, 1 });
     }
@@ -123,12 +123,8 @@ int main() {
                 if (scroll < 0) camera.zoom /= 1.1f;
             }
             else {
-                if (scroll > 0) {
-                    hotbarIdx--; blockState = 0;
-                }
-                if (scroll < 0) {
-                    hotbarIdx++; blockState = 0;
-                }
+                if (scroll > 0) hotbarIdx--;
+                if (scroll < 0) hotbarIdx++;
 
                 if (hotbarIdx < 0) hotbarIdx = 9;
                 if (hotbarIdx > 9) hotbarIdx = 0;

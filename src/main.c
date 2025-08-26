@@ -48,9 +48,10 @@ int main() {
 
     texture_atlas_load(ASSETS_PATH "atlas.png", 2, 10);
 
-    block_registry_init();
-    item_registry_init();
     block_models_init();
+
+    item_registry_init();
+    block_registry_init();
 
     chunk_manager_init();
 
@@ -73,9 +74,6 @@ int main() {
     Vector2i currentChunkPos = { 0, 0 };
 
     char buffer[1024];
-
-    Material meshMaterial = LoadMaterialDefault();
-    SetMaterialTexture(&meshMaterial, MATERIAL_MAP_ALBEDO, texture_atlas_get());
 
     while (!WindowShouldClose()) {
         camera.offset = (Vector2){

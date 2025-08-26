@@ -63,29 +63,26 @@ int block_models_get_vertex_count(size_t model_idx)
 	return models[model_idx].vertexCount;
 }
 
-void block_models_build_mesh(Mesh* output, size_t idx, size_t atlasIdx, bool flipH, bool flipV) {
-	if (!output) return;
-	if (idx >= MODEL_COUNT) return;
+void block_models_build_mesh(Mesh* output, size_t modelIdx, size_t atlasIdx, bool flipH, bool flipV) {
+	if (output == NULL) return;
+	if (modelIdx >= MODEL_COUNT) return;
 
 	// Calcula UV base do atlas
 	Rectangle uvRect = texture_atlas_get_uv(atlasIdx, flipH, flipV);
 
-	output->vertexCount = models[idx].vertexCount;
-	output->triangleCount = models[idx].vertexCount / 3;
-	output->vertices = malloc(models[idx].vertexCount * 3 * sizeof(float));
-	output->texcoords = malloc(models[idx].vertexCount * 2 * sizeof(float));
+	output->vertexCount = models[modelIdx].vertexCount;
+	output->triangleCount = models[modelIdx].vertexCount / 3;
+	output->vertices = malloc(models[modelIdx].vertexCount * 3 * sizeof(float));
+	output->texcoords = malloc(models[modelIdx].vertexCount * 2 * sizeof(float));
 
-	for (int i = 0; i < models[idx].vertexCount; i++) {
-		// posições
-		output->vertices[(i * 3)] = models[idx].vertices[i].x;
-		output->vertices[(i * 3) + 1] = models[idx].vertices[i].y;
+	for (int i = 0; i < models[modelIdx].vertexCount; i++) {
+		output->vertices[(i * 3)] = models[modelIdx].vertices[i].x;
+		output->vertices[(i * 3) + 1] = models[modelIdx].vertices[i].y;
 		output->vertices[(i * 3) + 2] = 0.0f;
 
-		// UV relativo do modelo
-		float u_rel = models[idx].vertices[i].u;
-		float v_rel = models[idx].vertices[i].v;
+		float u_rel = models[modelIdx].vertices[i].u;
+		float v_rel = models[modelIdx].vertices[i].v;
 
-		// Converte para UV do atlas
 		float u = uvRect.x + u_rel * uvRect.width;
 		float v = uvRect.y + v_rel * uvRect.height;
 

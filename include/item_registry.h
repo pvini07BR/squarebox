@@ -4,11 +4,15 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <raylib.h>
+
 #define ITEM_COUNT 12
 
 typedef struct {
 	const char* name;
-	uint8_t atlas_idx;
+	size_t atlas_idx;
+	size_t model_idx;
+	Mesh mesh;
 	
 	// Set 0 if this item isn't going to place any blocks.
 	uint8_t blockId;

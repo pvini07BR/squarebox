@@ -74,7 +74,7 @@ typedef struct {
 void chunk_init(Chunk* chunk);
 void chunk_regenerate(Chunk* chunk);
 void chunk_genmesh(Chunk* chunk);
-void chunk_draw(Chunk* chunk, Material* material);
+void chunk_draw(Chunk* chunk);
 void chunk_free(Chunk* chunk);
 
 void chunk_fill_light(Chunk* chunk, Vector2u startPoint, uint8_t newLightValue);

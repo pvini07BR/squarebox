@@ -15,15 +15,12 @@
 #include <raymath.h>
 
 static Chunk* chunks = NULL;
-static Material chunkMaterial;
 static Texture2D lightMap;
 static Vector2i currentChunkPos = { 0, 0 };
 
 void chunk_manager_init() {
     chunks = (Chunk*)malloc(CHUNK_COUNT * sizeof(Chunk));
-    chunkMaterial = LoadMaterialDefault();
-    SetMaterialTexture(&chunkMaterial, MATERIAL_MAP_ALBEDO, texture_atlas_get());
-
+    
     for (int c = 0; c < CHUNK_COUNT; c++) {
         chunk_init(&chunks[c]);
         chunks[c].position = (Vector2i){ INT_MAX, INT_MAX };
@@ -35,7 +32,7 @@ void chunk_manager_draw() {
     rlDisableBackfaceCulling();
 
     for (int i = 0; i < CHUNK_COUNT; i++) {
-        chunk_draw(&chunks[i], &chunkMaterial);
+        chunk_draw(&chunks[i]);
     }
 
     DrawTextureEx(
@@ -206,7 +203,7 @@ void chunk_manager_update_lighting() {
             int x = i % CHUNK_WIDTH;
             int y = i / CHUNK_WIDTH;
 
-            if (bbr->transparent && wbr->transparent) {
+            if ((bbr->flags & BLOCK_FLAG_TRANSPARENT) && (wbr->flags & BLOCK_FLAG_TRANSPARENT)) {
                 chunk_fill_light(&chunks[c], (Vector2u) { x, y }, 15);
             }
             else if (bbr->lightLevel > 0 || wbr->lightLevel > 0) {
@@ -235,7 +232,7 @@ bool chunk_manager_interact(Vector2i position, bool isWall) {
     BlockRegistry* brg = br_get_block_registry(inst.id);
 
     // Open container if the selected block holds a container
-    if (brg->flag == BLOCK_FLAG_CONTAINER) {
+    if (brg->trait == BLOCK_TRAIT_CONTAINER) {
         if (inst.state >= 0) {
             item_container_open(container_vector_get(&chunk->containerVec, inst.state));
             return true;
@@ -273,7 +270,7 @@ void chunk_manager_set_block_safe(Vector2i position, BlockInstance blockValue, b
 
             BlockRegistry* br = br_get_block_registry(blockValue.id);
             // If the block is log-like, then rotate it when there are blocks on the sides
-            if (br->flag == BLOCK_FLAG_LOG_LIKE) {
+            if (br->trait == BLOCK_TRAIT_ROTATES) {
                 if (blockNeighbors[NEIGHBOR_RIGHT].id > 0 || blockNeighbors[NEIGHBOR_LEFT].id > 0) blockValue.state = 1;
             }
 

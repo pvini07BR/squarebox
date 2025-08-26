@@ -25,7 +25,7 @@ unsigned int wallBrightness = 128;
 unsigned int wallAOvalue = 64;
 
 #define BLOCK_IS_SOLID_DARK(i) \
-    (!(registries[i]->transparent) && (registries[i]->lightLevel <= 0))
+    (!(registries[i]->flags & BLOCK_FLAG_TRANSPARENT) && (registries[i]->lightLevel <= 0))
 
 unsigned int posmod(int v, int m) {
     int r = v % m;
@@ -187,7 +187,7 @@ void chunk_fill_light(Chunk* chunk, Vector2u startPoint, uint8_t newLightValue) 
     uint8_t decayAmount = 1;
 
     BlockRegistry* br = br_get_block_registry(chunk_get_block(chunk, startPoint, false).id);
-    if (!br->transparent) decayAmount = 4;
+    if (!(br->flags & BLOCK_FLAG_TRANSPARENT)) decayAmount = 4;
 
     Vector2i neighbors[] = {
         { -1, 0 }, { 1, 0 }, { 0, 1 }, { 0, -1 }
@@ -237,9 +237,9 @@ void chunk_set_block(Chunk* chunk, Vector2u position, BlockInstance blockValue, 
     // If the placed block holds a container, add new container to the
     // container vector. If removing a existing container block, then
     // remove the container.
-    if (inst->id <= 0 && brg->flag == BLOCK_FLAG_CONTAINER) {
+    if (inst->id <= 0 && brg->trait == BLOCK_TRAIT_CONTAINER) {
         blockValue.state = container_vector_add(&chunk->containerVec, "Chest", 3, 10, false);
-    } else if (prev_brg->flag == BLOCK_FLAG_CONTAINER && blockValue.id <= 0) {
+    } else if (prev_brg->trait == BLOCK_TRAIT_CONTAINER && blockValue.id <= 0) {
         container_vector_remove(&chunk->containerVec, inst->state);
         inst->state = -1;
     }
@@ -327,8 +327,8 @@ void build_quad(Chunk* chunk, size_t* offsets, BlockInstance* blocks, Mesh* mesh
 
     BlockRegistry* brg = br_get_block_registry(blocks[i].id);
 
-    bool flipH = brg->flipH && (h & 1) ? true : false;
-    bool flipV = brg->flipV && (h & 2) ? true : false;
+    bool flipH = (brg->flags & BLOCK_FLAG_FLIP_H) && (h & 1) ? true : false;
+    bool flipV = (brg->flags & BLOCK_FLAG_FLIP_V) && (h & 2) ? true : false;
 
     bool flipTriangles = false;
 
@@ -432,7 +432,7 @@ void build_quad(Chunk* chunk, size_t* offsets, BlockInstance* blocks, Mesh* mesh
     // Block state rendering
     uint8_t uvRotation = 0;
 
-    if (brg->flag == BLOCK_FLAG_LOG_LIKE) {
+    if (brg->trait == BLOCK_TRAIT_ROTATES) {
         uvRotation = blocks[i].state;
     }
 
@@ -562,7 +562,7 @@ void chunk_regenerate(Chunk* chunk) {
     }
 }
 
-void chunk_draw(Chunk* chunk, Material* material) {
+void chunk_draw(Chunk* chunk) {
     if (!chunk) return;
 
     rlPushMatrix();
@@ -574,8 +574,8 @@ void chunk_draw(Chunk* chunk, Material* material) {
     );
 
     if (chunk->initializedMeshes) {
-        DrawMesh(chunk->wallMesh, *material, MatrixIdentity());
-        DrawMesh(chunk->blockMesh, *material, MatrixIdentity());
+        DrawMesh(chunk->wallMesh, texture_atlas_get_material(), MatrixIdentity());
+        DrawMesh(chunk->blockMesh, texture_atlas_get_material(), MatrixIdentity());
     }
 
     rlPopMatrix();

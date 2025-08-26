@@ -1,6 +1,7 @@
 #include "texture_atlas.h"
 
 static Texture2D textureAtlas;
+static Material material;
 size_t rows;
 size_t columns;
 
@@ -10,6 +11,9 @@ void texture_atlas_load(const char* path, size_t r, size_t c) {
 
 	textureAtlas = LoadTexture(path);
 	SetTextureWrap(textureAtlas, TEXTURE_WRAP_CLAMP);
+
+    material = LoadMaterialDefault();
+    SetMaterialTexture(&material, MATERIAL_MAP_ALBEDO, textureAtlas);
 }
 
 Texture2D texture_atlas_get() { return textureAtlas; }
@@ -64,7 +68,13 @@ Rectangle texture_atlas_get_uv(size_t idx, bool flipH, bool flipV)
     };
 }
 
+Material texture_atlas_get_material()
+{
+    return material;
+}
+
 void texture_atlas_free()
 {
+    UnloadMaterial(material);
 	UnloadTexture(textureAtlas);
 }

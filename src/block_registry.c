@@ -1,9 +1,9 @@
 #include "block_registry.h"
+#include "block_models.h"
+#include "defines.h"
 
 #include <stdlib.h>
 #include <stdio.h>
-
-#include "defines.h"
 
 static BlockRegistry* blockRegistry = NULL;
 
@@ -18,131 +18,99 @@ void block_registry_init() {
         .name = "Air",
         .atlas_idx = 0,
         .model_idx = 0,
+        .trait = BLOCK_TRAIT_NONE,
+        .flags = BLOCK_FLAG_TRANSPARENT,
         .lightLevel = 0,
-        .flag = BLOCK_FLAG_NONE,
-        .transparent = true,
-        .solid = false,
-        .flipH = false,
-        .flipV = false
     };
 
     blockRegistry[1] = (BlockRegistry){
         .name = "Grass Block",
         .atlas_idx = 0,
         .model_idx = 0,
+        .trait = BLOCK_TRAIT_NONE,
+        .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FLIP_H,
         .lightLevel = 0,
-        .flag = BLOCK_FLAG_NONE,
-        .transparent = false,
-        .solid = true,
-        .flipH = true,
-        .flipV = false
     };
 
     blockRegistry[2] = (BlockRegistry){
         .name = "Dirt Block",
         .atlas_idx = 1,
         .model_idx = 0,
+        .trait = BLOCK_TRAIT_NONE,
+        .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FLIP_H | BLOCK_FLAG_FLIP_V,
         .lightLevel = 0,
-        .flag = BLOCK_FLAG_NONE,
-        .transparent = false,
-        .solid = true,
-        .flipH = true,
-        .flipV = true
     };
 
     blockRegistry[3] = (BlockRegistry){
         .name = "Stone Block",
         .atlas_idx = 2,
         .model_idx = 0,
+        .trait = BLOCK_TRAIT_NONE,
+        .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FLIP_H,
         .lightLevel = 0,
-        .flag = BLOCK_FLAG_NONE,
-        .transparent = false,
-        .solid = true,
-        .flipH = true,
-        .flipV = false
     };
 
     blockRegistry[4] = (BlockRegistry){
         .name = "Cobblestone",
         .atlas_idx = 3,
         .model_idx = 0,
+        .trait = BLOCK_TRAIT_NONE,
+        .flags = BLOCK_FLAG_SOLID,
         .lightLevel = 0,
-        .transparent = false,
-        .solid = true,
-        .flipH = false,
-        .flipV = false
     };
 
     blockRegistry[5] = (BlockRegistry){
         .name = "Wooden Planks",
         .atlas_idx = 4,
         .model_idx = 0,
+        .trait = BLOCK_TRAIT_NONE,
+        .flags = BLOCK_FLAG_SOLID,
         .lightLevel = 0,
-        .flag = BLOCK_FLAG_NONE,
-        .transparent = false,
-        .solid = true,
-        .flipH = false,
-        .flipV = false
     };
 
     blockRegistry[6] = (BlockRegistry){
         .name = "Wood Log",
         .atlas_idx = 5,
         .model_idx = 0,
+        .trait = BLOCK_TRAIT_ROTATES,
+        .flags = BLOCK_FLAG_SOLID,
         .lightLevel = 0,
-        .flag = BLOCK_FLAG_LOG_LIKE,
-        .transparent = false,
-        .solid = true,
-        .flipH = false,
-        .flipV = false
     };
 
     blockRegistry[7] = (BlockRegistry){
         .name = "Leaves",
         .atlas_idx = 6,
         .model_idx = 0,
+        .trait = BLOCK_TRAIT_NONE,
+        .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_TRANSPARENT | BLOCK_FLAG_FLIP_H | BLOCK_FLAG_FLIP_V,
         .lightLevel = 0,
-        .flag = BLOCK_FLAG_NONE,
-        .transparent = true,
-        .solid = true,
-        .flipH = true,
-        .flipV = true
     };
 
     blockRegistry[8] = (BlockRegistry){
         .name = "Glass Block",
         .atlas_idx = 7,
         .model_idx = 0,
+        .trait = BLOCK_TRAIT_NONE,
+        .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_TRANSPARENT,
         .lightLevel = 0,
-        .flag = BLOCK_FLAG_NONE,
-        .transparent = true,
-        .solid = true,
-        .flipH = false,
-        .flipV = false
     };
 
     blockRegistry[9] = (BlockRegistry){
         .name = "Lamp Block",
         .atlas_idx = 8,
         .model_idx = 0,
+        .trait = BLOCK_TRAIT_NONE,
+        .flags = BLOCK_FLAG_SOLID,
         .lightLevel = 15,
-        .flag = BLOCK_FLAG_NONE,
-        .transparent = false,
-        .solid = true,
-        .flipH = false,
-        .flipV = false
     };
 
     blockRegistry[10] = (BlockRegistry){
         .name = "Chest",
         .atlas_idx = 9,
         .model_idx = 0,
+        .trait = BLOCK_TRAIT_CONTAINER,
+        .flags = BLOCK_FLAG_SOLID,
         .lightLevel = 0,
-        .flag = BLOCK_FLAG_CONTAINER,
-        .transparent = false,
-        .solid = true,
-        .flipH = false,
-        .flipV = false
     };
 }
 

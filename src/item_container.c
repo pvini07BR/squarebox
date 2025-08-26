@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include <rlgl.h>
 #include <raylib.h>
 #include <raymath.h>
 
@@ -228,6 +229,15 @@ void draw_item(ItemSlot* is, int x, int y) {
 	if (is->item_id <= 0) return;
 	ItemRegistry* ir = ir_get_item_registry(is->item_id);
 
+	rlDrawRenderBatchActive();
+
+	DrawMesh(
+		ir->mesh,
+		texture_atlas_get_material(),
+		MatrixTranslate(x + ((ITEM_SLOT_SIZE - TILE_SIZE) / 2.0f), y + ((ITEM_SLOT_SIZE - TILE_SIZE) / 2.0f), 0.0f)
+	);
+
+	/*
 	DrawTexturePro(
 		texture_atlas_get(),
 		texture_atlas_get_rect(ir->atlas_idx, false, false),
@@ -241,6 +251,7 @@ void draw_item(ItemSlot* is, int x, int y) {
 		0.0f,
 		WHITE
 	);
+	*/
 
 	if (is->amount > 1) {
 		char amountStr[4];
@@ -257,6 +268,8 @@ void draw_item(ItemSlot* is, int x, int y) {
 }
 
 void item_container_draw_specific(ItemContainer* ic, int x, int y) {
+	if (!ic) return;
+
 	Vector2 size = item_container_get_size(ic);
 	Vector2 titleSize = MeasureTextEx(GetFontDefault(), ic->name, TITLE_SIZE, 0.0f);
 	titleSize.y += ITEM_SLOT_GAP;

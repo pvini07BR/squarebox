@@ -14,8 +14,8 @@ void block_models_init() {
 		.vertices = malloc(sizeof(Vertex2D) * 6)
 	};
 	models[BLOCK_MODEL_QUAD].vertices[0] = (Vertex2D){ 0,         0,         0, 0 };
-	models[BLOCK_MODEL_QUAD].vertices[1] = (Vertex2D){ TILE_SIZE, TILE_SIZE, 1, 1 };
-	models[BLOCK_MODEL_QUAD].vertices[2] = (Vertex2D){ 0,         TILE_SIZE, 0, 1 };
+	models[BLOCK_MODEL_QUAD].vertices[1] = (Vertex2D){ 0,         TILE_SIZE, 0, 1 };
+	models[BLOCK_MODEL_QUAD].vertices[2] = (Vertex2D){ TILE_SIZE, TILE_SIZE, 1, 1 };
 	
 	models[BLOCK_MODEL_QUAD].vertices[3] = (Vertex2D){ 0,         0,         0, 0 };
 	models[BLOCK_MODEL_QUAD].vertices[4] = (Vertex2D){ TILE_SIZE, TILE_SIZE, 1, 1 };
@@ -27,8 +27,8 @@ void block_models_init() {
 		.vertices = malloc(sizeof(Vertex2D) * 6)
 	};
 	models[BLOCK_MODEL_SLAB].vertices[0] = (Vertex2D){ 0,                  TILE_SIZE / 2.0f, 0.0f, 0.5f };
-	models[BLOCK_MODEL_SLAB].vertices[1] = (Vertex2D){ TILE_SIZE,          TILE_SIZE,        1.0f, 1.0f };
-	models[BLOCK_MODEL_SLAB].vertices[2] = (Vertex2D){ 0,                  TILE_SIZE,        0.0f, 1.0f };
+	models[BLOCK_MODEL_SLAB].vertices[1] = (Vertex2D){ 0,                  TILE_SIZE,        0.0f, 1.0f };
+	models[BLOCK_MODEL_SLAB].vertices[2] = (Vertex2D){ TILE_SIZE,          TILE_SIZE,        1.0f, 1.0f };
 		   													           
 	models[BLOCK_MODEL_SLAB].vertices[3] = (Vertex2D){ 0,                  TILE_SIZE / 2.0f, 0.0f, 0.5f };
 	models[BLOCK_MODEL_SLAB].vertices[4] = (Vertex2D){ TILE_SIZE,          TILE_SIZE,        1.0f, 1.0f };
@@ -40,21 +40,21 @@ void block_models_init() {
 		.vertices = malloc(sizeof(Vertex2D) * 12)
 	};
 
-	models[BLOCK_MODEL_STAIRS].vertices[0] =  (Vertex2D){ 0,                TILE_SIZE / 2.0f, 0.0f, 0.5f };
-	models[BLOCK_MODEL_STAIRS].vertices[1] =  (Vertex2D){ TILE_SIZE,        TILE_SIZE / 2.0f, 1.0f, 0.5f };
-	models[BLOCK_MODEL_STAIRS].vertices[2] =  (Vertex2D){ 0,                TILE_SIZE,        0.0f, 1.0f };
-					 					          
-	models[BLOCK_MODEL_STAIRS].vertices[3] =  (Vertex2D){ 0,                TILE_SIZE,        0.0f, 1.0f };
-	models[BLOCK_MODEL_STAIRS].vertices[4] =  (Vertex2D){ TILE_SIZE,        TILE_SIZE / 2.0f, 1.0f, 0.5f };
-	models[BLOCK_MODEL_STAIRS].vertices[5] =  (Vertex2D){ TILE_SIZE,        TILE_SIZE,        1.0f, 1.0f };
+	models[BLOCK_MODEL_STAIRS].vertices[0] = (Vertex2D){ 0.0f,              TILE_SIZE / 2.0f, 0.0f, 0.5f };
+	models[BLOCK_MODEL_STAIRS].vertices[1] = (Vertex2D){ 0.0f,              TILE_SIZE,        0.0f, 1.0f };
+	models[BLOCK_MODEL_STAIRS].vertices[2] = (Vertex2D){ TILE_SIZE,         TILE_SIZE,        1.0f, 1.0f };
+
+	models[BLOCK_MODEL_STAIRS].vertices[3] = (Vertex2D){ 0.0f,              TILE_SIZE / 2.0f, 0.0f, 0.5f };
+	models[BLOCK_MODEL_STAIRS].vertices[4] = (Vertex2D){ TILE_SIZE,         TILE_SIZE,        1.0f, 1.0f };
+	models[BLOCK_MODEL_STAIRS].vertices[5] = (Vertex2D){ TILE_SIZE,         TILE_SIZE / 2.0f, 1.0f, 0.5f };
 					 
-	models[BLOCK_MODEL_STAIRS].vertices[6] =  (Vertex2D){ TILE_SIZE / 2.0f, 0,                0.5f, 0.0f };
-	models[BLOCK_MODEL_STAIRS].vertices[7] =  (Vertex2D){ TILE_SIZE,        0,                1.0f, 0.0f };
-	models[BLOCK_MODEL_STAIRS].vertices[8] =  (Vertex2D){ TILE_SIZE / 2.0f, TILE_SIZE / 2.0f, 0.5f, 0.5f };
+	models[BLOCK_MODEL_STAIRS].vertices[6] =  (Vertex2D){ TILE_SIZE / 2.0f, 0.0f,             0.5f, 0.0f };
+	models[BLOCK_MODEL_STAIRS].vertices[7] =  (Vertex2D){ TILE_SIZE / 2.0f, TILE_SIZE / 2.0f, 0.5f, 0.5f };
+	models[BLOCK_MODEL_STAIRS].vertices[8] =  (Vertex2D){ TILE_SIZE,        TILE_SIZE / 2.0f, 1.0f, 0.5f };
 		   
-	models[BLOCK_MODEL_STAIRS].vertices[9] =  (Vertex2D){ TILE_SIZE / 2.0f, TILE_SIZE / 2.0f, 0.5f, 0.5f };
-	models[BLOCK_MODEL_STAIRS].vertices[10] = (Vertex2D){ TILE_SIZE,        0,                1.0f, 0.0f };
-	models[BLOCK_MODEL_STAIRS].vertices[11] = (Vertex2D){ TILE_SIZE,        TILE_SIZE / 2.0f, 1.0f, 0.5f };
+	models[BLOCK_MODEL_STAIRS].vertices[9] =  (Vertex2D){ TILE_SIZE / 2.0f, 0.0f,             0.5f, 0.0f };
+	models[BLOCK_MODEL_STAIRS].vertices[10] = (Vertex2D){ TILE_SIZE,        TILE_SIZE / 2.0f, 1.0f, 0.5f };
+	models[BLOCK_MODEL_STAIRS].vertices[11] = (Vertex2D){ TILE_SIZE,        0.0f,             1.0f, 0.0f };
 
 	// Nub model
 	models[BLOCK_MODEL_NUB] = (BlockModel){
@@ -63,12 +63,26 @@ void block_models_init() {
 	};
 
 	models[BLOCK_MODEL_NUB].vertices[0] = (Vertex2D){ TILE_SIZE / 2.0f, TILE_SIZE / 2.0f, 0.5f, 0.5f };
-	models[BLOCK_MODEL_NUB].vertices[1] = (Vertex2D){ TILE_SIZE,        TILE_SIZE,        1.0f, 1.0f };
-	models[BLOCK_MODEL_NUB].vertices[2] = (Vertex2D){ TILE_SIZE / 2.0f, TILE_SIZE,        0.5f, 1.0f };
+	models[BLOCK_MODEL_NUB].vertices[1] = (Vertex2D){ TILE_SIZE / 2.0f, TILE_SIZE,        0.5f, 1.0f };
+	models[BLOCK_MODEL_NUB].vertices[2] = (Vertex2D){ TILE_SIZE,        TILE_SIZE,        1.0f, 1.0f };
 
 	models[BLOCK_MODEL_NUB].vertices[3] = (Vertex2D){ TILE_SIZE / 2.0f, TILE_SIZE / 2.0f, 0.5f, 0.5f };
 	models[BLOCK_MODEL_NUB].vertices[4] = (Vertex2D){ TILE_SIZE,        TILE_SIZE,        1.0f, 1.0f };
 	models[BLOCK_MODEL_NUB].vertices[5] = (Vertex2D){ TILE_SIZE,        TILE_SIZE / 2.0f, 1.0f, 0.5f };
+
+	// Torch model
+	models[BLOCK_MODEL_TORCH] = (BlockModel){
+		.vertexCount = 6,
+		.vertices = malloc(sizeof(Vertex2D) * 6)
+	};
+
+	models[BLOCK_MODEL_TORCH].vertices[0] = (Vertex2D){ TILE_SIZE * 0.4375f, TILE_SIZE * 0.4375f, 0.4375f, 0.4375f };
+	models[BLOCK_MODEL_TORCH].vertices[1] = (Vertex2D){ TILE_SIZE * 0.4375f, TILE_SIZE,           0.4375f, 1.0f    };
+	models[BLOCK_MODEL_TORCH].vertices[2] = (Vertex2D){ TILE_SIZE * 0.5625f, TILE_SIZE,           0.5625f, 1.0f    };
+
+	models[BLOCK_MODEL_TORCH].vertices[3] = (Vertex2D){ TILE_SIZE * 0.4375f, TILE_SIZE * 0.4375f, 0.4375f, 0.4375f };
+	models[BLOCK_MODEL_TORCH].vertices[4] = (Vertex2D){ TILE_SIZE * 0.5625f, TILE_SIZE,           0.5625f, 1.0f    };
+	models[BLOCK_MODEL_TORCH].vertices[5] = (Vertex2D){ TILE_SIZE * 0.5625f, TILE_SIZE * 0.4375f, 0.5625f, 0.4375f };
 }
 
 int block_models_get_vertex_count(size_t model_idx)
@@ -121,17 +135,14 @@ void bm_set_block_model(size_t* offsets, Mesh* mesh, Vector2u position, Color co
 
 	Rectangle uvRect = texture_atlas_get_uv(atlasIdx, flipUV_H, flipUV_V);
 
-	// centro do tile em coordenadas do mundo/local
 	const float tileHalf = (float)TILE_SIZE * 0.5f;
 	const float baseX = (float)position.x * (float)TILE_SIZE;
 	const float baseY = (float)position.y * (float)TILE_SIZE;
 
 	for (int v = 0; v < models[modelIdx].vertexCount; v++) {
-		// posição original (assumida em 0..TILE_SIZE)
 		float vx = models[modelIdx].vertices[v].x;
 		float vy = models[modelIdx].vertices[v].y;
 
-		// mover para centro, rotacionar, mover de volta
 		float lx = vx - tileHalf;
 		float ly = vy - tileHalf;
 		float rx, ry;
@@ -194,12 +205,13 @@ void bm_set_block_model(size_t* offsets, Mesh* mesh, Vector2u position, Color co
 		int colorIdx = 0;
 		if (modelIdx != BLOCK_MODEL_STAIRS) {
 			if (v == 0) colorIdx = 0;	// Top left
-			if (v == 1) colorIdx = 2;	// Bottom right
-			if (v == 2) colorIdx = 3;	// Bottom left
+			if (v == 1) colorIdx = 3;	// Bottom left
+			if (v == 2) colorIdx = 2;	// Bottom right
 			if (v == 3) colorIdx = 0;	// Top left
 			if (v == 4) colorIdx = 2;	// Bottom right
 			if (v == 5) colorIdx = 1;	// Top right
 		}
+		/*
 		else {
 			if (v == 0) colorIdx = 0;	// Bottom quad top left
 			if (v == 1) colorIdx = 2;	// Bottom quad top right
@@ -215,6 +227,7 @@ void bm_set_block_model(size_t* offsets, Mesh* mesh, Vector2u position, Color co
 			if (v == 10) colorIdx = 1;  // Upper quad top right
 			if (v == 11) colorIdx = 2;	// Upper quad bottom right
 		}
+		*/
 
 		mesh->colors[(vertexOffset + v) * 4 + 0] = colors[colorIdx].r;
 		mesh->colors[(vertexOffset + v) * 4 + 1] = colors[colorIdx].g;

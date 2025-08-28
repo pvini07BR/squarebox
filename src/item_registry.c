@@ -160,6 +160,13 @@ void item_registry_init() {
 		.model_idx = BLOCK_MODEL_NUB,
 		.blockId = BLOCK_WOODEN_PLANKS_NUB
 	};
+	
+	itemRegistry[ITEM_TORCH] = (ItemRegistry){
+		.name = "Torch",
+		.atlas_idx = 10,
+		.model_idx = BLOCK_MODEL_TORCH,
+		.blockId = 0
+	};
 
 	for (int i = 0; i < ITEM_COUNT; i++) {
 		itemRegistry[i].mesh = (Mesh){ 0 };

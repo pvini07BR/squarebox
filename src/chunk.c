@@ -327,32 +327,6 @@ void chunk_genmesh(Chunk* chunk) {
         // Blocks that emit light will not be darkened when its placed as a wall.
         build_quad(chunk, chunk->wallOffsets, chunk->walls, &chunk->wallMesh, true, x, y, brg->lightLevel <= 0 ? wallBrightness : 255);
         build_quad(chunk, chunk->blockOffsets, chunk->blocks, &chunk->blockMesh, false, x, y, 255);
-
-        /*
-        if (chunk->blocks[i].id > 0) {
-            BlockRegistry* rg = br_get_block_registry(chunk->blocks[i].id);
-            bm_set_block_model(
-                chunk->blockOffsets,
-                &chunk->blockMesh,
-                (Vector2u){ x, y },
-                WHITE,
-                rg->model_idx,
-                rg->atlas_idx
-            );
-        }
-
-        if (chunk->walls[i].id > 0) {
-            BlockRegistry* rg = br_get_block_registry(chunk->walls[i].id);
-            bm_set_block_model(
-                chunk->wallOffsets,
-                &chunk->wallMesh,
-                (Vector2u) { x, y },
-                GRAY,
-                rg->model_idx,
-                rg->atlas_idx
-            );
-        }
-        */
     }
 
     UploadMesh(&chunk->blockMesh, false);

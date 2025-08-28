@@ -29,7 +29,7 @@ void chunk_manager_init() {
 }
 
 void chunk_manager_draw() {
-    rlDisableBackfaceCulling();
+    //rlDisableBackfaceCulling();
 
     for (int i = 0; i < CHUNK_COUNT; i++) {
         chunk_draw(&chunks[i]);

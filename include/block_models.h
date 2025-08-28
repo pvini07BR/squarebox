@@ -12,6 +12,7 @@ typedef enum {
     BLOCK_MODEL_SLAB,
     BLOCK_MODEL_STAIRS,
     BLOCK_MODEL_NUB,
+    BLOCK_MODEL_TORCH,
     BLOCK_MODEL_COUNT
 } BlockModelEnum;
 

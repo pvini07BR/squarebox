@@ -88,14 +88,6 @@ void chunk_set_block(Chunk* chunk, Vector2u position, BlockInstance blockValue, 
     if (!chunk) return;
     if (position.x >= CHUNK_WIDTH || position.y >= CHUNK_WIDTH) return;
 
-    BlockRegistry* brg = br_get_block_registry(blockValue.id);
-
-    BlockInstance* inst = NULL;
-    if (!isWall) inst = &chunk->blocks[position.x + (position.y * CHUNK_WIDTH)];
-    else inst = &chunk->walls[position.x + (position.y * CHUNK_WIDTH)];
-
-    BlockRegistry* prev_brg = br_get_block_registry(inst->id);
-
     // If the placed block holds a container, add new container to the
     // container vector. If removing a existing container block, then
     // remove the container.

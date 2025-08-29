@@ -1,6 +1,7 @@
 #ifndef BLOCK_REGISTRY_H
 #define BLOCK_REGISTRY_H
 
+#include "chunk.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -83,6 +84,9 @@ typedef struct {
 	// If the value is greater than zero, then this block will emit light.
 	// otherwise it will not.
 	uint8_t lightLevel;
+	// Function pointer to a function that will resolve the state of the block.
+	// returns a bool value to indicate if the block can be placed or not.
+	bool (*state_resolver)(BlockInstance* inst, BlockInstance neighbors[4], Chunk* chunk, bool isWall);
 } BlockRegistry;
 
 void block_registry_init();

@@ -1,4 +1,6 @@
 #include "block_models.h"
+#include "raylib.h"
+#include "raymath.h"
 #include "texture_atlas.h"
 #include "defines.h"
 
@@ -75,26 +77,46 @@ void block_models_init() {
 		.vertices = malloc(sizeof(Vertex2D) * 6)
 	};
 
-	models[BLOCK_MODEL_TORCH].vertices[0] = (Vertex2D){ TILE_SIZE * 0.4375f, TILE_SIZE * 0.4375f, 0.4375f, 0.4375f };
-	models[BLOCK_MODEL_TORCH].vertices[1] = (Vertex2D){ TILE_SIZE * 0.4375f, TILE_SIZE,           0.4375f, 1.0f    };
-	models[BLOCK_MODEL_TORCH].vertices[2] = (Vertex2D){ TILE_SIZE * 0.5625f, TILE_SIZE,           0.5625f, 1.0f    };
+	float unit = 1.0f / (float)TILE_SIZE;
 
-	models[BLOCK_MODEL_TORCH].vertices[3] = (Vertex2D){ TILE_SIZE * 0.4375f, TILE_SIZE * 0.4375f, 0.4375f, 0.4375f };
-	models[BLOCK_MODEL_TORCH].vertices[4] = (Vertex2D){ TILE_SIZE * 0.5625f, TILE_SIZE,           0.5625f, 1.0f    };
-	models[BLOCK_MODEL_TORCH].vertices[5] = (Vertex2D){ TILE_SIZE * 0.5625f, TILE_SIZE * 0.4375f, 0.5625f, 0.4375f };
+	Vector2 p0 = { unit * 14, unit * 14 };
+	Vector2 p1 = { unit * 14, unit * 32 };
+	Vector2 p2 = { unit * 18, unit * 32 };
+	Vector2 p3 = { unit * 18, unit * 14 };
 
+	models[BLOCK_MODEL_TORCH].vertices[0] = (Vertex2D){ p0.x * TILE_SIZE, p0.y * TILE_SIZE, p0.x, p0.y };
+	models[BLOCK_MODEL_TORCH].vertices[1] = (Vertex2D){ p1.x * TILE_SIZE, p1.y * TILE_SIZE, p1.x, p1.y };
+	models[BLOCK_MODEL_TORCH].vertices[2] = (Vertex2D){ p2.x * TILE_SIZE, p2.y * TILE_SIZE, p2.x, p2.y };
+
+	models[BLOCK_MODEL_TORCH].vertices[3] = (Vertex2D){ p0.x * TILE_SIZE, p0.y * TILE_SIZE, p0.x, p0.y };
+	models[BLOCK_MODEL_TORCH].vertices[4] = (Vertex2D){ p2.x * TILE_SIZE, p2.y * TILE_SIZE, p2.x, p2.y };
+	models[BLOCK_MODEL_TORCH].vertices[5] = (Vertex2D){ p3.x * TILE_SIZE, p3.y * TILE_SIZE, p3.x, p3.y };
+
+	Vector2 p = Vector2Rotate((Vector2){ models[BLOCK_MODEL_TORCH].vertices[0].x, models[BLOCK_MODEL_TORCH].vertices[0].y }, PI / 2.0f);
+
+	// Torch on the wall model
 	models[BLOCK_MODEL_TORCH_WALL] = (BlockModel){
 		.vertexCount = 6,
 		.vertices = malloc(sizeof(Vertex2D) * 6)
 	};
 
-	models[BLOCK_MODEL_TORCH_WALL].vertices[0] = (Vertex2D){ TILE_SIZE * 0.7660f, TILE_SIZE * 0.1097f, 0.4375f, 0.4375f };
-	models[BLOCK_MODEL_TORCH_WALL].vertices[1] = (Vertex2D){ TILE_SIZE * 0.8792f, TILE_SIZE * 0.5323f, 0.4375f, 1.0f    };
-	models[BLOCK_MODEL_TORCH_WALL].vertices[2] = (Vertex2D){ TILE_SIZE,           TILE_SIZE * 0.5f,    0.5625f, 1.0f    };
+	Vector2 new_p0 = (Vector2){ unit * 28, unit * -1.25f };
+	Vector2 new_p1 = (Vector2){ unit * 28, unit * 15.25f };
+	Vector2 new_p2 = (Vector2){ unit * 32, unit * 15.25f };
+	Vector2 new_p3 = (Vector2){ unit * 32, unit * -1.25f };
 
-	models[BLOCK_MODEL_TORCH_WALL].vertices[3] = (Vertex2D){ TILE_SIZE * 0.7660f, TILE_SIZE * 0.1097f, 0.4375f, 0.4375f };
-	models[BLOCK_MODEL_TORCH_WALL].vertices[4] = (Vertex2D){ TILE_SIZE,           TILE_SIZE * 0.5f,    0.5625f, 1.0f    };
-	models[BLOCK_MODEL_TORCH_WALL].vertices[5] = (Vertex2D){ TILE_SIZE * 0.8867f, TILE_SIZE * 0.0774f, 0.5625f, 0.4375f };
+	Vector2 rp0 = Vector2Add(Vector2Rotate(Vector2Subtract(new_p0, new_p2), -PI / 8.0f), new_p2);
+	Vector2 rp1 = Vector2Add(Vector2Rotate(Vector2Subtract(new_p1, new_p2), -PI / 8.0f), new_p2);
+	Vector2 rp2 = Vector2Add(Vector2Rotate(Vector2Subtract(new_p2, new_p2), -PI / 8.0f), new_p2);
+	Vector2 rp3 = Vector2Add(Vector2Rotate(Vector2Subtract(new_p3, new_p2), -PI / 8.0f), new_p2);
+
+	models[BLOCK_MODEL_TORCH_WALL].vertices[0] = (Vertex2D){ rp0.x * TILE_SIZE, rp0.y * TILE_SIZE, p0.x, p0.y };
+	models[BLOCK_MODEL_TORCH_WALL].vertices[1] = (Vertex2D){ rp1.x * TILE_SIZE, rp1.y * TILE_SIZE, p1.x, p1.y };
+	models[BLOCK_MODEL_TORCH_WALL].vertices[2] = (Vertex2D){ rp2.x * TILE_SIZE, rp2.y * TILE_SIZE, p2.x, p2.y };
+
+	models[BLOCK_MODEL_TORCH_WALL].vertices[3] = (Vertex2D){ rp0.x * TILE_SIZE, rp0.y * TILE_SIZE, p0.x, p0.y };
+	models[BLOCK_MODEL_TORCH_WALL].vertices[4] = (Vertex2D){ rp2.x * TILE_SIZE, rp2.y * TILE_SIZE, p2.x, p2.y };
+	models[BLOCK_MODEL_TORCH_WALL].vertices[5] = (Vertex2D){ rp3.x * TILE_SIZE, rp3.y * TILE_SIZE, p3.x, p3.y };
 }
 
 int block_models_get_vertex_count(size_t model_idx)

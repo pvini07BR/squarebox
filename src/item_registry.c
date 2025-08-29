@@ -165,12 +165,12 @@ void item_registry_init() {
 		.name = "Torch",
 		.atlas_idx = 10,
 		.model_idx = BLOCK_MODEL_TORCH,
-		.blockId = 0
+		.blockId = BLOCK_TORCH
 	};
 
 	for (int i = 0; i < ITEM_COUNT; i++) {
 		itemRegistry[i].mesh = (Mesh){ 0 };
-		block_models_build_mesh(&itemRegistry[i].mesh, itemRegistry[i].model_idx, itemRegistry[i].atlas_idx, false, false, 0);
+		block_models_build_mesh(&itemRegistry[i].mesh, itemRegistry[i].model_idx, itemRegistry[i].atlas_idx, false, false, false, false, 0);
 	}
 }
 

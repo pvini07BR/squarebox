@@ -183,9 +183,47 @@ int main() {
         else if ((IsKeyPressed(KEY_E) || IsKeyPressed(KEY_ESCAPE) && item_container_is_open()))
             item_container_close();
 
-        if (IsKeyPressed(KEY_Z)) blockState--;
-        if (IsKeyPressed(KEY_X)) blockState++;
+        ItemSlot heldItem = inventory_get_item(0, hotbarIdx);
+        ItemRegistry* heldItemReg = ir_get_item_registry(heldItem.item_id);
+        BlockRegistry* heldBlockReg = br_get_block_registry(heldItemReg->blockId);
+        if (heldItemReg->blockId > 0 && heldBlockReg->flags & BLOCK_FLAG_STATE_MUTABLE) {
+            bool reload = false;
 
+            if (lastItemId != heldItem.item_id) reload = true;
+
+            if (IsKeyPressed(KEY_Z) || IsKeyPressed(KEY_X)) {
+                if (IsKeyPressed(KEY_Z)) blockState--;
+                if (IsKeyPressed(KEY_X)) blockState++;
+
+                if (blockState < 0) blockState = heldBlockReg->variant_count - 1;
+                if (blockState >= heldBlockReg->variant_count) blockState = 0;
+
+                reload = true;
+            }
+
+            if (reload) {
+                if (loadedGhostMesh == true) {
+                    UnloadMesh(ghostBlockMesh);
+                    ghostBlockMesh = (Mesh){ 0 };
+                    loadedGhostMesh = false;
+                }
+            }
+            
+            if (loadedGhostMesh == false) {
+                BlockVariant bvar = br_get_block_variant(heldItemReg->blockId, blockState);
+                block_models_build_mesh(&ghostBlockMesh, bvar.model_idx, bvar.atlas_idx, false, false, bvar.flipH, bvar.flipV, bvar.rotation);
+                loadedGhostMesh = true;
+            }
+        } else {
+            blockState = 0;
+            if (loadedGhostMesh == true) {
+                UnloadMesh(ghostBlockMesh);
+                ghostBlockMesh = (Mesh){ 0 };
+                loadedGhostMesh = false;
+            }
+        }
+
+        /*
         if (hotbarIdx != last_hotbarIdx || blockState != last_blockState || inventory_get_item(0, hotbarIdx).item_id != lastItemId) {
             if (loadedGhostMesh == true) {
                 UnloadMesh(ghostBlockMesh);
@@ -208,6 +246,7 @@ int main() {
             last_blockState = blockState;
             lastItemId = inventory_get_item(0, hotbarIdx).item_id;
         }
+        */
 
         Vector2i cameraChunkPos = {
             (int)floorf(camera.target.x / (CHUNK_WIDTH * TILE_SIZE)),

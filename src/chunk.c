@@ -99,12 +99,14 @@ void chunk_set_block(Chunk* chunk, Vector2u position, BlockInstance blockValue, 
     // If the placed block holds a container, add new container to the
     // container vector. If removing a existing container block, then
     // remove the container.
+    /*
     if (inst->id <= 0 && brg->trait == BLOCK_TRAIT_CONTAINER) {
         blockValue.state = container_vector_add(&chunk->containerVec, "Chest", 3, 10, false);
     } else if (prev_brg->trait == BLOCK_TRAIT_CONTAINER && blockValue.id <= 0) {
         container_vector_remove(&chunk->containerVec, inst->state);
         inst->state = -1;
     }
+    */
 
     if (!isWall)
         chunk->blocks[position.x + (position.y * CHUNK_WIDTH)] = blockValue;
@@ -189,8 +191,8 @@ void build_quad(Chunk* chunk, size_t* offsets, BlockInstance* blocks, Mesh* mesh
 
     BlockRegistry* brg = br_get_block_registry(blocks[i].id);
 
-    bool flipH = (brg->flags & BLOCK_FLAG_FLIP_H) && (h & 1) ? true : false;
-    bool flipV = (brg->flags & BLOCK_FLAG_FLIP_V) && (h & 2) ? true : false;
+    bool flipUVH = (brg->flags & BLOCK_FLAG_FLIP_H) && (h & 1) ? true : false;
+    bool flipUVV = (brg->flags & BLOCK_FLAG_FLIP_V) && (h & 2) ? true : false;
 
     bool flipTriangles = false;
 
@@ -294,10 +296,8 @@ void build_quad(Chunk* chunk, size_t* offsets, BlockInstance* blocks, Mesh* mesh
 
     // Block state rendering
     BlockVariant bvar = br_get_block_variant(blocks[i].id, blocks[i].state);
-    if (!flipH) flipH = bvar.flipH;
-    if (!flipV) flipV = bvar.flipV;
 
-    bm_set_block_model(offsets, mesh, (Vector2u) { x, y }, colors, bvar.model_idx, bvar.atlas_idx, flipH, flipV, bvar.rotation, bvar.model_idx > 0);
+    bm_set_block_model(offsets, mesh, (Vector2u) { x, y }, colors, bvar.model_idx, bvar.atlas_idx, flipUVH, flipUVV, bvar.flipH, bvar.flipV, bvar.rotation);
 }
 
 void chunk_genmesh(Chunk* chunk) {

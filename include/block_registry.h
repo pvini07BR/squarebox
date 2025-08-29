@@ -30,19 +30,9 @@ typedef enum {
 	BLOCK_STONE_NUB,
 	BLOCK_COBBLESTONE_NUB,
 	BLOCK_WOODEN_PLANKS_NUB,
+	BLOCK_TORCH,
 	BLOCK_COUNT
 } BlockEnum;
-
-typedef enum {
-	// No trait is assigned to that block.
-	BLOCK_TRAIT_NONE,
-
-	// Will make the block be able to rotate.
-	BLOCK_TRAIT_ROTATES,
-
-	// This makes the block be interactable and store (a index to) a container.
-	BLOCK_TRAIT_CONTAINER
-} BlockTrait;
 
 typedef enum {
 	// Tells if the block is transparent.
@@ -55,7 +45,11 @@ typedef enum {
 	BLOCK_FLAG_FLIP_H = (1 << 2),
 
 	// Tells if the block can flip vertically randomly.
-	BLOCK_FLAG_FLIP_V = (1 << 3)
+	BLOCK_FLAG_FLIP_V = (1 << 3),
+
+	// Tells if the state of this block can be determined
+	// instead of calculated.
+	BLOCK_FLAG_STATE_MUTABLE = (1 << 4)
 } BlockFlag;
 
 typedef struct {
@@ -65,9 +59,9 @@ typedef struct {
 	// Index of the model in the block models array.
 	// see block_models.c.
 	size_t model_idx;
-	// Determines if the texture should flip horizontally in this block state.
+	// Determines if the model should flip horizontally in this block state.
 	bool flipH;
-	// Determines if the texture should flip vertically in this block state.
+	// Determines if the model should flip vertically in this block state.
 	bool flipV;
 	// Determines what rotation the model should have in this block state.
 	uint8_t rotation;
@@ -83,9 +77,6 @@ typedef struct {
 	// it will be indexed with the state member variable
 	// in the BlockInstance struct.
 	BlockVariant variants[MAX_BLOCK_VARIANTS];
-	// Enum value that tells what trait the block will have.
-	// It tells if it will rotate, or have a container, etc.
-	BlockTrait trait;
 	// Bit flags that will tell if the block is transaprent, solid, etc.
 	// see the BlockFlag enum.
 	uint8_t flags;

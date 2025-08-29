@@ -28,6 +28,8 @@ void chunk_manager_init() {
 }
 
 void chunk_manager_draw() {
+    rlDisableBackfaceCulling();
+    
     for (int i = 0; i < CHUNK_COUNT; i++) {
         chunk_draw(&chunks[i]);
     }
@@ -233,12 +235,14 @@ bool chunk_manager_interact(Vector2i position, bool isWall) {
     BlockRegistry* brg = br_get_block_registry(inst.id);
 
     // Open container if the selected block holds a container
+    /*
     if (brg->trait == BLOCK_TRAIT_CONTAINER) {
         if (inst.state >= 0) {
             item_container_open(container_vector_get(&chunk->containerVec, inst.state));
             return true;
         }
     }
+    */
 
     return false;
 }

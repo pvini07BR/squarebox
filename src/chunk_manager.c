@@ -276,6 +276,14 @@ void chunk_manager_set_block_safe(Vector2i position, BlockInstance blockValue, b
                 }
             }
 
+            if (!isWall) {
+                BlockRegistry* br = br_get_block_registry(chunk_get_block(chunk, relPos, true).id);
+                if (br->flags & BLOCK_FLAG_SOLID) canPlace = true;
+            } else {
+                BlockRegistry* br = br_get_block_registry(chunk_get_block(chunk, relPos, false).id);
+                if (br->flags & BLOCK_FLAG_SOLID) canPlace = true;
+            }
+
             // Resolve the state before setting the block
             BlockRegistry* brg = br_get_block_registry(blockValue.id);
             if (brg->state_resolver) {

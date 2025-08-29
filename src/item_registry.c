@@ -170,7 +170,7 @@ void item_registry_init() {
 
 	for (int i = 0; i < ITEM_COUNT; i++) {
 		itemRegistry[i].mesh = (Mesh){ 0 };
-		block_models_build_mesh(&itemRegistry[i].mesh, itemRegistry[i].model_idx, itemRegistry[i].atlas_idx, false, false);
+		block_models_build_mesh(&itemRegistry[i].mesh, itemRegistry[i].model_idx, itemRegistry[i].atlas_idx, false, false, 0);
 	}
 }
 

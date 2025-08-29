@@ -1,11 +1,12 @@
 #ifndef BLOCK_REGISTRY_H
 #define BLOCK_REGISTRY_H
 
-#include <stdbool.h>
-#include <stdint.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #include <raylib.h>
+
+#define MAX_BLOCK_VARIANTS 4
 
 typedef enum {
 	BLOCK_AIR,
@@ -57,9 +58,6 @@ typedef enum {
 	BLOCK_FLAG_FLIP_V = (1 << 3)
 } BlockFlag;
 
-// Struct that tells the properties of a block.
-// It is used through a index on the static registry array
-// to obtain the necessary details.
 typedef struct {
 	// Index in the atlas texture to use.
 	// See texture_atlas.c.
@@ -67,6 +65,24 @@ typedef struct {
 	// Index of the model in the block models array.
 	// see block_models.c.
 	size_t model_idx;
+	// Determines if the texture should flip horizontally in this block state.
+	bool flipH;
+	// Determines if the texture should flip vertically in this block state.
+	bool flipV;
+	// Determines what rotation the model should have in this block state.
+	uint8_t rotation;
+} BlockVariant;
+
+// Struct that tells the properties of a block.
+// It is used through a index on the static registry array
+// to obtain the necessary details.
+typedef struct {
+	// Number of variants this block has.
+	size_t variant_count;
+	// An array of variants for that block.
+	// it will be indexed with the state member variable
+	// in the BlockInstance struct.
+	BlockVariant variants[MAX_BLOCK_VARIANTS];
 	// Enum value that tells what trait the block will have.
 	// It tells if it will rotate, or have a container, etc.
 	BlockTrait trait;
@@ -80,6 +96,7 @@ typedef struct {
 
 void block_registry_init();
 BlockRegistry* br_get_block_registry(size_t idx);
+BlockVariant br_get_block_variant(size_t reg_idx, size_t variant_idx);
 void block_registry_free();
 
 #endif

@@ -1,5 +1,4 @@
 #include "block_models.h"
-#include "block_registry.h"
 #include "texture_atlas.h"
 #include "defines.h"
 
@@ -91,34 +90,71 @@ int block_models_get_vertex_count(size_t model_idx)
 	return models[model_idx].vertexCount;
 }
 
-void block_models_build_mesh(Mesh* output, size_t modelIdx, size_t atlasIdx, bool flipH, bool flipV) {
-	if (output == NULL) return;
-	if (modelIdx >= BLOCK_MODEL_COUNT) return;
+void block_models_build_mesh(Mesh* output, size_t modelIdx, size_t atlasIdx, bool flipH, bool flipV, int rotation)
+{
+    if (!output) return;
+    if (modelIdx >= BLOCK_MODEL_COUNT) return;
 
-	// Calcula UV base do atlas
-	Rectangle uvRect = texture_atlas_get_uv(atlasIdx, flipH, flipV);
+    Rectangle uvRect = texture_atlas_get_uv(atlasIdx, flipH, flipV);
 
-	output->vertexCount = models[modelIdx].vertexCount;
-	output->triangleCount = models[modelIdx].vertexCount / 3;
-	output->vertices = malloc(models[modelIdx].vertexCount * 3 * sizeof(float));
-	output->texcoords = malloc(models[modelIdx].vertexCount * 2 * sizeof(float));
+    const int vcount = models[modelIdx].vertexCount;
+    output->vertexCount   = vcount;
+    output->triangleCount = vcount / 3;
+    output->vertices  = malloc(vcount * 3 * sizeof(float));
+    output->texcoords = malloc(vcount * 2 * sizeof(float));
 
-	for (int i = 0; i < models[modelIdx].vertexCount; i++) {
-		output->vertices[(i * 3)] = models[modelIdx].vertices[i].x;
-		output->vertices[(i * 3) + 1] = models[modelIdx].vertices[i].y;
-		output->vertices[(i * 3) + 2] = 0.0f;
+    rotation &= 3; // forÃ§a 0..3
 
-		float u_rel = models[modelIdx].vertices[i].u;
-		float v_rel = models[modelIdx].vertices[i].v;
+    const float cx = TILE_SIZE * 0.5f;
+    const float cy = TILE_SIZE * 0.5f;
 
-		float u = uvRect.x + u_rel * uvRect.width;
-		float v = uvRect.y + v_rel * uvRect.height;
+    for (int i = 0; i < vcount; i++) {
+        float x = models[modelIdx].vertices[i].x;
+        float y = models[modelIdx].vertices[i].y;
 
-		output->texcoords[(i * 2)] = u;
-		output->texcoords[(i * 2) + 1] = v;
-	}
+        // --- ROTACIONA GEOMETRIA ---
+        float lx = x - cx;
+        float ly = y - cy;
 
-	UploadMesh(output, false);
+        float rx, ry;
+        switch (rotation) {
+            case 0:  rx =  lx; ry =  ly; break;
+            case 1:  rx = -ly; ry =  lx; break;
+            case 2:  rx = -lx; ry = -ly; break;
+            default: rx =  ly; ry = -lx; break;
+        }
+
+        float fx = rx + cx;
+        float fy = ry + cy;
+
+        output->vertices[i*3 + 0] = fx;
+        output->vertices[i*3 + 1] = fy;
+        output->vertices[i*3 + 2] = 0.0f;
+
+        // --- UVs ---
+        float u_rel = models[modelIdx].vertices[i].u;
+        float v_rel = models[modelIdx].vertices[i].v;
+
+        if (modelIdx > 0) {
+            // SÃ³ para modelo 0: rotaciona as UVs junto
+            float lu = u_rel - 0.5f;
+            float lv = v_rel - 0.5f;
+            float ru, rv;
+            switch (rotation) {
+                case 0:  ru =  lu; rv =  lv; break;
+                case 1:  ru = -lv; rv =  lu; break;
+                case 2:  ru = -lu; rv = -lv; break;
+                default: ru =  lv; rv = -lu; break;
+            }
+            u_rel = ru + 0.5f;
+            v_rel = rv + 0.5f;
+        }
+
+        output->texcoords[i*2 + 0] = uvRect.x + u_rel * uvRect.width;
+        output->texcoords[i*2 + 1] = uvRect.y + v_rel * uvRect.height;
+    }
+
+    UploadMesh(output, false);
 }
 
 void bm_set_block_model(size_t* offsets, Mesh* mesh, Vector2u position, Color colors[4], size_t modelIdx, size_t atlasIdx, bool flipUV_H, bool flipUV_V, int rotation, bool rotateUVs)
@@ -149,16 +185,16 @@ void bm_set_block_model(size_t* offsets, Mesh* mesh, Vector2u position, Color co
 
 		switch (rot) {
 		default:
-		case 0: // 0°
+		case 0: // 0ï¿½
 			rx = lx; ry = ly;
 			break;
-		case 1: // 90° CCW
+		case 1: // 90ï¿½ CCW
 			rx = -ly; ry = lx;
 			break;
-		case 2: // 180°
+		case 2: // 180ï¿½
 			rx = -lx; ry = -ly;
 			break;
-		case 3: // 270° CCW
+		case 3: // 270ï¿½ CCW
 			rx = ly; ry = -lx;
 			break;
 		}
@@ -177,16 +213,16 @@ void bm_set_block_model(size_t* offsets, Mesh* mesh, Vector2u position, Color co
 
 			switch (rot) {
 			default:
-			case 0:	// 0° CCW
+			case 0:	// 0ï¿½ CCW
 				ru = lu; rv = lv;
 				break;
-			case 1: // 90° CCW
+			case 1: // 90ï¿½ CCW
 				ru = -lv; rv = lu;
 				break;
-			case 2:	// 180° CCW
+			case 2:	// 180ï¿½ CCW
 				ru = -lu; rv = -lv;
 				break;
-			case 3: // 270° CCW
+			case 3: // 270ï¿½ CCW
 				ru = lv; rv = -lu;
 				break;
 			}

@@ -22,6 +22,23 @@ extern bool smoothLighting;
 extern unsigned int wallBrightness;
 extern unsigned int wallAOvalue;
 
+/*
+if (loadedGhostMesh == true) {
+                        UnloadMesh(ghostBlockMesh);
+                        ghostBlockMesh = (Mesh){ 0 };
+                        loadedGhostMesh = false;
+                    }
+                    ItemRegistry* ir = ir_get_item_registry(inventory_get_item(0, hotbarIdx).item_id);
+                    if (ir->blockId > 0) {
+                        BlockRegistry* brg = br_get_block_registry(ir->blockId);
+                        if (blockState >= brg->variant_count) blockState = brg->variant_count - 1;
+                        BlockVariant bvar = br_get_block_variant(ir->blockId, blockState);
+                        block_models_build_mesh(&ghostBlockMesh, bvar.model_idx, bvar.atlas_idx, bvar.flipH, bvar.flipV, bvar.rotation);
+                        loadedGhostMesh = true;
+                    } else {
+                        blockState = 0;
+                    }*/
+
 int main() {
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(1280, 720, "mijocraft");
@@ -30,7 +47,14 @@ int main() {
     bool wall_mode = false;
     ItemContainer creativeMenu;
     int8_t hotbarIdx = 0;
-    int8_t blockState = 0;
+    int blockState = 0;
+
+    int8_t last_hotbarIdx = -1;
+    size_t last_blockState = SIZE_MAX;
+    uint8_t lastItemId = UCHAR_MAX;
+    
+    bool loadedGhostMesh = false;
+    Mesh ghostBlockMesh = { 0 };
 
     bool mouseIsInUI = false;
 
@@ -159,22 +183,30 @@ int main() {
         else if ((IsKeyPressed(KEY_E) || IsKeyPressed(KEY_ESCAPE) && item_container_is_open()))
             item_container_close();
 
-        ItemRegistry* ir = ir_get_item_registry(inventory_get_item(0, hotbarIdx).item_id);
-        if (ir->blockId > 0) {
-            BlockRegistry* br = br_get_block_registry(ir->blockId);
-            if (br->trait == BLOCK_TRAIT_ROTATES) {
-                if (IsKeyPressed(KEY_Z)) blockState--;
-                if (IsKeyPressed(KEY_X)) blockState++;
+        if (IsKeyPressed(KEY_Z)) blockState--;
+        if (IsKeyPressed(KEY_X)) blockState++;
 
-                if (blockState < 0) blockState = 3;
-                if (blockState > 3) blockState = 0;
+        if (hotbarIdx != last_hotbarIdx || blockState != last_blockState || inventory_get_item(0, hotbarIdx).item_id != lastItemId) {
+            if (loadedGhostMesh == true) {
+                UnloadMesh(ghostBlockMesh);
+                ghostBlockMesh = (Mesh){ 0 };
+                loadedGhostMesh = false;
             }
-            else {
+            
+            ItemRegistry* ir = ir_get_item_registry(inventory_get_item(0, hotbarIdx).item_id);
+            if (ir->blockId > 0) {
+                BlockRegistry* brg = br_get_block_registry(ir->blockId);
+                if (blockState < 0) blockState = brg->variant_count - 1;
+                if (blockState >= brg->variant_count) blockState = 0;
+                BlockVariant bvar = br_get_block_variant(ir->blockId, blockState);
+                block_models_build_mesh(&ghostBlockMesh, bvar.model_idx, bvar.atlas_idx, bvar.flipH, bvar.flipV, bvar.rotation);
+                loadedGhostMesh = true;
+            } else {
                 blockState = 0;
             }
-        }
-        else {
-            blockState = 0;
+            last_hotbarIdx = hotbarIdx;
+            last_blockState = blockState;
+            lastItemId = inventory_get_item(0, hotbarIdx).item_id;
         }
 
         Vector2i cameraChunkPos = {
@@ -195,31 +227,12 @@ int main() {
 
         if (!item_container_is_open()) {
             // Draw block model if it is rotatable
-            ItemRegistry* ir = ir_get_item_registry(inventory_get_item(0, hotbarIdx).item_id);
-            if (ir->blockId > 0) {
-                BlockRegistry* br = br_get_block_registry(ir->blockId);
-                if (br->trait == BLOCK_TRAIT_ROTATES) {
-                    float half = TILE_SIZE / 2.0f;
-
-                    Matrix transMatrix = MatrixTranslate(mouseBlockPos.x * TILE_SIZE, mouseBlockPos.y * TILE_SIZE, 0.0f);
-                    Matrix translateMinusCenter = MatrixTranslate(-half, -half, 0.0f);
-                    Matrix translateCenter = MatrixTranslate(half, half, 0.0f);
-                    Matrix rotMatrix = MatrixRotateZ(blockState * (PI / 2.0f));
-
-                    Matrix m = MatrixMultiply(
-                        MatrixMultiply(
-                            MatrixMultiply(translateMinusCenter, rotMatrix),
-                            translateCenter
-                        ),
-                        transMatrix
-                    );
-
-                    DrawMesh(
-                        ir->mesh,
-                        texture_atlas_get_material(),
-                        m
-                    );
-                }
+            if (loadedGhostMesh == true) {
+                DrawMesh(
+                    ghostBlockMesh,
+                    texture_atlas_get_material(),
+                    MatrixTranslate(mouseBlockPos.x * TILE_SIZE, mouseBlockPos.y * TILE_SIZE, 0.0f)
+                );
             }
 
             float cos = 47.5f * cosf(GetTime() * 4.0f) + 79.5f;

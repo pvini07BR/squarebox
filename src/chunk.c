@@ -45,9 +45,11 @@ void chunk_fill_light(Chunk* chunk, Vector2u startPoint, uint8_t newLightValue) 
 
     uint8_t decayAmount = 1;
 
-    BlockRegistry* br = br_get_block_registry(chunk_get_block(chunk, startPoint, false).id);
+    BlockInstance binst = chunk_get_block(chunk, startPoint, false);
+    BlockRegistry* br = br_get_block_registry(binst.id);
+    BlockVariant bvar = br_get_block_variant(binst.id, binst.state);
     // Any model index greater than 0 is not considered a full block, so it lets light slip through
-    if (!(br->flags & BLOCK_FLAG_TRANSPARENT) && br->model_idx <= 0) decayAmount = 4;
+    if (!(br->flags & BLOCK_FLAG_TRANSPARENT) && bvar.model_idx <= 0) decayAmount = 4;
 
     Vector2i neighbors[] = {
         { -1, 0 }, { 1, 0 }, { 0, 1 }, { 0, -1 }
@@ -291,13 +293,11 @@ void build_quad(Chunk* chunk, size_t* offsets, BlockInstance* blocks, Mesh* mesh
     }
 
     // Block state rendering
-    uint8_t rotation = 0;
+    BlockVariant bvar = br_get_block_variant(blocks[i].id, blocks[i].state);
+    if (!flipH) flipH = bvar.flipH;
+    if (!flipV) flipV = bvar.flipV;
 
-    if (brg->trait == BLOCK_TRAIT_ROTATES) {
-        rotation = blocks[i].state;
-    }
-
-    bm_set_block_model(offsets, mesh, (Vector2u) { x, y }, colors, brg->model_idx, brg->atlas_idx, flipH, flipV, rotation, brg->model_idx > 0);
+    bm_set_block_model(offsets, mesh, (Vector2u) { x, y }, colors, bvar.model_idx, bvar.atlas_idx, flipH, flipV, bvar.rotation, bvar.model_idx > 0);
 }
 
 void chunk_genmesh(Chunk* chunk) {
@@ -308,12 +308,13 @@ void chunk_genmesh(Chunk* chunk) {
 
     for (int i = 0; i < CHUNK_AREA; i++) {
         BlockRegistry* rg = br_get_block_registry(chunk->blocks[i].id);
+        BlockVariant bvar = br_get_block_variant(chunk->blocks[i].id, chunk->blocks[i].state);
         chunk->blockOffsets[i] = blockVertexCount;
-        blockVertexCount += block_models_get_vertex_count(rg->model_idx);
+        blockVertexCount += block_models_get_vertex_count(bvar.model_idx);
 
         rg = br_get_block_registry(chunk->walls[i].id);
         chunk->wallOffsets[i] = wallVertexCount;
-        wallVertexCount += block_models_get_vertex_count(rg->model_idx);
+        wallVertexCount += block_models_get_vertex_count(bvar.model_idx);
     }
 
     reset_meshes(chunk, blockVertexCount, wallVertexCount);

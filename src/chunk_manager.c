@@ -3,7 +3,6 @@
 #include "chunk.h"
 #include "container_vector.h"
 #include "item_container.h"
-#include "texture_atlas.h"
 #include "defines.h"
 
 #include <limits.h>
@@ -29,8 +28,6 @@ void chunk_manager_init() {
 }
 
 void chunk_manager_draw() {
-    //rlDisableBackfaceCulling();
-
     for (int i = 0; i < CHUNK_COUNT; i++) {
         chunk_draw(&chunks[i]);
     }
@@ -194,17 +191,20 @@ void chunk_manager_update_lighting() {
 
     for (int c = 0; c < CHUNK_COUNT; c++) {
         for (int i = 0; i < CHUNK_AREA; i++) {
-            uint8_t b = chunks[c].blocks[i].id;
-            uint8_t w = chunks[c].walls[i].id;
+            BlockInstance b = chunks[c].blocks[i];
+            BlockInstance w = chunks[c].walls[i];
 
-            BlockRegistry* bbr = br_get_block_registry(b);
-            BlockRegistry* wbr = br_get_block_registry(w);
+            BlockRegistry* bbr = br_get_block_registry(b.id);
+            BlockRegistry* wbr = br_get_block_registry(w.id);
+
+            BlockVariant bvar = br_get_block_variant(b.id, b.state);
+            BlockVariant wvar = br_get_block_variant(w.id, w.state);
 
             int x = i % CHUNK_WIDTH;
             int y = i / CHUNK_WIDTH;
 
             // Any model index greater than 0 is not considered a full block, so it lets light slip through
-            if ((bbr->flags & BLOCK_FLAG_TRANSPARENT || bbr->model_idx > 0) && (wbr->flags & BLOCK_FLAG_TRANSPARENT || wbr->model_idx > 0)) {
+            if ((bbr->flags & BLOCK_FLAG_TRANSPARENT || bvar.model_idx > 0) && (wbr->flags & BLOCK_FLAG_TRANSPARENT || wvar.model_idx > 0)) {
                 chunk_fill_light(&chunks[c], (Vector2u) { x, y }, 15);
             }
             else if (bbr->lightLevel > 0 || wbr->lightLevel > 0) {

@@ -447,8 +447,8 @@ void chunk_tick(Chunk* chunk) {
         BlockInstance inst = chunk->blocks[idx];
 		BlockRegistry* brg = br_get_block_registry(inst.id);
 		if (!(brg->flags & BLOCK_FLAG_LIQUID_SOURCE) && !(brg->flags & BLOCK_FLAG_LIQUID_FLOWING)) {
-			//liquid_spread_list_remove(&chunk->liquidSpreadList, idx);
-            //i--; count--;
+			liquid_spread_list_remove(&chunk->liquidSpreadList, idx);
+            i--; count--;
 			continue;
 		}
 		

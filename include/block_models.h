@@ -34,7 +34,7 @@ void bm_set_block_model(size_t* offsets, Mesh* mesh, Vector2u position, Color co
                        size_t modelIdx, size_t atlasIdx,
                        bool flipUV_H, bool flipUV_V,
                        bool flipModelH, bool flipModelV,
-                       int rotation);
+                       uint8_t rotation);
 void block_models_free();
 
 #endif

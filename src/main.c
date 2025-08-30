@@ -29,6 +29,7 @@ int main() {
     InitWindow(1280, 720, "mijocraft");
     SetExitKey(KEY_NULL);
     SetTraceLogLevel(LOG_WARNING);
+    rlDisableBackfaceCulling();
 
     bool wall_mode = false;
     ItemContainer creativeMenu;

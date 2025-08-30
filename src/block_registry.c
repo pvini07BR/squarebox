@@ -8,15 +8,25 @@
 #include <stdio.h>
 
 bool torch_state_resolver(BlockInstance* inst, Chunk* chunk, uint8_t idx, BlockInstance neighbors[4], bool isWall) {
-    inst->state = 0;
+    BlockRegistry* bottom_brg = br_get_block_registry(neighbors[NEIGHBOR_BOTTOM].id);
+    if (bottom_brg->flags & BLOCK_FLAG_SOLID && bottom_brg->flags & BLOCK_FLAG_FULL_BLOCK) {
+        inst->state = 0;
+        return true;
+    }
     
     BlockRegistry* right_brg = br_get_block_registry(neighbors[NEIGHBOR_RIGHT].id);
-    if (right_brg->flags & BLOCK_FLAG_SOLID) inst->state = 1;
+    if (right_brg->flags & BLOCK_FLAG_SOLID && right_brg->flags & BLOCK_FLAG_FULL_BLOCK) {
+        inst->state = 1;
+        return true;
+    }
 
     BlockRegistry* left_brg = br_get_block_registry(neighbors[NEIGHBOR_LEFT].id);
-    if (left_brg->flags & BLOCK_FLAG_SOLID) inst->state = 2;
+    if (left_brg->flags & BLOCK_FLAG_SOLID && left_brg->flags & BLOCK_FLAG_FULL_BLOCK) {
+        inst->state = 2;
+        return true;
+    }
 
-    return true;
+    return false;
 }
 
 bool on_chest_interact(BlockInstance* inst, Chunk* chunk) {
@@ -68,7 +78,7 @@ void block_registry_init() {
     blockRegistry[BLOCK_GRASS_BLOCK] = (BlockRegistry){
         .variant_count = 1,
         .variants = { { .atlas_idx = 0, .model_idx = BLOCK_MODEL_QUAD, .flipH = false, .flipV = false, .rotation = 0 } },
-        .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FLIP_H,
+        .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FLIP_H | BLOCK_FLAG_FULL_BLOCK,
         .lightLevel = 0,
         .state_resolver = NULL
     };
@@ -76,7 +86,7 @@ void block_registry_init() {
     blockRegistry[BLOCK_DIRT] = (BlockRegistry){
         .variant_count = 1,
         .variants = { { .atlas_idx = 1, .model_idx = BLOCK_MODEL_QUAD, .flipH = false, .flipV = false, .rotation = 0 } },
-        .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FLIP_H | BLOCK_FLAG_FLIP_V,
+        .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FLIP_H | BLOCK_FLAG_FLIP_V | BLOCK_FLAG_FULL_BLOCK,
         .lightLevel = 0,
         .state_resolver = NULL
     };
@@ -84,7 +94,7 @@ void block_registry_init() {
     blockRegistry[BLOCK_STONE] = (BlockRegistry){
         .variant_count = 1,
         .variants = { { .atlas_idx = 2, .model_idx = BLOCK_MODEL_QUAD, .flipH = false, .flipV = false, .rotation = 0 } },
-        .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FLIP_H,
+        .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FLIP_H | BLOCK_FLAG_FULL_BLOCK,
         .lightLevel = 0,
         .state_resolver = NULL
     };
@@ -92,7 +102,7 @@ void block_registry_init() {
     blockRegistry[BLOCK_COBBLESTONE] = (BlockRegistry){
         .variant_count = 1,
         .variants = { { .atlas_idx = 3, .model_idx = BLOCK_MODEL_QUAD, .flipH = false, .flipV = false, .rotation = 0 } },
-        .flags = BLOCK_FLAG_SOLID,
+        .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FULL_BLOCK,
         .lightLevel = 0,
         .state_resolver = NULL
     };
@@ -100,7 +110,7 @@ void block_registry_init() {
     blockRegistry[BLOCK_WOODEN_PLANKS] = (BlockRegistry){
         .variant_count = 1,
         .variants = { { .atlas_idx = 4, .model_idx = BLOCK_MODEL_QUAD, .flipH = false, .flipV = false, .rotation = 0 } },
-        .flags = BLOCK_FLAG_SOLID,
+        .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FULL_BLOCK,
         .lightLevel = 0,
         .state_resolver = NULL
     };
@@ -111,7 +121,7 @@ void block_registry_init() {
             { .atlas_idx = 5, .model_idx = BLOCK_MODEL_QUAD, .flipH = false, .flipV = false, .rotation = 0 },
             { .atlas_idx = 5, .model_idx = BLOCK_MODEL_QUAD, .flipH = false, .flipV = false, .rotation = 1 },
         },
-        .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_STATE_MUTABLE,
+        .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_STATE_MUTABLE | BLOCK_FLAG_FULL_BLOCK,
         .lightLevel = 0,
         .state_resolver = NULL
     };
@@ -119,7 +129,7 @@ void block_registry_init() {
     blockRegistry[BLOCK_LEAVES] = (BlockRegistry){
         .variant_count = 1,
         .variants = { { .atlas_idx = 6, .model_idx = BLOCK_MODEL_QUAD, .flipH = false, .flipV = false, .rotation = 0 } },
-        .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_TRANSPARENT | BLOCK_FLAG_FLIP_H | BLOCK_FLAG_FLIP_V,
+        .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_TRANSPARENT | BLOCK_FLAG_FLIP_H | BLOCK_FLAG_FLIP_V | BLOCK_FLAG_FULL_BLOCK,
         .lightLevel = 0,
         .state_resolver = NULL
     };
@@ -127,7 +137,7 @@ void block_registry_init() {
     blockRegistry[BLOCK_GLASS] = (BlockRegistry){
         .variant_count = 1,
         .variants = { { .atlas_idx = 7, .model_idx = BLOCK_MODEL_QUAD, .flipH = false, .flipV = false, .rotation = 0 } },
-        .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_TRANSPARENT,
+        .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_TRANSPARENT | BLOCK_FLAG_FULL_BLOCK,
         .lightLevel = 0,
         .state_resolver = NULL
     };
@@ -135,7 +145,7 @@ void block_registry_init() {
     blockRegistry[BLOCK_LAMP] = (BlockRegistry){
         .variant_count = 1,
         .variants = { { .atlas_idx = 8, .model_idx = BLOCK_MODEL_QUAD, .flipH = false, .flipV = false, .rotation = 0 } },
-        .flags = BLOCK_FLAG_SOLID,
+        .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FULL_BLOCK,
         .lightLevel = 15,
         .state_resolver = NULL
     };
@@ -143,7 +153,7 @@ void block_registry_init() {
     blockRegistry[BLOCK_CHEST] = (BlockRegistry){
         .variant_count = 1,
         .variants = { { .atlas_idx = 9, .model_idx = BLOCK_MODEL_QUAD, .flipH = false, .flipV = false, .rotation = 0 } },
-        .flags = BLOCK_FLAG_SOLID,
+        .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FULL_BLOCK,
         .lightLevel = 0,
         .interact_callback = on_chest_interact,
         .state_resolver = chest_solver,

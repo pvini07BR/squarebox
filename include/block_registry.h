@@ -44,29 +44,32 @@ typedef enum {
 	// Tells if the block is solid. That means, if it will have collision or not.
 	BLOCK_FLAG_SOLID = (1 << 1),
 
+	// Tells if the block is a full quad.
+	BLOCK_FLAG_FULL_BLOCK = (1 << 2),
+
 	// Tells if the block can flip horizontally randomly.
-	BLOCK_FLAG_FLIP_H = (1 << 2),
+	BLOCK_FLAG_FLIP_H = (1 << 3),
 
 	// Tells if the block can flip vertically randomly.
-	BLOCK_FLAG_FLIP_V = (1 << 3),
+	BLOCK_FLAG_FLIP_V = (1 << 4),
 
 	// Tells if the state of this block can be determined
 	// instead of calculated.
-	BLOCK_FLAG_STATE_MUTABLE = (1 << 4),
+	BLOCK_FLAG_STATE_MUTABLE = (1 << 5),
 
 	// Tells if the block is replaceable, like water, grass, flowers, etc.
-	BLOCK_FLAG_REPLACEABLE = (1 << 5),
+	BLOCK_FLAG_REPLACEABLE = (1 << 6),
 
 	// Tells if the block is a liquid source.
 	// this will make the block render differently from
 	// other blocks, and will render only if it is in the
 	// block layer.
-	BLOCK_FLAG_LIQUID_SOURCE = (1 << 6),
+	BLOCK_FLAG_LIQUID_SOURCE = (1 << 7),
 	// Tells if the block is a flowing liquid.
 	// this will make the block render differently from
 	// other blocks, and will render only if it is in the
 	// block layer.
-	BLOCK_FLAG_LIQUID_FLOWING = (1 << 7)
+	BLOCK_FLAG_LIQUID_FLOWING = (1 << 8)
 } BlockFlag;
 
 typedef struct {
@@ -96,7 +99,7 @@ typedef struct {
 	BlockVariant variants[MAX_BLOCK_VARIANTS];
 	// Bit flags that will tell if the block is transaprent, solid, etc.
 	// see the BlockFlag enum.
-	uint8_t flags;
+	int flags;
 	// If the value is greater than zero, then this block will emit light.
 	// otherwise it will not.
 	uint8_t lightLevel;

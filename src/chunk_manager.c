@@ -203,14 +203,10 @@ void chunk_manager_update_lighting() {
             BlockRegistry* bbr = br_get_block_registry(b.id);
             BlockRegistry* wbr = br_get_block_registry(w.id);
 
-            BlockVariant bvar = br_get_block_variant(b.id, b.state);
-            BlockVariant wvar = br_get_block_variant(w.id, w.state);
-
             int x = i % CHUNK_WIDTH;
             int y = i / CHUNK_WIDTH;
 
-            // Any model index greater than 0 is not considered a full block, so it lets light slip through
-            if ((bbr->flags & BLOCK_FLAG_TRANSPARENT || bvar.model_idx > 0) && (wbr->flags & BLOCK_FLAG_TRANSPARENT || wvar.model_idx > 0)) {
+            if ((bbr->flags & BLOCK_FLAG_TRANSPARENT || !(bbr->flags & BLOCK_FLAG_FULL_BLOCK)) && (wbr->flags & BLOCK_FLAG_TRANSPARENT || !(wbr->flags & BLOCK_FLAG_FULL_BLOCK))) {
                 chunk_fill_light(&chunks[c], (Vector2u) { x, y }, 15);
             }
             else if (bbr->lightLevel > 0 || wbr->lightLevel > 0) {

@@ -141,29 +141,6 @@ void block_models_build_mesh(Mesh* output, size_t modelIdx, size_t atlasIdx, boo
 	UploadMesh(output, false);
 }
 
-static inline void swap_vertex_data(Mesh* mesh, int a, int b)
-{
-    // swap positions (3 floats)
-    for (int k = 0; k < 3; k++) {
-        float tmpf = mesh->vertices[a * 3 + k];
-        mesh->vertices[a * 3 + k] = mesh->vertices[b * 3 + k];
-        mesh->vertices[b * 3 + k] = tmpf;
-    }
-    // swap texcoords (2 floats)
-    for (int k = 0; k < 2; k++) {
-        float tmpf = mesh->texcoords[a * 2 + k];
-        mesh->texcoords[a * 2 + k] = mesh->texcoords[b * 2 + k];
-        mesh->texcoords[b * 2 + k] = tmpf;
-    }
-	if (mesh->colors == NULL) return;
-    // swap colors (4 unsigned char)
-    for (int k = 0; k < 4; k++) {
-        unsigned char tmpc = mesh->colors[a * 4 + k];
-        mesh->colors[a * 4 + k] = mesh->colors[b * 4 + k];
-        mesh->colors[b * 4 + k] = tmpc;
-    }
-}
-
 void bm_set_block_model(size_t* offsets, Mesh* mesh, Vector2u position, Color colors[4],
                        size_t modelIdx, size_t atlasIdx,
                        bool flipUV_H, bool flipUV_V,

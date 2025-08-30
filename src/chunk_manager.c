@@ -258,7 +258,8 @@ void chunk_manager_set_block_safe(Vector2i position, BlockInstance blockValue, b
     };
 
     if (blockValue.id > 0) {
-        if (chunk_get_block(chunk, relPos, isWall).id <= 0) {
+		BlockRegistry* current_br = br_get_block_registry(chunk_get_block(chunk, relPos, isWall).id);
+        if (current_br->flags & BLOCK_FLAG_REPLACEABLE) {
             bool canPlace = false;
 
             BlockInstance neighbors[4];
@@ -287,12 +288,11 @@ void chunk_manager_set_block_safe(Vector2i position, BlockInstance blockValue, b
             if (brg->state_resolver) {
                 BlockInstance neighbors[4];
                 chunk_get_block_neighbors(chunk, relPos, isWall, neighbors);
-                if (canPlace == true) canPlace = brg->state_resolver(&blockValue, neighbors, chunk, isWall);
+                if (canPlace == true) canPlace = brg->state_resolver(&blockValue, chunk, relPos.x + (relPos.y * CHUNK_WIDTH), neighbors, isWall);
             }
 
             if (canPlace) {
                 chunk_set_block(chunk, relPos, blockValue, isWall);
-                chunk_manager_update_lighting();
             }
         }
     }
@@ -301,10 +301,9 @@ void chunk_manager_set_block_safe(Vector2i position, BlockInstance blockValue, b
         if (current.id > 0) {
 			BlockRegistry* brg = br_get_block_registry(current.id);
             if (brg->destroy_callback) {
-				brg->destroy_callback(&current, chunk);
+				brg->destroy_callback(&current, chunk, relPos.x + (relPos.y * CHUNK_WIDTH));
             }
             chunk_set_block(chunk, relPos, blockValue, isWall);
-            chunk_manager_update_lighting();
         }
     }
 }
@@ -348,7 +347,6 @@ void chunk_manager_set_block(Vector2i position, BlockInstance blockValue, bool i
             isWall
         );
     }
-    chunk_manager_update_lighting();
 }
 
 BlockInstance chunk_manager_get_block(Vector2i position, bool isWall) {

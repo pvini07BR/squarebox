@@ -1,9 +1,11 @@
 ﻿#include "chunk.h"
+#include "chunk_manager.h"
 #include "container_vector.h"
 #include "defines.h"
 #include "block_registry.h"
 #include "texture_atlas.h"
 #include "block_models.h"
+#include "liquid_spread.h"
 
 #include <math.h>
 #include <stdint.h>
@@ -48,8 +50,10 @@ void chunk_fill_light(Chunk* chunk, Vector2u startPoint, uint8_t newLightValue) 
     BlockInstance binst = chunk_get_block(chunk, startPoint, false);
     BlockRegistry* br = br_get_block_registry(binst.id);
     BlockVariant bvar = br_get_block_variant(binst.id, binst.state);
-    // Any model index greater than 0 is not considered a full block, so it lets light slip through
-    if (!(br->flags & BLOCK_FLAG_TRANSPARENT) && bvar.model_idx <= 0) decayAmount = 4;
+
+    if ((!(br->flags & BLOCK_FLAG_TRANSPARENT) && bvar.model_idx == BLOCK_MODEL_QUAD) || br->flags & (BLOCK_FLAG_LIQUID_SOURCE | BLOCK_FLAG_LIQUID_FLOWING)) {
+        decayAmount = 4;
+	}
 
     Vector2i neighbors[] = {
         { -1, 0 }, { 1, 0 }, { 0, 1 }, { 0, -1 }
@@ -88,10 +92,15 @@ void chunk_set_block(Chunk* chunk, Vector2u position, BlockInstance blockValue, 
     if (!chunk) return;
     if (position.x >= CHUNK_WIDTH || position.y >= CHUNK_WIDTH) return;
 
+    BlockInstance current = chunk_get_block(chunk, position, isWall);
+	if (current.id == blockValue.id && current.state == blockValue.state) return;
+
     if (!isWall)
         chunk->blocks[position.x + (position.y * CHUNK_WIDTH)] = blockValue;
     else
         chunk->walls[position.x + (position.y * CHUNK_WIDTH)] = blockValue;
+
+    chunk_manager_update_lighting();
 }
 
 BlockInstance chunk_get_block(Chunk* chunk, Vector2u position, bool isWall) {
@@ -151,6 +160,7 @@ void chunk_init(Chunk* chunk)
     if (chunk == NULL) return;
 
     container_vector_init(&chunk->containerVec);
+    liquid_spread_list_init(&chunk->liquidSpreadList);
 
     chunk->initializedMeshes = false;
 }
@@ -323,6 +333,7 @@ void chunk_free(Chunk* chunk)
     }
 
     container_vector_free(&chunk->containerVec);
+	liquid_spread_list_free(&chunk->liquidSpreadList);
 }
 
 void chunk_regenerate(Chunk* chunk) {
@@ -403,7 +414,7 @@ void chunk_draw(Chunk* chunk) {
             int x = i % CHUNK_WIDTH;
             int y = i / CHUNK_WIDTH;
 
-			float value = chunk->blocks[i].state / 8.0f;
+            float value = chunk->blocks[i].state / 9.0f;
 
             DrawRectangle(
                 x * TILE_SIZE,
@@ -420,16 +431,69 @@ void chunk_draw(Chunk* chunk) {
 
 void chunk_tick(Chunk* chunk) {
     if (!chunk) return;
+
+    int count = chunk->liquidSpreadList.count;
+    for (int i = 0; i < count; i++) {
+		uint8_t idx = chunk->liquidSpreadList.indices[i];
+		int x = idx % CHUNK_WIDTH;
+        int y = idx / CHUNK_WIDTH;
+
+        BlockInstance inst = chunk->blocks[idx];
+		BlockRegistry* brg = br_get_block_registry(inst.id);
+		if (!(brg->flags & BLOCK_FLAG_LIQUID_SOURCE) && !(brg->flags & BLOCK_FLAG_LIQUID_FLOWING)) {
+			//liquid_spread_list_remove(&chunk->liquidSpreadList, idx);
+            //i--; count--;
+			continue;
+		}
+		
+        BlockInstance neighbors[4];
+		chunk_get_block_neighbors(chunk, (Vector2u) { x, y }, false, neighbors);
+		BlockRegistry* registries[4];
+        for (int n = 0; n < 4; n++) registries[n] = br_get_block_registry(neighbors[n].id);
+        
+		// Spreading downwards
+        if (!(registries[NEIGHBOR_BOTTOM]->flags & BLOCK_FLAG_SOLID)) {
+            SetBlockResult result = chunk_set_block_extrapolating(chunk, (Vector2i) { x, y + 1 }, (BlockInstance) { BLOCK_WATER_FLOWING, 0 }, false);
+            if (result.chunk) {
+                //liquid_spread_list_remove(&chunk->liquidSpreadList, idx);
+                //i--; count--;
+				uint8_t otherIdx = result.position.x + (result.position.y * CHUNK_WIDTH);
+                liquid_spread_list_add(&result.chunk->liquidSpreadList, otherIdx);
+                continue;
+            }
+        }
+
+        int depth = inst.state;
+
+        // Spreading on the sides
+        if (inst.state < 8) {
+            if (!(registries[NEIGHBOR_LEFT]->flags & BLOCK_FLAG_SOLID) && !(registries[NEIGHBOR_LEFT]->flags & (BLOCK_FLAG_LIQUID_SOURCE | BLOCK_FLAG_LIQUID_FLOWING))) {
+                SetBlockResult result = chunk_set_block_extrapolating(chunk, (Vector2i) { x - 1, y }, (BlockInstance) { BLOCK_WATER_FLOWING, depth + 1 }, false);
+                if (result.chunk) {
+                    //liquid_spread_list_remove(&chunk->liquidSpreadList, idx);
+                    //i--; count--;
+                    uint8_t otherIdx = result.position.x + (result.position.y * CHUNK_WIDTH);
+                    liquid_spread_list_add(&result.chunk->liquidSpreadList, otherIdx);
+                }
+            }
+            if (!(registries[NEIGHBOR_RIGHT]->flags & BLOCK_FLAG_SOLID) && !(registries[NEIGHBOR_RIGHT]->flags & (BLOCK_FLAG_LIQUID_SOURCE | BLOCK_FLAG_LIQUID_FLOWING))) {
+                SetBlockResult result = chunk_set_block_extrapolating(chunk, (Vector2i) { x + 1, y }, (BlockInstance) { BLOCK_WATER_FLOWING, depth + 1 }, false);
+                if (result.chunk) {
+                    //liquid_spread_list_remove(&chunk->liquidSpreadList, idx);
+                    //i--; count--;
+                    uint8_t otherIdx = result.position.x + (result.position.y * CHUNK_WIDTH);
+                    liquid_spread_list_add(&result.chunk->liquidSpreadList, otherIdx);
+                }
+            }
+        }
+    }
 }
 
 BlockInstance chunk_get_block_extrapolating(Chunk* chunk, Vector2i position, bool isWall) {
     if (!chunk) return (BlockInstance) { 0, 0 };
 
     if (position.x >= 0 && position.y >= 0 && position.x < CHUNK_WIDTH && position.y < CHUNK_WIDTH) {
-        if (!isWall)
-            return chunk->blocks[position.x + (position.y * CHUNK_WIDTH)];
-        else
-            return chunk->walls[position.x + (position.y * CHUNK_WIDTH)];
+		return chunk_get_block(chunk, (Vector2u) { position.x, position.y }, isWall);
     }
     else {
         Chunk* neighbor = NULL;
@@ -450,21 +514,20 @@ BlockInstance chunk_get_block_extrapolating(Chunk* chunk, Vector2i position, boo
             .y = posmod(position.y, CHUNK_WIDTH)
         };
 
-        if (!isWall)
-            return neighbor->blocks[relPos.x + (relPos.y * CHUNK_WIDTH)];
-        else
-            return neighbor->walls[relPos.x + (relPos.y * CHUNK_WIDTH)];
+		return chunk_get_block(neighbor, relPos, isWall);
     }
 }
 
-void chunk_set_block_extrapolating(Chunk* chunk, Vector2i position, BlockInstance blockValue, bool isWall) {
-    if (!chunk) return;
+SetBlockResult chunk_set_block_extrapolating(Chunk* chunk, Vector2i position, BlockInstance blockValue, bool isWall) {
+    if (!chunk) return (SetBlockResult) {
+        .chunk = NULL, .position = (Vector2u){ UINT8_MAX, UINT8_MAX }
+    };
 
     if (position.x >= 0 && position.y >= 0 && position.x < CHUNK_WIDTH && position.y < CHUNK_WIDTH) {
-        if (!isWall)
-            chunk->blocks[position.x + (position.y * CHUNK_WIDTH)] = blockValue;
-        else
-            chunk->walls[position.x + (position.y * CHUNK_WIDTH)] = blockValue;
+	    chunk_set_block(chunk, (Vector2u) { position.x, position.y }, blockValue, isWall);
+        return (SetBlockResult) {
+            .chunk = chunk, .position = (Vector2u){ position.x, position.y }
+        };
     }
     else {
         Chunk* neighbor = NULL;
@@ -478,17 +541,21 @@ void chunk_set_block_extrapolating(Chunk* chunk, Vector2i position, BlockInstanc
         else if (position.y < 0) neighbor = (Chunk*)chunk->neighbors.up;
         else if (position.y >= CHUNK_WIDTH) neighbor = (Chunk*)chunk->neighbors.down;
 
-        if (neighbor == NULL) return;
-
         Vector2u relPos = {
             .x = posmod(position.x, CHUNK_WIDTH),
             .y = posmod(position.y, CHUNK_WIDTH)
         };
 
-        if (!isWall)
-            neighbor->blocks[relPos.x + (relPos.y * CHUNK_WIDTH)] = blockValue;
-        else
-            neighbor->walls[relPos.x + (relPos.y * CHUNK_WIDTH)] = blockValue;
+        if (neighbor == NULL) {
+            return (SetBlockResult) {
+                .chunk = NULL, .position = relPos
+            };
+        }
+
+		chunk_set_block(neighbor, relPos, blockValue, isWall);
+        return (SetBlockResult) {
+            .chunk = neighbor, .position = relPos
+        };
     }
 }
 

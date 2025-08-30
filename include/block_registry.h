@@ -54,16 +54,19 @@ typedef enum {
 	// instead of calculated.
 	BLOCK_FLAG_STATE_MUTABLE = (1 << 4),
 
+	// Tells if the block is replaceable, like water, grass, flowers, etc.
+	BLOCK_FLAG_REPLACEABLE = (1 << 5),
+
 	// Tells if the block is a liquid source.
 	// this will make the block render differently from
 	// other blocks, and will render only if it is in the
 	// block layer.
-	BLOCK_FLAG_LIQUID_SOURCE = (1 << 5),
+	BLOCK_FLAG_LIQUID_SOURCE = (1 << 6),
 	// Tells if the block is a flowing liquid.
 	// this will make the block render differently from
 	// other blocks, and will render only if it is in the
 	// block layer.
-	BLOCK_FLAG_LIQUID_FLOWING = (1 << 6)
+	BLOCK_FLAG_LIQUID_FLOWING = (1 << 7)
 } BlockFlag;
 
 typedef struct {
@@ -93,7 +96,7 @@ typedef struct {
 	BlockVariant variants[MAX_BLOCK_VARIANTS];
 	// Bit flags that will tell if the block is transaprent, solid, etc.
 	// see the BlockFlag enum.
-	int flags;
+	uint8_t flags;
 	// If the value is greater than zero, then this block will emit light.
 	// otherwise it will not.
 	uint8_t lightLevel;
@@ -102,9 +105,9 @@ typedef struct {
 	bool (*interact_callback)(BlockInstance* inst, Chunk* chunk);
 	// Function pointer to a function that will resolve the state of the block.
 	// returns a bool value to indicate if the block can be placed or not.
-	bool (*state_resolver)(BlockInstance* inst, BlockInstance neighbors[4], Chunk* chunk, bool isWall);
+	bool (*state_resolver)(BlockInstance* inst, Chunk* chunk, uint8_t idx, BlockInstance neighbors[4], bool isWall);
 	// Function pointer to a function that will be called when the block is destroyed.
-	void (*destroy_callback)(BlockInstance* inst, Chunk* chunk);
+	void (*destroy_callback)(BlockInstance* inst, Chunk* chunk, uint8_t idx);
 } BlockRegistry;
 
 void block_registry_init();

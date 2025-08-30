@@ -1,12 +1,13 @@
 #include "block_registry.h"
 #include "block_models.h"
+#include "liquid_spread.h"
 #include "chunk.h"
 #include "defines.h"
 
 #include <stdlib.h>
 #include <stdio.h>
 
-bool torch_state_resolver(BlockInstance* inst, BlockInstance neighbors[4], Chunk* chunk, bool isWall) {
+bool torch_state_resolver(BlockInstance* inst, Chunk* chunk, uint8_t idx, BlockInstance neighbors[4], bool isWall) {
     inst->state = 0;
     
     BlockRegistry* right_brg = br_get_block_registry(neighbors[NEIGHBOR_RIGHT].id);
@@ -26,7 +27,7 @@ bool on_chest_interact(BlockInstance* inst, Chunk* chunk) {
     return false;
 }
 
-bool chest_solver(BlockInstance* inst, BlockInstance neighbors[4], Chunk* chunk, bool isWall) {
+bool chest_solver(BlockInstance* inst, Chunk* chunk, uint8_t idx, BlockInstance neighbors[4], bool isWall) {
     inst->state = container_vector_add(&chunk->containerVec, "Chest", 3, 10, false);
     if (inst->state >= 0) return true;
     return false;
@@ -37,6 +38,14 @@ void on_chest_destroy(BlockInstance* inst, Chunk* chunk) {
         container_vector_remove(&chunk->containerVec, inst->state);
         inst->state = -1;
     }
+}
+
+bool liquid_solver(BlockInstance* inst, Chunk* chunk, uint8_t idx, BlockInstance neighbors[4], bool isWall) {
+	liquid_spread_list_add(&chunk->liquidSpreadList, idx);
+}
+
+void on_liquid_destroy(BlockInstance* inst, Chunk* chunk, uint8_t idx) {
+    liquid_spread_list_remove(&chunk->liquidSpreadList, idx);
 }
 
 static BlockRegistry* blockRegistry = NULL;
@@ -51,7 +60,7 @@ void block_registry_init() {
     blockRegistry[BLOCK_AIR] = (BlockRegistry){
         .variant_count = 1,
         .variants = { { .atlas_idx = 0, .model_idx = BLOCK_MODEL_QUAD, .flipH = false, .flipV = false, .rotation = 0 } },
-        .flags = BLOCK_FLAG_TRANSPARENT,
+        .flags = BLOCK_FLAG_TRANSPARENT | BLOCK_FLAG_REPLACEABLE,
         .lightLevel = 0,
         .state_resolver = NULL
     };
@@ -286,15 +295,19 @@ void block_registry_init() {
     blockRegistry[BLOCK_WATER_SOURCE] = (BlockRegistry){
         .variant_count = 1,
         .variants = { {.atlas_idx = 0, .model_idx = BLOCK_MODEL_QUAD, .flipH = false, .flipV = false, .rotation = 0 } },
-        .flags = BLOCK_FLAG_TRANSPARENT | BLOCK_FLAG_LIQUID_SOURCE,
+        .flags = BLOCK_FLAG_TRANSPARENT | BLOCK_FLAG_REPLACEABLE | BLOCK_FLAG_LIQUID_SOURCE,
         .lightLevel = 0,
+		.state_resolver = liquid_solver,
+		.destroy_callback = on_liquid_destroy
     };
 
     blockRegistry[BLOCK_WATER_FLOWING] = (BlockRegistry){
         .variant_count = 1,
         .variants = { {.atlas_idx = 0, .model_idx = BLOCK_MODEL_QUAD, .flipH = false, .flipV = false, .rotation = 0 } },
-        .flags = BLOCK_FLAG_TRANSPARENT | BLOCK_FLAG_LIQUID_FLOWING,
+        .flags = BLOCK_FLAG_TRANSPARENT | BLOCK_FLAG_REPLACEABLE | BLOCK_FLAG_LIQUID_FLOWING,
         .lightLevel = 0,
+		.state_resolver = liquid_solver,
+        .destroy_callback = on_liquid_destroy
     };
 }
 

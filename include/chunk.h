@@ -7,6 +7,7 @@
 #include <raylib.h>
 
 #include "container_vector.h"
+#include "liquid_spread.h"
 
 #define CHUNK_WIDTH 16
 #define CHUNK_AREA CHUNK_WIDTH*CHUNK_WIDTH
@@ -65,11 +66,17 @@ typedef struct {
 	size_t blockOffsets[CHUNK_AREA];
 	size_t wallOffsets[CHUNK_AREA];
 	ContainerVector containerVec;
+	LiquidSpreadList liquidSpreadList;
 	ChunkNeighbors neighbors;
 	bool initializedMeshes;
 	Mesh blockMesh;
 	Mesh wallMesh;
 } Chunk;
+
+typedef struct {
+	Chunk* chunk;
+	Vector2u position;
+} SetBlockResult;
 
 void chunk_init(Chunk* chunk);
 void chunk_regenerate(Chunk* chunk);
@@ -91,7 +98,8 @@ uint8_t chunk_get_light(Chunk* chunk, Vector2u position);
 // Position is relative to the chunk origin, but it accepts
 // negative values so that it is used to get the block from the neighboring
 // chunk.
-void chunk_set_block_extrapolating(Chunk* chunk, Vector2i position, BlockInstance blockValue, bool isWall);
+// This function returns a struct that tells in which chunk it was placed, and the relative position.
+SetBlockResult chunk_set_block_extrapolating(Chunk* chunk, Vector2i position, BlockInstance blockValue, bool isWall);
 // Position is relative to the chunk origin, but it accepts
 // negative values so that it is used to get the block from the neighboring
 // chunk.

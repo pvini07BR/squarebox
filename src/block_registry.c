@@ -282,6 +282,20 @@ void block_registry_init() {
         .lightLevel = 15,
         .state_resolver = torch_state_resolver
     };
+
+    blockRegistry[BLOCK_WATER_SOURCE] = (BlockRegistry){
+        .variant_count = 1,
+        .variants = { {.atlas_idx = 0, .model_idx = BLOCK_MODEL_QUAD, .flipH = false, .flipV = false, .rotation = 0 } },
+        .flags = BLOCK_FLAG_TRANSPARENT | BLOCK_FLAG_LIQUID_SOURCE,
+        .lightLevel = 0,
+    };
+
+    blockRegistry[BLOCK_WATER_FLOWING] = (BlockRegistry){
+        .variant_count = 1,
+        .variants = { {.atlas_idx = 0, .model_idx = BLOCK_MODEL_QUAD, .flipH = false, .flipV = false, .rotation = 0 } },
+        .flags = BLOCK_FLAG_TRANSPARENT | BLOCK_FLAG_LIQUID_FLOWING,
+        .lightLevel = 0,
+    };
 }
 
 BlockRegistry* br_get_block_registry(size_t idx) {

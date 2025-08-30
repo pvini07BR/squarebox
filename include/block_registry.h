@@ -32,6 +32,8 @@ typedef enum {
 	BLOCK_COBBLESTONE_NUB,
 	BLOCK_WOODEN_PLANKS_NUB,
 	BLOCK_TORCH,
+	BLOCK_WATER_SOURCE,
+	BLOCK_WATER_FLOWING,
 	BLOCK_COUNT
 } BlockEnum;
 
@@ -50,7 +52,18 @@ typedef enum {
 
 	// Tells if the state of this block can be determined
 	// instead of calculated.
-	BLOCK_FLAG_STATE_MUTABLE = (1 << 4)
+	BLOCK_FLAG_STATE_MUTABLE = (1 << 4),
+
+	// Tells if the block is a liquid source.
+	// this will make the block render differently from
+	// other blocks, and will render only if it is in the
+	// block layer.
+	BLOCK_FLAG_LIQUID_SOURCE = (1 << 5),
+	// Tells if the block is a flowing liquid.
+	// this will make the block render differently from
+	// other blocks, and will render only if it is in the
+	// block layer.
+	BLOCK_FLAG_LIQUID_FLOWING = (1 << 6)
 } BlockFlag;
 
 typedef struct {
@@ -80,7 +93,7 @@ typedef struct {
 	BlockVariant variants[MAX_BLOCK_VARIANTS];
 	// Bit flags that will tell if the block is transaprent, solid, etc.
 	// see the BlockFlag enum.
-	uint8_t flags;
+	int flags;
 	// If the value is greater than zero, then this block will emit light.
 	// otherwise it will not.
 	uint8_t lightLevel;

@@ -157,7 +157,8 @@ void chunk_init(Chunk* chunk)
 
 void build_quad(Chunk* chunk, size_t* offsets, BlockInstance* blocks, Mesh* mesh, bool isWall, uint8_t x, uint8_t y, uint8_t brightness) {
     int i = x + (y * CHUNK_WIDTH);
-    if (blocks[i].id <= 0) return;
+	BlockRegistry* brg = br_get_block_registry(blocks[i].id);
+    if (blocks[i].id <= 0 || brg->flags & BLOCK_FLAG_LIQUID_SOURCE || brg->flags & BLOCK_FLAG_LIQUID_FLOWING) return;
     
     // Start by brightness value
     uint8_t cornerValues[4] = { brightness, brightness, brightness, brightness };
@@ -168,8 +169,6 @@ void build_quad(Chunk* chunk, size_t* offsets, BlockInstance* blocks, Mesh* mesh
     h ^= y * 668265263u;
     h ^= (unsigned int)isWall * 1442695040888963407ull;
     h = (h ^ (h >> 13)) * 1274126177u;
-
-    BlockRegistry* brg = br_get_block_registry(blocks[i].id);
 
     bool flipUVH = (brg->flags & BLOCK_FLAG_FLIP_H) && (h & 1) ? true : false;
     bool flipUVV = (brg->flags & BLOCK_FLAG_FLIP_V) && (h & 2) ? true : false;
@@ -387,7 +386,40 @@ void chunk_draw(Chunk* chunk) {
         DrawMesh(chunk->blockMesh, texture_atlas_get_material(), MatrixIdentity());
     }
 
+    for (int i = 0; i < CHUNK_AREA; i++) {
+		BlockRegistry* brg = br_get_block_registry(chunk->blocks[i].id);
+
+        if (brg->flags & BLOCK_FLAG_LIQUID_SOURCE) {
+            int x = i % CHUNK_WIDTH;
+            int y = i / CHUNK_WIDTH;
+            DrawRectangle(
+                x * TILE_SIZE,
+                y * TILE_SIZE,
+                TILE_SIZE,
+                TILE_SIZE,
+                (Color){ 0, 0, 255, 100 }
+			);
+		} else if (brg->flags & BLOCK_FLAG_LIQUID_FLOWING) {
+            int x = i % CHUNK_WIDTH;
+            int y = i / CHUNK_WIDTH;
+
+			float value = chunk->blocks[i].state / 8.0f;
+
+            DrawRectangle(
+                x * TILE_SIZE,
+                y * TILE_SIZE + (TILE_SIZE * value),
+                TILE_SIZE,
+                TILE_SIZE * (1.0f - value),
+                (Color) { 255, 0, 0, 100 }
+            );
+        }
+    }
+
     rlPopMatrix();
+}
+
+void chunk_tick(Chunk* chunk) {
+    if (!chunk) return;
 }
 
 BlockInstance chunk_get_block_extrapolating(Chunk* chunk, Vector2i position, bool isWall) {
@@ -422,6 +454,41 @@ BlockInstance chunk_get_block_extrapolating(Chunk* chunk, Vector2i position, boo
             return neighbor->blocks[relPos.x + (relPos.y * CHUNK_WIDTH)];
         else
             return neighbor->walls[relPos.x + (relPos.y * CHUNK_WIDTH)];
+    }
+}
+
+void chunk_set_block_extrapolating(Chunk* chunk, Vector2i position, BlockInstance blockValue, bool isWall) {
+    if (!chunk) return;
+
+    if (position.x >= 0 && position.y >= 0 && position.x < CHUNK_WIDTH && position.y < CHUNK_WIDTH) {
+        if (!isWall)
+            chunk->blocks[position.x + (position.y * CHUNK_WIDTH)] = blockValue;
+        else
+            chunk->walls[position.x + (position.y * CHUNK_WIDTH)] = blockValue;
+    }
+    else {
+        Chunk* neighbor = NULL;
+
+        if (position.x < 0 && position.y < 0) neighbor = (Chunk*)chunk->neighbors.upLeft;
+        else if (position.x >= CHUNK_WIDTH && position.y < 0) neighbor = (Chunk*)chunk->neighbors.upRight;
+        else if (position.x < 0 && position.y >= CHUNK_WIDTH) neighbor = (Chunk*)chunk->neighbors.downLeft;
+        else if (position.x >= CHUNK_WIDTH && position.y >= CHUNK_WIDTH) neighbor = (Chunk*)chunk->neighbors.downRight;
+        else if (position.x < 0) neighbor = (Chunk*)chunk->neighbors.left;
+        else if (position.x >= CHUNK_WIDTH) neighbor = (Chunk*)chunk->neighbors.right;
+        else if (position.y < 0) neighbor = (Chunk*)chunk->neighbors.up;
+        else if (position.y >= CHUNK_WIDTH) neighbor = (Chunk*)chunk->neighbors.down;
+
+        if (neighbor == NULL) return;
+
+        Vector2u relPos = {
+            .x = posmod(position.x, CHUNK_WIDTH),
+            .y = posmod(position.y, CHUNK_WIDTH)
+        };
+
+        if (!isWall)
+            neighbor->blocks[relPos.x + (relPos.y * CHUNK_WIDTH)] = blockValue;
+        else
+            neighbor->walls[relPos.x + (relPos.y * CHUNK_WIDTH)] = blockValue;
     }
 }
 

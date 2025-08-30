@@ -16,6 +16,8 @@
 #include "item_container.h"
 #include "block_models.h"
 
+#define TICK_DELTA (1.0f / 5.0f)
+
 extern int seed;
 extern bool wallAmbientOcclusion;
 extern bool smoothLighting;
@@ -83,8 +85,16 @@ int main() {
     Vector2i currentChunkPos = { 0, 0 };
 
     char buffer[1024];
+    float accumulator = 0.0f;
 
     while (!WindowShouldClose()) {
+        // Tick chunks
+		accumulator += GetFrameTime();
+        while (accumulator >= TICK_DELTA) {
+            chunk_manager_tick();
+            accumulator -= TICK_DELTA;
+		}
+
         camera.offset = (Vector2){
             .x = GetScreenWidth() / 2.0f, 
             .y = GetScreenHeight() / 2.0f
@@ -206,31 +216,6 @@ int main() {
                 loadedGhostMesh = false;
             }
         }
-
-        /*
-        if (hotbarIdx != last_hotbarIdx || blockState != last_blockState || inventory_get_item(0, hotbarIdx).item_id != lastItemId) {
-            if (loadedGhostMesh == true) {
-                UnloadMesh(ghostBlockMesh);
-                ghostBlockMesh = (Mesh){ 0 };
-                loadedGhostMesh = false;
-            }
-            
-            ItemRegistry* ir = ir_get_item_registry(inventory_get_item(0, hotbarIdx).item_id);
-            if (ir->blockId > 0) {
-                BlockRegistry* brg = br_get_block_registry(ir->blockId);
-                if (blockState < 0) blockState = brg->variant_count - 1;
-                if (blockState >= brg->variant_count) blockState = 0;
-                BlockVariant bvar = br_get_block_variant(ir->blockId, blockState);
-                block_models_build_mesh(&ghostBlockMesh, bvar.model_idx, bvar.atlas_idx, bvar.flipH, bvar.flipV, bvar.rotation);
-                loadedGhostMesh = true;
-            } else {
-                blockState = 0;
-            }
-            last_hotbarIdx = hotbarIdx;
-            last_blockState = blockState;
-            lastItemId = inventory_get_item(0, hotbarIdx).item_id;
-        }
-        */
 
         Vector2i cameraChunkPos = {
             (int)floorf(camera.target.x / (CHUNK_WIDTH * TILE_SIZE)),

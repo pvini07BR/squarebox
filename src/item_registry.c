@@ -168,6 +168,13 @@ void item_registry_init() {
 		.blockId = BLOCK_TORCH
 	};
 
+	itemRegistry[ITEM_WATER_BUCKET] = (ItemRegistry){
+		.name = "Water Bucket",
+		.atlas_idx = 0,
+		.model_idx = BLOCK_MODEL_QUAD,
+		.blockId = BLOCK_WATER_SOURCE
+	};
+
 	for (int i = 0; i < ITEM_COUNT; i++) {
 		itemRegistry[i].mesh = (Mesh){ 0 };
 		block_models_build_mesh(&itemRegistry[i].mesh, itemRegistry[i].model_idx, itemRegistry[i].atlas_idx, false, false, false, false, 0);

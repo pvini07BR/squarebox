@@ -63,6 +63,12 @@ void chunk_manager_draw() {
     }
 }
 
+void chunk_manager_tick() {
+    for (int i = 0; i < CHUNK_COUNT; i++) {
+		chunk_tick(&chunks[i]);
+    }
+}
+
 void chunk_manager_free() {
     UnloadTexture(lightMap);
     if (chunks) {

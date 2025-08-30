@@ -75,6 +75,7 @@ void chunk_init(Chunk* chunk);
 void chunk_regenerate(Chunk* chunk);
 void chunk_genmesh(Chunk* chunk);
 void chunk_draw(Chunk* chunk);
+void chunk_tick(Chunk* chunk);
 void chunk_free(Chunk* chunk);
 
 void chunk_fill_light(Chunk* chunk, Vector2u startPoint, uint8_t newLightValue);
@@ -87,6 +88,10 @@ BlockInstance chunk_get_block(Chunk* chunk, Vector2u position, bool isWall);
 void chunk_set_light(Chunk* chunk, Vector2u position, uint8_t value);
 // Position is relative to the chunk origin.
 uint8_t chunk_get_light(Chunk* chunk, Vector2u position);
+// Position is relative to the chunk origin, but it accepts
+// negative values so that it is used to get the block from the neighboring
+// chunk.
+void chunk_set_block_extrapolating(Chunk* chunk, Vector2i position, BlockInstance blockValue, bool isWall);
 // Position is relative to the chunk origin, but it accepts
 // negative values so that it is used to get the block from the neighboring
 // chunk.

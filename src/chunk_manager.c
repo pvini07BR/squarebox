@@ -267,9 +267,7 @@ void chunk_manager_set_block_safe(Vector2i position, BlockInstance blockValue, b
             chunk_get_block_neighbors(chunk, relPos, isWall, neighbors);
 
             for (int i = 0; i < 4; i++) {
-                BlockRegistry* br = br_get_block_registry(neighbors[i].id);
-
-                if (br->flags & BLOCK_FLAG_SOLID) {
+                if (neighbors[i].id > 0) {
                     canPlace = true;
                     break;
                 }

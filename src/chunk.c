@@ -416,11 +416,17 @@ void chunk_draw(Chunk* chunk) {
 
             float value = chunk->blocks[i].state / 9.0f;
 
-            DrawRectangle(
-                x * TILE_SIZE,
-                y * TILE_SIZE + (TILE_SIZE * value),
-                TILE_SIZE,
-                TILE_SIZE * (1.0f - value),
+            DrawTriangle(
+                (Vector2) { x * TILE_SIZE, y * TILE_SIZE + (TILE_SIZE * value) },
+                (Vector2) { x * TILE_SIZE, y * TILE_SIZE + TILE_SIZE },
+                (Vector2) { x * TILE_SIZE + TILE_SIZE, y * TILE_SIZE + TILE_SIZE },
+                (Color) { 255, 0, 0, 100 }
+            );
+
+            DrawTriangle(
+                (Vector2) { x * TILE_SIZE, y * TILE_SIZE + (TILE_SIZE * value) },
+                (Vector2) { x * TILE_SIZE + TILE_SIZE, y * TILE_SIZE + TILE_SIZE },
+                (Vector2) { x * TILE_SIZE + TILE_SIZE, y * TILE_SIZE + (TILE_SIZE * value) },
                 (Color) { 255, 0, 0, 100 }
             );
         }

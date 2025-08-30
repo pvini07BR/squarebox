@@ -170,7 +170,7 @@ void item_registry_init() {
 
 	itemRegistry[ITEM_WATER_BUCKET] = (ItemRegistry){
 		.name = "Water Bucket",
-		.atlas_idx = 0,
+		.atlas_idx = 11,
 		.model_idx = BLOCK_MODEL_QUAD,
 		.blockId = BLOCK_WATER_SOURCE
 	};

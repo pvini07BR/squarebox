@@ -21,7 +21,7 @@ bool chunk_manager_interact(Vector2i position, bool isWall);
 
 // This version of set block checks for surroundings before placing anything,
 // and does not set a blockId to zero when its already zero.
-// Its for preventing unecessary light and mesh updates.
+// Also resolves the states and calls block callbacks.
 void chunk_manager_set_block_safe(Vector2i position, BlockInstance blockValue, bool isWall);
 
 Chunk* chunk_manager_get_chunk(Vector2i position);

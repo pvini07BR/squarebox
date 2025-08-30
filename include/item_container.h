@@ -17,13 +17,15 @@ typedef struct {
 } ItemSlot;
 
 typedef struct {
-	const char* name;
+	char* name;
 	ItemSlot* items;
 	uint8_t rows;
 	uint8_t columns;
 	bool immutable;
 } ItemContainer;
 
+// Creates a item container with given parameters.
+// the name NEEDS to be a string literal. The container does not free it.
 void item_container_create(ItemContainer* ic, const char* name, uint8_t rows, uint8_t columns, bool immutable);
 ItemSlot item_container_get_item(ItemContainer* ic, uint8_t row, uint8_t column);
 void item_container_set_item(ItemContainer* ic, uint8_t row, uint8_t column, ItemSlot item);

@@ -84,9 +84,14 @@ typedef struct {
 	// If the value is greater than zero, then this block will emit light.
 	// otherwise it will not.
 	uint8_t lightLevel;
+	// Function pointer to a function that will be called when the block is interacted with.
+	// returns a bool value to indicate if the interaction was successful or not.
+	bool (*interact_callback)(BlockInstance* inst, Chunk* chunk);
 	// Function pointer to a function that will resolve the state of the block.
 	// returns a bool value to indicate if the block can be placed or not.
 	bool (*state_resolver)(BlockInstance* inst, BlockInstance neighbors[4], Chunk* chunk, bool isWall);
+	// Function pointer to a function that will be called when the block is destroyed.
+	void (*destroy_callback)(BlockInstance* inst, Chunk* chunk);
 } BlockRegistry;
 
 void block_registry_init();

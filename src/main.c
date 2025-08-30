@@ -22,27 +22,11 @@ extern bool smoothLighting;
 extern unsigned int wallBrightness;
 extern unsigned int wallAOvalue;
 
-/*
-if (loadedGhostMesh == true) {
-                        UnloadMesh(ghostBlockMesh);
-                        ghostBlockMesh = (Mesh){ 0 };
-                        loadedGhostMesh = false;
-                    }
-                    ItemRegistry* ir = ir_get_item_registry(inventory_get_item(0, hotbarIdx).item_id);
-                    if (ir->blockId > 0) {
-                        BlockRegistry* brg = br_get_block_registry(ir->blockId);
-                        if (blockState >= brg->variant_count) blockState = brg->variant_count - 1;
-                        BlockVariant bvar = br_get_block_variant(ir->blockId, blockState);
-                        block_models_build_mesh(&ghostBlockMesh, bvar.model_idx, bvar.atlas_idx, bvar.flipH, bvar.flipV, bvar.rotation);
-                        loadedGhostMesh = true;
-                    } else {
-                        blockState = 0;
-                    }*/
-
 int main() {
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(1280, 720, "mijocraft");
     SetExitKey(KEY_NULL);
+    SetTraceLogLevel(LOG_WARNING);
 
     bool wall_mode = false;
     ItemContainer creativeMenu;

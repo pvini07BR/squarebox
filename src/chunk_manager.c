@@ -28,8 +28,6 @@ void chunk_manager_init() {
 }
 
 void chunk_manager_draw() {
-    rlDisableBackfaceCulling();
-    
     for (int i = 0; i < CHUNK_COUNT; i++) {
         chunk_draw(&chunks[i]);
     }
@@ -234,16 +232,10 @@ bool chunk_manager_interact(Vector2i position, bool isWall) {
     BlockInstance inst = chunk_get_block(chunk, relPos, isWall);
     BlockRegistry* brg = br_get_block_registry(inst.id);
 
-    // Open container if the selected block holds a container
-    /*
-    if (brg->trait == BLOCK_TRAIT_CONTAINER) {
-        if (inst.state >= 0) {
-            item_container_open(container_vector_get(&chunk->containerVec, inst.state));
-            return true;
-        }
+	// If the block has an interact callback, call it
+    if (brg->interact_callback) {
+        return brg->interact_callback(&inst, chunk);
     }
-    */
-
     return false;
 }
 
@@ -289,7 +281,7 @@ void chunk_manager_set_block_safe(Vector2i position, BlockInstance blockValue, b
             if (brg->state_resolver) {
                 BlockInstance neighbors[4];
                 chunk_get_block_neighbors(chunk, relPos, isWall, neighbors);
-                brg->state_resolver(&blockValue, neighbors, chunk, isWall);
+                if (canPlace == true) canPlace = brg->state_resolver(&blockValue, neighbors, chunk, isWall);
             }
 
             if (canPlace) {
@@ -299,7 +291,12 @@ void chunk_manager_set_block_safe(Vector2i position, BlockInstance blockValue, b
         }
     }
     else {
-        if (chunk_get_block(chunk, relPos, isWall).id > 0) {
+        BlockInstance current = chunk_get_block(chunk, relPos, isWall);
+        if (current.id > 0) {
+			BlockRegistry* brg = br_get_block_registry(current.id);
+            if (brg->destroy_callback) {
+				brg->destroy_callback(&current, chunk);
+            }
             chunk_set_block(chunk, relPos, blockValue, isWall);
             chunk_manager_update_lighting();
         }

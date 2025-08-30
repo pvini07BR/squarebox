@@ -18,6 +18,27 @@ bool torch_state_resolver(BlockInstance* inst, BlockInstance neighbors[4], Chunk
     return true;
 }
 
+bool on_chest_interact(BlockInstance* inst, Chunk* chunk) {
+    if (inst->state >= 0) {
+        item_container_open(container_vector_get(&chunk->containerVec, inst->state));
+        return true;
+    }
+    return false;
+}
+
+bool chest_solver(BlockInstance* inst, BlockInstance neighbors[4], Chunk* chunk, bool isWall) {
+    inst->state = container_vector_add(&chunk->containerVec, "Chest", 3, 10, false);
+    if (inst->state >= 0) return true;
+    return false;
+}
+
+void on_chest_destroy(BlockInstance* inst, Chunk* chunk) {
+    if (inst->state >= 0) {
+        container_vector_remove(&chunk->containerVec, inst->state);
+        inst->state = -1;
+    }
+}
+
 static BlockRegistry* blockRegistry = NULL;
 
 void block_registry_init() {
@@ -115,7 +136,9 @@ void block_registry_init() {
         .variants = { { .atlas_idx = 9, .model_idx = BLOCK_MODEL_QUAD, .flipH = false, .flipV = false, .rotation = 0 } },
         .flags = BLOCK_FLAG_SOLID,
         .lightLevel = 0,
-        .state_resolver = NULL
+        .interact_callback = on_chest_interact,
+        .state_resolver = chest_solver,
+        .destroy_callback = on_chest_destroy
     };
 
     blockRegistry[BLOCK_DIRT_SLAB] = (BlockRegistry){

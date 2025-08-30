@@ -88,18 +88,6 @@ void chunk_set_block(Chunk* chunk, Vector2u position, BlockInstance blockValue, 
     if (!chunk) return;
     if (position.x >= CHUNK_WIDTH || position.y >= CHUNK_WIDTH) return;
 
-    // If the placed block holds a container, add new container to the
-    // container vector. If removing a existing container block, then
-    // remove the container.
-    /*
-    if (inst->id <= 0 && brg->trait == BLOCK_TRAIT_CONTAINER) {
-        blockValue.state = container_vector_add(&chunk->containerVec, "Chest", 3, 10, false);
-    } else if (prev_brg->trait == BLOCK_TRAIT_CONTAINER && blockValue.id <= 0) {
-        container_vector_remove(&chunk->containerVec, inst->state);
-        inst->state = -1;
-    }
-    */
-
     if (!isWall)
         chunk->blocks[position.x + (position.y * CHUNK_WIDTH)] = blockValue;
     else

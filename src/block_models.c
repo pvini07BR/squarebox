@@ -79,10 +79,10 @@ void block_models_init() {
 
 	float unit = 1.0f / (float)TILE_SIZE;
 
-	Vector2 p0 = { unit * 14, unit * 14 };
-	Vector2 p1 = { unit * 14, unit * 32 };
-	Vector2 p2 = { unit * 18, unit * 32 };
-	Vector2 p3 = { unit * 18, unit * 14 };
+	Vector2 p0 = { unit * 9, unit * 2 };
+	Vector2 p1 = { unit * 9, unit * 32 };
+	Vector2 p2 = { unit * 24, unit * 32 };
+	Vector2 p3 = { unit * 24, unit * 2 };
 
 	models[BLOCK_MODEL_TORCH].vertices[0] = (Vertex2D){ p0.x * TILE_SIZE, p0.y * TILE_SIZE, p0.x, p0.y };
 	models[BLOCK_MODEL_TORCH].vertices[1] = (Vertex2D){ p1.x * TILE_SIZE, p1.y * TILE_SIZE, p1.x, p1.y };
@@ -100,10 +100,12 @@ void block_models_init() {
 		.vertices = malloc(sizeof(Vertex2D) * 6)
 	};
 
-	Vector2 new_p0 = (Vector2){ unit * 28, unit * -1.25f };
-	Vector2 new_p1 = (Vector2){ unit * 28, unit * 15.25f };
-	Vector2 new_p2 = (Vector2){ unit * 32, unit * 15.25f };
-	Vector2 new_p3 = (Vector2){ unit * 32, unit * -1.25f };
+	Vector2 translation = (Vector2){ unit * 12, -(unit * 10) };
+
+	Vector2 new_p0 = Vector2Add(p0, translation);
+	Vector2 new_p1 = Vector2Add(p1, translation);;
+	Vector2 new_p2 = Vector2Add(p2, translation);;
+	Vector2 new_p3 = Vector2Add(p3, translation);;
 
 	Vector2 rp0 = Vector2Add(Vector2Rotate(Vector2Subtract(new_p0, new_p2), -PI / 8.0f), new_p2);
 	Vector2 rp1 = Vector2Add(Vector2Rotate(Vector2Subtract(new_p1, new_p2), -PI / 8.0f), new_p2);

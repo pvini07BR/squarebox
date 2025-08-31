@@ -151,7 +151,8 @@ void item_registry_init() {
 		.name = "Cobblestone Nub",
 		.atlas_idx = 3,
 		.model_idx = BLOCK_MODEL_NUB,
-		.blockId = BLOCK_COBBLESTONE_NUB
+		.blockId = BLOCK_COBBLESTONE_NUB,
+		.placingFlags = ITEM_PLACE_FLAG_NOT_WALL
 	};
 
 	itemRegistry[ITEM_WOODEN_PLANKS_NUB] = (ItemRegistry){
@@ -172,7 +173,8 @@ void item_registry_init() {
 		.name = "Water Bucket",
 		.atlas_idx = 11,
 		.model_idx = BLOCK_MODEL_QUAD,
-		.blockId = BLOCK_WATER_SOURCE
+		.blockId = BLOCK_WATER_SOURCE,
+		.placingFlags = ITEM_PLACE_FLAG_NOT_WALL
 	};
 
 	for (int i = 0; i < ITEM_COUNT; i++) {

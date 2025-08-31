@@ -116,7 +116,7 @@ int main() {
                 else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {
                     if (!chunk_manager_interact(mouseBlockPos, wall_mode)) {
                         ItemRegistry* itr = ir_get_item_registry(inventory_get_item(0, hotbarIdx).item_id);
-                        if (itr->blockId > 0) {
+                        if (itr->blockId > 0 && !(itr->placingFlags & (wall_mode ? ITEM_PLACE_FLAG_NOT_WALL : ITEM_PLACE_FLAG_NOT_BLOCK))) {
                             BlockRegistry* br = br_get_block_registry(itr->blockId);
                             BlockInstance inst = {
                                 .id = itr->blockId,

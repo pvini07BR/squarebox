@@ -33,6 +33,11 @@ typedef enum {
 	ITEM_COUNT
 } ItemEnum;
 
+typedef enum {
+	ITEM_PLACE_FLAG_NOT_BLOCK = (1 << 0),
+	ITEM_PLACE_FLAG_NOT_WALL = (1 << 1)
+} ItemPlacingFlags;
+
 typedef struct {
 	const char* name;
 	size_t atlas_idx;
@@ -41,6 +46,7 @@ typedef struct {
 	
 	// Set 0 if this item isn't going to place any blocks.
 	uint8_t blockId;
+	ItemPlacingFlags placingFlags;
 } ItemRegistry;
 
 void item_registry_init();

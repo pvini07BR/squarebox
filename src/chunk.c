@@ -263,7 +263,7 @@ void chunk_fill_light(Chunk* chunk, Vector2u startPoint, uint8_t newLightValue) 
     BlockRegistry* br = br_get_block_registry(binst.id);
     BlockVariant bvar = br_get_block_variant(binst.id, binst.state);
 
-    if ((!(br->flags & BLOCK_FLAG_TRANSPARENT) && bvar.model_idx == BLOCK_MODEL_QUAD) || br->flags & (BLOCK_FLAG_LIQUID_SOURCE | BLOCK_FLAG_LIQUID_FLOWING)) {
+    if ((!(br->lightLevel == BLOCK_LIGHT_TRANSPARENT) && bvar.model_idx == BLOCK_MODEL_QUAD) || br->flags & (BLOCK_FLAG_LIQUID_SOURCE | BLOCK_FLAG_LIQUID_FLOWING)) {
         decayAmount = 4;
 	}
 
@@ -638,7 +638,7 @@ void build_quad(Chunk* chunk, size_t* offsets, BlockInstance* blocks, Mesh* mesh
         };
 
         for (int dir = 0; dir < 8; dir++) {
-            if ((!(registries[dir]->flags & BLOCK_FLAG_TRANSPARENT) && (registries[dir]->lightLevel <= 0))) {
+            if ((!(registries[dir]->lightLevel == BLOCK_LIGHT_TRANSPARENT) && (registries[dir]->lightLevel <= 0))) {
                 for (int c = 0; c < 2; c++) {
                     int corner = aoRules[dir].corners[c];
                     if (corner >= 0) {

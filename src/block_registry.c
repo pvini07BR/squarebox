@@ -71,8 +71,8 @@ void block_registry_init() {
     blockRegistry[BLOCK_AIR] = (BlockRegistry){
         .variant_count = 1,
         .variants = { { .atlas_idx = 0, .model_idx = BLOCK_MODEL_QUAD, .flipH = false, .flipV = false, .rotation = 0 } },
-        .flags = BLOCK_FLAG_TRANSPARENT | BLOCK_FLAG_REPLACEABLE,
-        .lightLevel = 0,
+        .flags = BLOCK_FLAG_REPLACEABLE,
+        .lightLevel = BLOCK_LIGHT_TRANSPARENT,
         .state_resolver = NULL
     };
 
@@ -80,7 +80,7 @@ void block_registry_init() {
         .variant_count = 1,
         .variants = { { .atlas_idx = 0, .model_idx = BLOCK_MODEL_QUAD, .flipH = false, .flipV = false, .rotation = 0 } },
         .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FLIP_H | BLOCK_FLAG_FULL_BLOCK,
-        .lightLevel = 0,
+        .lightLevel = BLOCK_LIGHT_NO_LIGHT,
         .state_resolver = NULL
     };
 
@@ -88,7 +88,7 @@ void block_registry_init() {
         .variant_count = 1,
         .variants = { { .atlas_idx = 1, .model_idx = BLOCK_MODEL_QUAD, .flipH = false, .flipV = false, .rotation = 0 } },
         .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FLIP_H | BLOCK_FLAG_FLIP_V | BLOCK_FLAG_FULL_BLOCK,
-        .lightLevel = 0,
+        .lightLevel = BLOCK_LIGHT_NO_LIGHT,
         .state_resolver = NULL
     };
 
@@ -96,7 +96,7 @@ void block_registry_init() {
         .variant_count = 1,
         .variants = { { .atlas_idx = 2, .model_idx = BLOCK_MODEL_QUAD, .flipH = false, .flipV = false, .rotation = 0 } },
         .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FLIP_H | BLOCK_FLAG_FULL_BLOCK,
-        .lightLevel = 0,
+        .lightLevel = BLOCK_LIGHT_NO_LIGHT,
         .state_resolver = NULL
     };
 
@@ -104,7 +104,7 @@ void block_registry_init() {
         .variant_count = 1,
         .variants = { { .atlas_idx = 3, .model_idx = BLOCK_MODEL_QUAD, .flipH = false, .flipV = false, .rotation = 0 } },
         .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FULL_BLOCK,
-        .lightLevel = 0,
+        .lightLevel = BLOCK_LIGHT_NO_LIGHT,
         .state_resolver = NULL
     };
 
@@ -112,7 +112,7 @@ void block_registry_init() {
         .variant_count = 1,
         .variants = { { .atlas_idx = 4, .model_idx = BLOCK_MODEL_QUAD, .flipH = false, .flipV = false, .rotation = 0 } },
         .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FULL_BLOCK,
-        .lightLevel = 0,
+        .lightLevel = BLOCK_LIGHT_NO_LIGHT,
         .state_resolver = NULL
     };
 
@@ -123,23 +123,23 @@ void block_registry_init() {
             { .atlas_idx = 5, .model_idx = BLOCK_MODEL_QUAD, .flipH = false, .flipV = false, .rotation = 1 },
         },
         .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_STATE_MUTABLE | BLOCK_FLAG_FULL_BLOCK,
-        .lightLevel = 0,
+        .lightLevel = BLOCK_LIGHT_NO_LIGHT,
         .state_resolver = NULL
     };
 
     blockRegistry[BLOCK_LEAVES] = (BlockRegistry){
         .variant_count = 1,
         .variants = { { .atlas_idx = 6, .model_idx = BLOCK_MODEL_QUAD, .flipH = false, .flipV = false, .rotation = 0 } },
-        .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_TRANSPARENT | BLOCK_FLAG_FLIP_H | BLOCK_FLAG_FLIP_V | BLOCK_FLAG_FULL_BLOCK,
-        .lightLevel = 0,
+        .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FLIP_H | BLOCK_FLAG_FLIP_V | BLOCK_FLAG_FULL_BLOCK,
+        .lightLevel = BLOCK_LIGHT_TRANSPARENT,
         .state_resolver = NULL
     };
 
     blockRegistry[BLOCK_GLASS] = (BlockRegistry){
         .variant_count = 1,
         .variants = { { .atlas_idx = 7, .model_idx = BLOCK_MODEL_QUAD, .flipH = false, .flipV = false, .rotation = 0 } },
-        .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_TRANSPARENT | BLOCK_FLAG_FULL_BLOCK,
-        .lightLevel = 0,
+        .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FULL_BLOCK,
+        .lightLevel = BLOCK_LIGHT_TRANSPARENT,
         .state_resolver = NULL
     };
 
@@ -147,7 +147,7 @@ void block_registry_init() {
         .variant_count = 1,
         .variants = { { .atlas_idx = 8, .model_idx = BLOCK_MODEL_QUAD, .flipH = false, .flipV = false, .rotation = 0 } },
         .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FULL_BLOCK,
-        .lightLevel = 15,
+        .lightLevel = BLOCK_LIGHT_15,
         .state_resolver = NULL
     };
 
@@ -155,7 +155,7 @@ void block_registry_init() {
         .variant_count = 1,
         .variants = { { .atlas_idx = 9, .model_idx = BLOCK_MODEL_QUAD, .flipH = false, .flipV = false, .rotation = 0 } },
         .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FULL_BLOCK,
-        .lightLevel = 0,
+        .lightLevel = BLOCK_LIGHT_NO_LIGHT,
         .interact_callback = on_chest_interact,
         .state_resolver = chest_solver,
         .destroy_callback = on_chest_destroy
@@ -170,7 +170,7 @@ void block_registry_init() {
             { .atlas_idx = 1, .model_idx = BLOCK_MODEL_SLAB, .flipH = false, .flipV = false, .rotation = 3 },
         },
         .flags = BLOCK_FLAG_STATE_MUTABLE | BLOCK_FLAG_SOLID | BLOCK_FLAG_FLIP_H | BLOCK_FLAG_FLIP_V,
-        .lightLevel = 0,
+        .lightLevel = BLOCK_LIGHT_NO_LIGHT,
         .state_resolver = NULL
     };
 
@@ -183,7 +183,7 @@ void block_registry_init() {
             { .atlas_idx = 2, .model_idx = BLOCK_MODEL_SLAB, .flipH = false, .flipV = false, .rotation = 3 },
         },
         .flags = BLOCK_FLAG_STATE_MUTABLE | BLOCK_FLAG_SOLID | BLOCK_FLAG_FLIP_H,
-        .lightLevel = 0,
+        .lightLevel = BLOCK_LIGHT_NO_LIGHT,
         .state_resolver = NULL
     };
 
@@ -196,7 +196,7 @@ void block_registry_init() {
             { .atlas_idx = 3, .model_idx = BLOCK_MODEL_SLAB, .flipH = false, .flipV = false, .rotation = 3 },
         },
         .flags = BLOCK_FLAG_STATE_MUTABLE | BLOCK_FLAG_SOLID,
-        .lightLevel = 0,
+        .lightLevel = BLOCK_LIGHT_NO_LIGHT,
         .state_resolver = NULL
     };
 
@@ -209,7 +209,7 @@ void block_registry_init() {
             { .atlas_idx = 4, .model_idx = BLOCK_MODEL_SLAB, .flipH = false, .flipV = false, .rotation = 3 },
         },
         .flags = BLOCK_FLAG_STATE_MUTABLE | BLOCK_FLAG_SOLID,
-        .lightLevel = 0,
+        .lightLevel = BLOCK_LIGHT_NO_LIGHT,
         .state_resolver = NULL
     };
 
@@ -222,7 +222,7 @@ void block_registry_init() {
             { .atlas_idx = 2, .model_idx = BLOCK_MODEL_STAIRS, .flipH = false, .flipV = false, .rotation = 3 },
         },
         .flags = BLOCK_FLAG_STATE_MUTABLE | BLOCK_FLAG_SOLID | BLOCK_FLAG_FLIP_H,
-        .lightLevel = 0,
+        .lightLevel = BLOCK_LIGHT_NO_LIGHT,
         .state_resolver = NULL
     };
 
@@ -235,7 +235,7 @@ void block_registry_init() {
             { .atlas_idx = 3, .model_idx = BLOCK_MODEL_STAIRS, .flipH = false, .flipV = false, .rotation = 3 },
         },
         .flags = BLOCK_FLAG_STATE_MUTABLE | BLOCK_FLAG_SOLID,
-        .lightLevel = 0,
+        .lightLevel = BLOCK_LIGHT_NO_LIGHT,
         .state_resolver = NULL
     };
 
@@ -248,7 +248,7 @@ void block_registry_init() {
             { .atlas_idx = 4, .model_idx = BLOCK_MODEL_STAIRS, .flipH = false, .flipV = false, .rotation = 3 },
         },
         .flags = BLOCK_FLAG_STATE_MUTABLE | BLOCK_FLAG_SOLID,
-        .lightLevel = 0,
+        .lightLevel = BLOCK_LIGHT_NO_LIGHT,
         .state_resolver = NULL
     };
 
@@ -261,7 +261,7 @@ void block_registry_init() {
             { .atlas_idx = 2, .model_idx = BLOCK_MODEL_NUB, .flipH = false, .flipV = false, .rotation = 3 },
         },
         .flags = BLOCK_FLAG_STATE_MUTABLE | BLOCK_FLAG_SOLID | BLOCK_FLAG_FLIP_H,
-        .lightLevel = 0,
+        .lightLevel = BLOCK_LIGHT_NO_LIGHT,
         .state_resolver = NULL
     };
 
@@ -274,7 +274,7 @@ void block_registry_init() {
             { .atlas_idx = 3, .model_idx = BLOCK_MODEL_NUB, .flipH = false, .flipV = false, .rotation = 3 },
         },
         .flags = BLOCK_FLAG_STATE_MUTABLE | BLOCK_FLAG_SOLID,
-        .lightLevel = 0,
+        .lightLevel = BLOCK_LIGHT_NO_LIGHT,
         .state_resolver = NULL
     };
 
@@ -287,7 +287,7 @@ void block_registry_init() {
             { .atlas_idx = 4, .model_idx = BLOCK_MODEL_NUB, .flipH = false, .flipV = false, .rotation = 3 },
         },
         .flags = BLOCK_FLAG_STATE_MUTABLE | BLOCK_FLAG_SOLID,
-        .lightLevel = 0,
+        .lightLevel = BLOCK_LIGHT_NO_LIGHT,
         .state_resolver = NULL
     };
 
@@ -299,15 +299,15 @@ void block_registry_init() {
             { .atlas_idx = 10, .model_idx = BLOCK_MODEL_TORCH_WALL, .flipH = true, .flipV = false, .rotation = 0 },
         },
         .flags = 0,
-        .lightLevel = 15,
+        .lightLevel = BLOCK_LIGHT_15,
         .state_resolver = torch_state_resolver
     };
 
     blockRegistry[BLOCK_WATER_SOURCE] = (BlockRegistry){
         .variant_count = 1,
         .variants = { {.atlas_idx = 0, .model_idx = BLOCK_MODEL_QUAD, .flipH = false, .flipV = false, .rotation = 0 } },
-        .flags = BLOCK_FLAG_TRANSPARENT | BLOCK_FLAG_REPLACEABLE | BLOCK_FLAG_LIQUID_SOURCE,
-        .lightLevel = 0,
+        .flags = BLOCK_FLAG_REPLACEABLE | BLOCK_FLAG_LIQUID_SOURCE,
+        .lightLevel = BLOCK_LIGHT_TRANSPARENT,
 		.state_resolver = liquid_solver,
 		.destroy_callback = on_liquid_destroy
     };
@@ -315,8 +315,8 @@ void block_registry_init() {
     blockRegistry[BLOCK_WATER_FLOWING] = (BlockRegistry){
         .variant_count = 1,
         .variants = { {.atlas_idx = 0, .model_idx = BLOCK_MODEL_QUAD, .flipH = false, .flipV = false, .rotation = 0 } },
-        .flags = BLOCK_FLAG_TRANSPARENT | BLOCK_FLAG_REPLACEABLE | BLOCK_FLAG_LIQUID_FLOWING,
-        .lightLevel = 0,
+        .flags = BLOCK_FLAG_REPLACEABLE | BLOCK_FLAG_LIQUID_FLOWING,
+        .lightLevel = BLOCK_LIGHT_TRANSPARENT,
 		.state_resolver = liquid_solver,
         .destroy_callback = on_liquid_destroy
     };

@@ -37,40 +37,57 @@ typedef enum {
 	BLOCK_COUNT
 } BlockEnum;
 
-typedef enum {
-	// Tells if the block is transparent.
-	BLOCK_FLAG_TRANSPARENT = (1 << 0),
-	
+typedef enum {	
 	// Tells if the block is solid. That means, if it will have collision or not.
-	BLOCK_FLAG_SOLID = (1 << 1),
+	BLOCK_FLAG_SOLID = (1 << 0),
 
 	// Tells if the block is a full quad.
-	BLOCK_FLAG_FULL_BLOCK = (1 << 2),
+	BLOCK_FLAG_FULL_BLOCK = (1 << 1),
 
 	// Tells if the block can flip horizontally randomly.
-	BLOCK_FLAG_FLIP_H = (1 << 3),
+	BLOCK_FLAG_FLIP_H = (1 << 2),
 
 	// Tells if the block can flip vertically randomly.
-	BLOCK_FLAG_FLIP_V = (1 << 4),
+	BLOCK_FLAG_FLIP_V = (1 << 3),
 
 	// Tells if the state of this block can be determined
 	// instead of calculated.
-	BLOCK_FLAG_STATE_MUTABLE = (1 << 5),
+	BLOCK_FLAG_STATE_MUTABLE = (1 << 4),
 
 	// Tells if the block is replaceable, like water, grass, flowers, etc.
-	BLOCK_FLAG_REPLACEABLE = (1 << 6),
+	BLOCK_FLAG_REPLACEABLE = (1 << 5),
 
 	// Tells if the block is a liquid source.
 	// this will make the block render differently from
 	// other blocks, and will render only if it is in the
 	// block layer.
-	BLOCK_FLAG_LIQUID_SOURCE = (1 << 7),
+	BLOCK_FLAG_LIQUID_SOURCE = (1 << 6),
 	// Tells if the block is a flowing liquid.
 	// this will make the block render differently from
 	// other blocks, and will render only if it is in the
 	// block layer.
-	BLOCK_FLAG_LIQUID_FLOWING = (1 << 8)
+	BLOCK_FLAG_LIQUID_FLOWING = (1 << 7)
 } BlockFlag;
+
+typedef enum {
+	BLOCK_LIGHT_TRANSPARENT = -1,
+	BLOCK_LIGHT_NO_LIGHT = 0,
+	BLOCK_LIGHT_1 = 1,
+	BLOCK_LIGHT_2 = 2,
+	BLOCK_LIGHT_3 = 3,
+	BLOCK_LIGHT_4 = 4,
+	BLOCK_LIGHT_5 = 5,
+	BLOCK_LIGHT_6 = 6,
+	BLOCK_LIGHT_7 = 7,
+	BLOCK_LIGHT_8 = 8,
+	BLOCK_LIGHT_9 = 9,
+	BLOCK_LIGHT_10 = 10,
+	BLOCK_LIGHT_11 = 11,
+	BLOCK_LIGHT_12 = 12,
+	BLOCK_LIGHT_13 = 13,
+	BLOCK_LIGHT_14 = 14,
+	BLOCK_LIGHT_15 = 15
+} BlockLight;
 
 typedef struct {
 	// Index in the atlas texture to use.
@@ -100,9 +117,8 @@ typedef struct {
 	// Bit flags that will tell if the block is transaprent, solid, etc.
 	// see the BlockFlag enum.
 	int flags;
-	// If the value is greater than zero, then this block will emit light.
-	// otherwise it will not.
-	uint8_t lightLevel;
+	// This value tells if the block is transparent, opaque or emit light.
+	BlockLight lightLevel;
 	// Function pointer to a function that will be called when the block is interacted with.
 	// returns a bool value to indicate if the interaction was successful or not.
 	bool (*interact_callback)(BlockInstance* inst, Chunk* chunk);

@@ -204,7 +204,7 @@ void chunk_manager_update_lighting() {
             int x = i % CHUNK_WIDTH;
             int y = i / CHUNK_WIDTH;
 
-            if ((bbr->flags & BLOCK_FLAG_TRANSPARENT || !(bbr->flags & BLOCK_FLAG_FULL_BLOCK)) && (wbr->flags & BLOCK_FLAG_TRANSPARENT || !(wbr->flags & BLOCK_FLAG_FULL_BLOCK))) {
+            if ((bbr->lightLevel == BLOCK_LIGHT_TRANSPARENT || !(bbr->flags & BLOCK_FLAG_FULL_BLOCK)) && (wbr->lightLevel == BLOCK_LIGHT_TRANSPARENT || !(wbr->flags & BLOCK_FLAG_FULL_BLOCK))) {
                 chunk_fill_light(&chunks[c], (Vector2u) { x, y }, 15);
             }
             else if (bbr->lightLevel > 0 || wbr->lightLevel > 0) {

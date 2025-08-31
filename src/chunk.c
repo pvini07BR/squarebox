@@ -169,103 +169,221 @@ void chunk_draw(Chunk* chunk) {
     rlPopMatrix();
 }
 
+// Verifica se pode fluir para baixo
+bool can_flow_down(BlockExtraResult target, BlockRegistry* targetRegistry, int currentLevel) {
+    // Pode fluir para ar
+    if (target.block->id == BLOCK_AIR) {
+        return true;
+    }
+
+    // Pode fluir através de blocos substituíveis (grama, etc.)
+    if ((targetRegistry->flags & BLOCK_FLAG_REPLACEABLE) &&
+        !(targetRegistry->flags & (BLOCK_FLAG_LIQUID_SOURCE | BLOCK_FLAG_LIQUID_FLOWING))) {
+        return true;
+    }
+
+    // Pode melhorar líquido flowing existente
+    if (targetRegistry->flags & BLOCK_FLAG_LIQUID_FLOWING) {
+        FlowingLiquidState* existingState = (FlowingLiquidState*)&target.block->state;
+
+        // Pode fluir se o nível existente é menor que 7 (pode melhorar)
+        if (existingState->level < 7) {
+            return true;
+        }
+    }
+
+    // NÃO pode fluir para sources
+    return false;
+}
+
+static inline bool is_replaceable(BlockRegistry* r) {
+    return r && (r->flags & BLOCK_FLAG_REPLACEABLE);
+}
+static inline bool is_source(BlockRegistry* r) {
+    return r && (r->flags & BLOCK_FLAG_LIQUID_SOURCE);
+}
+static inline bool is_flowing(BlockRegistry* r) {
+    return r && (r->flags & BLOCK_FLAG_LIQUID_FLOWING);
+}
+
 void chunk_tick(Chunk* chunk) {
     if (!chunk) return;
 
     bool changed = false;
-
     int count = chunk->liquidSpreadList.count;
-    for (int i = 0; i < count; i++) {
-        uint8_t idx = chunk->liquidSpreadList.indices[i];
+
+    for (int li = count - 1; li >= 0; li--) {
+        uint8_t idx = chunk->liquidSpreadList.indices[li];
         int x = idx % CHUNK_WIDTH;
         int y = idx / CHUNK_WIDTH;
 
-		BlockInstance* binst = chunk_get_block_ptr(chunk, (Vector2u) { x, y }, false);
-        if (binst == NULL) {
-			liquid_spread_list_remove(&chunk->liquidSpreadList, i);
+        BlockInstance* binst = chunk_get_block_ptr(chunk, (Vector2u) { x, y }, false);
+        if (!binst) {
+            liquid_spread_list_remove(&chunk->liquidSpreadList, li);
             continue;
         }
-		
-		BlockRegistry* br = br_get_block_registry(binst->id);
-		if (br == NULL) {
-            liquid_spread_list_remove(&chunk->liquidSpreadList, i);
-            continue;
-        }
-        if (!(br->flags & (BLOCK_FLAG_LIQUID_SOURCE | BLOCK_FLAG_LIQUID_FLOWING))) {
-            liquid_spread_list_remove(&chunk->liquidSpreadList, i);
+
+        BlockRegistry* br = br_get_block_registry(binst->id);
+        if (!br || !(br->flags & (BLOCK_FLAG_LIQUID_SOURCE | BLOCK_FLAG_LIQUID_FLOWING))) {
+            liquid_spread_list_remove(&chunk->liquidSpreadList, li);
             continue;
         }
 
         BlockExtraResult neighbors[4];
         chunk_get_block_neighbors_extra(chunk, (Vector2u) { x, y }, false, neighbors);
+
         BlockRegistry* registries[4];
-        for (int i = 0; i < 4; i++) registries[i] = br_get_block_registry(neighbors[i].block->id);
-
-        if (br->flags & BLOCK_FLAG_LIQUID_SOURCE) {
-            if (registries[NEIGHBOR_LEFT]->flags & BLOCK_FLAG_REPLACEABLE) {
-                *neighbors[NEIGHBOR_LEFT].block = (BlockInstance){ .id = BLOCK_WATER_FLOWING, .state = get_flowing_liquid_state(7, false) };
-                liquid_spread_list_add(&neighbors[NEIGHBOR_LEFT].chunk->liquidSpreadList, neighbors[NEIGHBOR_LEFT].idx);
-                changed = true;
+        for (int j = 0; j < 4; j++) {
+            if (neighbors[j].block == NULL) {
+                registries[j] = NULL;
+                continue;
             }
+            registries[j] = br_get_block_registry(neighbors[j].block->id);
         }
-        else if (br->flags & BLOCK_FLAG_LIQUID_FLOWING) {
-            FlowingLiquidState* binst_state = &binst->state;
-            printf("%d\n", binst_state->level);
 
-            if (registries[NEIGHBOR_LEFT]->flags & BLOCK_FLAG_REPLACEABLE && binst_state->level > 0) {
-                *neighbors[NEIGHBOR_LEFT].block = (BlockInstance){ .id = BLOCK_WATER_FLOWING, .state = get_flowing_liquid_state(binst_state->level - 1, false) };
-                liquid_spread_list_add(&neighbors[NEIGHBOR_LEFT].chunk->liquidSpreadList, neighbors[NEIGHBOR_LEFT].idx);
+        if (br->flags & BLOCK_FLAG_LIQUID_FLOWING) {
+            bool left_is_source = registries[NEIGHBOR_LEFT] && is_source(registries[NEIGHBOR_LEFT]);
+            bool right_is_source = registries[NEIGHBOR_RIGHT] && is_source(registries[NEIGHBOR_RIGHT]);
+            if (left_is_source && right_is_source) {
+                binst->id = BLOCK_WATER_SOURCE;
+                binst->state = 0;
+                br = br_get_block_registry(binst->id);
                 changed = true;
-            }
-        }
-        /*
-        if (br->flags & BLOCK_FLAG_LIQUID_SOURCE) {
-            if (registries[NEIGHBOR_BOTTOM]->flags & BLOCK_FLAG_REPLACEABLE) {
-                if (registries[NEIGHBOR_BOTTOM]->flags & BLOCK_FLAG_LIQUID_SOURCE) continue;
-                *neighbors[NEIGHBOR_BOTTOM].block = (BlockInstance){ .id = BLOCK_WATER_FLOWING, .state = get_flowing_liquid_state(8, true) };
-				liquid_spread_list_add(&neighbors[NEIGHBOR_BOTTOM].chunk->liquidSpreadList, neighbors[NEIGHBOR_BOTTOM].idx);
-                changed = true;
-            }
-            else {
-				NeighborDirection directions[] = { NEIGHBOR_LEFT, NEIGHBOR_RIGHT };
-                for (int d = 0; d < 2; d++) {
-					NeighborDirection dir = directions[d];
-                    if (registries[dir]->flags & BLOCK_FLAG_REPLACEABLE || registries[dir]->flags & BLOCK_FLAG_LIQUID_FLOWING) {
-                        *neighbors[dir].block = (BlockInstance){ .id = BLOCK_WATER_FLOWING, .state = get_flowing_liquid_state(8, false) };
-                        liquid_spread_list_add(&neighbors[dir].chunk->liquidSpreadList, neighbors[dir].idx);
+
+                bool bottom_was_replaceable = is_replaceable(registries[NEIGHBOR_BOTTOM]);
+                bool placed_bottom = false;
+                bool bottom_is_source = registries[NEIGHBOR_BOTTOM] && is_source(registries[NEIGHBOR_BOTTOM]);
+
+                if (bottom_was_replaceable &&
+                    !(registries[NEIGHBOR_BOTTOM] && (registries[NEIGHBOR_BOTTOM]->flags & BLOCK_FLAG_LIQUID_SOURCE)))
+                {
+                    if (!(registries[NEIGHBOR_BOTTOM] && is_flowing(registries[NEIGHBOR_BOTTOM]) &&
+                        ((FlowingLiquidState*)&neighbors[NEIGHBOR_BOTTOM].block->state)->falling == true))
+                    {
+                        *neighbors[NEIGHBOR_BOTTOM].block =
+                            (BlockInstance){ .id = BLOCK_WATER_FLOWING, .state = get_flowing_liquid_state(7, true) };
+                        liquid_spread_list_add(&neighbors[NEIGHBOR_BOTTOM].chunk->liquidSpreadList, neighbors[NEIGHBOR_BOTTOM].idx);
                         changed = true;
+                        placed_bottom = true;
                     }
                 }
+
+                if (!bottom_was_replaceable || placed_bottom || bottom_is_source) {
+                    NeighborDirection dirs[] = { NEIGHBOR_LEFT, NEIGHBOR_RIGHT };
+                    for (int d = 0; d < 2; d++) {
+                        NeighborDirection dir = dirs[d];
+                        BlockRegistry* r = registries[dir];
+                        if (!r) continue;
+                        if (r->flags & BLOCK_FLAG_LIQUID_SOURCE) continue;
+
+                        bool neighbor_is_flowing = (r->flags & BLOCK_FLAG_LIQUID_FLOWING) != 0;
+                        uint8_t newLevel = 6;
+
+                        if ((r->flags & BLOCK_FLAG_REPLACEABLE) || neighbor_is_flowing) {
+                            if (neighbor_is_flowing) {
+                                FlowingLiquidState* ns = (FlowingLiquidState*)&neighbors[dir].block->state;
+                                if (ns->level >= newLevel) continue;
+                            }
+                            *neighbors[dir].block = (BlockInstance){ .id = BLOCK_WATER_FLOWING, .state = get_flowing_liquid_state(newLevel, false) };
+                            liquid_spread_list_add(&neighbors[dir].chunk->liquidSpreadList, neighbors[dir].idx);
+                            changed = true;
+                        }
+                    }
+                }
+
+                continue;
             }
         }
-        else if (br->flags & BLOCK_FLAG_LIQUID_FLOWING) {
-            if (registries[NEIGHBOR_BOTTOM]->flags & BLOCK_FLAG_REPLACEABLE) {
-                if (!(registries[NEIGHBOR_BOTTOM]->flags & BLOCK_FLAG_LIQUID_SOURCE)) {
-                    *neighbors[NEIGHBOR_BOTTOM].block = (BlockInstance){ .id = BLOCK_WATER_FLOWING, .state = get_flowing_liquid_state(8, true) };
+
+        if (br->flags & BLOCK_FLAG_LIQUID_SOURCE) {
+            bool bottom_was_replaceable = is_replaceable(registries[NEIGHBOR_BOTTOM]);
+            bool placed_bottom = false;
+            bool bottom_is_source = registries[NEIGHBOR_BOTTOM] && is_source(registries[NEIGHBOR_BOTTOM]); // NOVO: detecta source embaixo
+
+            if (bottom_was_replaceable &&
+                !(registries[NEIGHBOR_BOTTOM] && (registries[NEIGHBOR_BOTTOM]->flags & BLOCK_FLAG_LIQUID_SOURCE)))
+            {
+                if (!(registries[NEIGHBOR_BOTTOM] && is_flowing(registries[NEIGHBOR_BOTTOM]) &&
+                    ((FlowingLiquidState*)&neighbors[NEIGHBOR_BOTTOM].block->state)->falling == true))
+                {
+                    *neighbors[NEIGHBOR_BOTTOM].block =
+                        (BlockInstance){ .id = BLOCK_WATER_FLOWING, .state = get_flowing_liquid_state(7, true) };
                     liquid_spread_list_add(&neighbors[NEIGHBOR_BOTTOM].chunk->liquidSpreadList, neighbors[NEIGHBOR_BOTTOM].idx);
                     changed = true;
+                    placed_bottom = true;
                 }
             }
-            else if (binst->state > 0) {
-                NeighborDirection directions[] = { NEIGHBOR_LEFT, NEIGHBOR_RIGHT };
+
+            if (!bottom_was_replaceable || placed_bottom || bottom_is_source) {
+                NeighborDirection dirs[] = { NEIGHBOR_LEFT, NEIGHBOR_RIGHT };
                 for (int d = 0; d < 2; d++) {
-                    NeighborDirection dir = directions[d];
-                    if (registries[dir]->flags & BLOCK_FLAG_REPLACEABLE && !(registries[dir]->flags & BLOCK_FLAG_LIQUID_SOURCE)) {
-                        if (registries[dir]->flags & BLOCK_FLAG_LIQUID_FLOWING) {
-                            if (neighbors[dir].block->state >= binst->state - 1) continue;
-						}
-                        *neighbors[dir].block = (BlockInstance){ .id = BLOCK_WATER_FLOWING, .state = get_flowing_liquid_state(binst_state->level - 1, false)};
+                    NeighborDirection dir = dirs[d];
+                    BlockRegistry* r = registries[dir];
+                    if (!r) continue;
+
+                    if (r->flags & BLOCK_FLAG_LIQUID_SOURCE) continue;
+
+                    bool neighbor_is_flowing = (r->flags & BLOCK_FLAG_LIQUID_FLOWING) != 0;
+                    uint8_t newLevel = 6;
+
+                    if ((r->flags & BLOCK_FLAG_REPLACEABLE) || neighbor_is_flowing) {
+                        if (neighbor_is_flowing) {
+                            FlowingLiquidState* ns = (FlowingLiquidState*)&neighbors[dir].block->state;
+                            if (ns->level >= newLevel) continue;
+                        }
+                        *neighbors[dir].block = (BlockInstance){ .id = BLOCK_WATER_FLOWING, .state = get_flowing_liquid_state(newLevel, false) };
                         liquid_spread_list_add(&neighbors[dir].chunk->liquidSpreadList, neighbors[dir].idx);
                         changed = true;
                     }
                 }
             }
         }
-        */
+
+        else if (br->flags & BLOCK_FLAG_LIQUID_FLOWING) {
+            FlowingLiquidState* fs = (FlowingLiquidState*)&binst->state;
+
+            if (is_replaceable(registries[NEIGHBOR_BOTTOM]) &&
+                !(registries[NEIGHBOR_BOTTOM] && (registries[NEIGHBOR_BOTTOM]->flags & BLOCK_FLAG_LIQUID_SOURCE)))
+            {
+                if (!(is_flowing(registries[NEIGHBOR_BOTTOM]) &&
+                    ((FlowingLiquidState*)&neighbors[NEIGHBOR_BOTTOM].block->state)->falling == true))
+                {
+                    *neighbors[NEIGHBOR_BOTTOM].block =
+                        (BlockInstance){ .id = BLOCK_WATER_FLOWING, .state = get_flowing_liquid_state(7, true) };
+                    liquid_spread_list_add(&neighbors[NEIGHBOR_BOTTOM].chunk->liquidSpreadList, neighbors[NEIGHBOR_BOTTOM].idx);
+                    changed = true;
+                    continue;
+                }
+            }
+
+            if (fs->level > 0 && !is_replaceable(registries[NEIGHBOR_BOTTOM])) {
+                NeighborDirection dirs[] = { NEIGHBOR_LEFT, NEIGHBOR_RIGHT };
+                for (int d = 0; d < 2; d++) {
+                    NeighborDirection dir = dirs[d];
+                    BlockRegistry* r = registries[dir];
+                    if (!r) continue;
+                    if (r->flags & BLOCK_FLAG_LIQUID_SOURCE) continue;
+
+                    uint8_t targetLevel = fs->level - 1;
+                    bool neighbor_is_flowing = (r->flags & BLOCK_FLAG_LIQUID_FLOWING) != 0;
+
+                    if ((r->flags & BLOCK_FLAG_REPLACEABLE) || neighbor_is_flowing) {
+                        if (neighbor_is_flowing) {
+                            FlowingLiquidState* ns = (FlowingLiquidState*)&neighbors[dir].block->state;
+                            if (ns->level >= targetLevel) continue;
+                        }
+                        *neighbors[dir].block = (BlockInstance){ .id = BLOCK_WATER_FLOWING, .state = get_flowing_liquid_state(targetLevel, false) };
+                        liquid_spread_list_add(&neighbors[dir].chunk->liquidSpreadList, neighbors[dir].idx);
+                        changed = true;
+                    }
+                }
+            }
+        }
     }
 
-    if (changed == true) chunk_manager_update_lighting();
+    if (changed) chunk_manager_update_lighting();
 }
+
 
 void chunk_free(Chunk* chunk)
 {

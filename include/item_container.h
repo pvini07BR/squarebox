@@ -17,7 +17,7 @@ typedef struct {
 } ItemSlot;
 
 typedef struct {
-	char* name;
+	const char* name;
 	ItemSlot* items;
 	uint8_t rows;
 	uint8_t columns;

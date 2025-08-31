@@ -43,7 +43,7 @@ bool chest_solver(BlockInstance* inst, Chunk* chunk, uint8_t idx, BlockInstance 
     return false;
 }
 
-void on_chest_destroy(BlockInstance* inst, Chunk* chunk) {
+void on_chest_destroy(BlockInstance* inst, Chunk* chunk, uint8_t idx) {
     if (inst->state >= 0) {
         container_vector_remove(&chunk->containerVec, inst->state);
         inst->state = -1;
@@ -52,6 +52,7 @@ void on_chest_destroy(BlockInstance* inst, Chunk* chunk) {
 
 bool liquid_solver(BlockInstance* inst, Chunk* chunk, uint8_t idx, BlockInstance neighbors[4], bool isWall) {
 	liquid_spread_list_add(&chunk->liquidSpreadList, idx);
+    return true;
 }
 
 void on_liquid_destroy(BlockInstance* inst, Chunk* chunk, uint8_t idx) {

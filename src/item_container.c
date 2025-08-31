@@ -7,7 +7,6 @@
 #include <raylib.h>
 #include <raymath.h>
 
-#include "block_registry.h"
 #include "item_registry.h"
 #include "texture_atlas.h"
 #include "defines.h"

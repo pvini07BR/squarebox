@@ -20,18 +20,230 @@
 #define FNL_IMPL
 #include <thirdparty/FastNoiseLite.h>
 
+unsigned int posmod(int v, int m);
+void reset_meshes(Chunk* chunk, int blockVertexCount, int wallVertexCount);
+void build_quad(Chunk* chunk, size_t* offsets, BlockInstance* blocks, Mesh* mesh, bool isWall, uint8_t x, uint8_t y, uint8_t brightness);
+
 int seed = 0;
 bool wallAmbientOcclusion = true;
 bool smoothLighting = true;
 unsigned int wallBrightness = 128;
 unsigned int wallAOvalue = 64;
 
-#define BLOCK_IS_SOLID_DARK(i) \
-    (!(registries[i]->flags & BLOCK_FLAG_TRANSPARENT) && (registries[i]->lightLevel <= 0))
+void chunk_init(Chunk* chunk)
+{
+    if (chunk == NULL) return;
 
-unsigned int posmod(int v, int m) {
-    int r = v % m;
-    return (unsigned int)(r < 0 ? r + m : r);
+    container_vector_init(&chunk->containerVec);
+    liquid_spread_list_init(&chunk->liquidSpreadList);
+
+    chunk->initializedMeshes = false;
+}
+
+void chunk_regenerate(Chunk* chunk) {
+    if (!chunk) return;
+
+    fnl_state noise = fnlCreateState();
+    noise.seed = seed;
+    noise.frequency = -0.025f;
+    noise.noise_type = FNL_NOISE_OPENSIMPLEX2;
+    noise.fractal_type = FNL_FRACTAL_FBM;
+
+    for (int x = 0; x < CHUNK_WIDTH; x++) {
+        float value = fnlGetNoise2D(&noise, (chunk->position.x * CHUNK_WIDTH) + x, 0.0f);
+        value /= 2.0f;
+        value += 0.5;
+        value *= (CHUNK_WIDTH * 2);
+        value = round(value);
+
+        for (int y = 0; y < CHUNK_WIDTH; y++) {
+            int i = x + (y * CHUNK_WIDTH);
+            Vector2i globalBlockPos = {
+                chunk->position.x * CHUNK_WIDTH + (i % CHUNK_WIDTH),
+                chunk->position.y * CHUNK_WIDTH + (i / CHUNK_WIDTH)
+            };
+
+            if (globalBlockPos.y == value) {
+                chunk->blocks[i] = (BlockInstance){ 1, 0 };
+                chunk->walls[i] = (BlockInstance){ 1, 0 };
+            }
+            else if (globalBlockPos.y > value && globalBlockPos.y <= (value + 16)) {
+                chunk->blocks[i] = (BlockInstance){ 2, 0 };
+                chunk->walls[i] = (BlockInstance){ 2, 0 };
+            }
+            else if (globalBlockPos.y > (value + 16)) {
+                chunk->blocks[i] = (BlockInstance){ 3, 0 };
+                chunk->walls[i] = (BlockInstance){ 3, 0 };
+            }
+            else {
+                chunk->blocks[i] = (BlockInstance){ 0, 0 };
+                chunk->walls[i] = (BlockInstance){ 0, 0 };
+            }
+
+            chunk->light[i] = 0;
+        }
+    }
+}
+
+void chunk_genmesh(Chunk* chunk) {
+    if (chunk == NULL) return;
+
+    int blockVertexCount = 0;
+    int wallVertexCount = 0;
+
+    for (int i = 0; i < CHUNK_AREA; i++) {
+        BlockRegistry* rg = br_get_block_registry(chunk->blocks[i].id);
+        BlockVariant bvar = br_get_block_variant(chunk->blocks[i].id, chunk->blocks[i].state);
+        chunk->blockOffsets[i] = blockVertexCount;
+        blockVertexCount += block_models_get_vertex_count(bvar.model_idx);
+
+        rg = br_get_block_registry(chunk->walls[i].id);
+        chunk->wallOffsets[i] = wallVertexCount;
+        wallVertexCount += block_models_get_vertex_count(bvar.model_idx);
+    }
+
+    reset_meshes(chunk, blockVertexCount, wallVertexCount);
+
+    for (int i = 0; i < CHUNK_AREA; i++) {
+        int x = i % CHUNK_WIDTH;
+        int y = i / CHUNK_WIDTH;
+
+        BlockRegistry* brg = br_get_block_registry(chunk->walls[i].id);
+
+        // Blocks that emit light will not be darkened when its placed as a wall.
+        build_quad(chunk, chunk->wallOffsets, chunk->walls, &chunk->wallMesh, true, x, y, brg->lightLevel <= 0 ? wallBrightness : 255);
+        build_quad(chunk, chunk->blockOffsets, chunk->blocks, &chunk->blockMesh, false, x, y, 255);
+    }
+
+    UploadMesh(&chunk->blockMesh, false);
+    UploadMesh(&chunk->wallMesh, false);
+}
+
+void chunk_draw(Chunk* chunk) {
+    if (!chunk) return;
+
+    rlPushMatrix();
+
+    rlTranslatef(
+        chunk->position.x * CHUNK_WIDTH * TILE_SIZE,
+        chunk->position.y * CHUNK_WIDTH * TILE_SIZE,
+        0.0f
+    );
+
+    if (chunk->initializedMeshes) {
+        DrawMesh(chunk->wallMesh, texture_atlas_get_material(), MatrixIdentity());
+        DrawMesh(chunk->blockMesh, texture_atlas_get_material(), MatrixIdentity());
+    }
+
+    for (int i = 0; i < CHUNK_AREA; i++) {
+		BlockRegistry* brg = br_get_block_registry(chunk->blocks[i].id);
+
+        if (brg->flags & BLOCK_FLAG_LIQUID_SOURCE) {
+            int x = i % CHUNK_WIDTH;
+            int y = i / CHUNK_WIDTH;
+            DrawRectangle(
+                x * TILE_SIZE,
+                y * TILE_SIZE,
+                TILE_SIZE,
+                TILE_SIZE,
+                (Color){ 0, 0, 255, 100 }
+			);
+		} else if (brg->flags & BLOCK_FLAG_LIQUID_FLOWING) {
+            int x = i % CHUNK_WIDTH;
+            int y = i / CHUNK_WIDTH;
+
+            float value = chunk->blocks[i].state / 9.0f;
+
+            DrawTriangle(
+                (Vector2) { x * TILE_SIZE, y * TILE_SIZE + (TILE_SIZE * value) },
+                (Vector2) { x * TILE_SIZE, y * TILE_SIZE + TILE_SIZE },
+                (Vector2) { x * TILE_SIZE + TILE_SIZE, y * TILE_SIZE + TILE_SIZE },
+                (Color) { 255, 0, 0, 100 }
+            );
+
+            DrawTriangle(
+                (Vector2) { x * TILE_SIZE, y * TILE_SIZE + (TILE_SIZE * value) },
+                (Vector2) { x * TILE_SIZE + TILE_SIZE, y * TILE_SIZE + TILE_SIZE },
+                (Vector2) { x * TILE_SIZE + TILE_SIZE, y * TILE_SIZE + (TILE_SIZE * value) },
+                (Color) { 255, 0, 0, 100 }
+            );
+        }
+    }
+
+    rlPopMatrix();
+}
+
+void chunk_tick(Chunk* chunk) {
+    if (!chunk) return;
+
+    int count = chunk->liquidSpreadList.count;
+    for (int i = 0; i < count; i++) {
+		uint8_t idx = chunk->liquidSpreadList.indices[i];
+		int x = idx % CHUNK_WIDTH;
+        int y = idx / CHUNK_WIDTH;
+
+        BlockInstance inst = chunk->blocks[idx];
+		BlockRegistry* brg = br_get_block_registry(inst.id);
+		if (!(brg->flags & BLOCK_FLAG_LIQUID_SOURCE) && !(brg->flags & BLOCK_FLAG_LIQUID_FLOWING)) {
+			liquid_spread_list_remove(&chunk->liquidSpreadList, idx);
+            i--; count--;
+			continue;
+		}
+		
+        BlockInstance neighbors[4];
+		chunk_get_block_neighbors(chunk, (Vector2u) { x, y }, false, neighbors);
+		BlockRegistry* registries[4];
+        for (int n = 0; n < 4; n++) registries[n] = br_get_block_registry(neighbors[n].id);
+        
+		// Spreading downwards
+        if (!(registries[NEIGHBOR_BOTTOM]->flags & BLOCK_FLAG_SOLID)) {
+            BlockExtraResult result = chunk_set_block_extrapolating(chunk, (Vector2i) { x, y + 1 }, (BlockInstance) { BLOCK_WATER_FLOWING, 0 }, false);
+            if (result.chunk) {
+                //liquid_spread_list_remove(&chunk->liquidSpreadList, idx);
+                //i--; count--;
+				uint8_t otherIdx = result.position.x + (result.position.y * CHUNK_WIDTH);
+                liquid_spread_list_add(&result.chunk->liquidSpreadList, otherIdx);
+                continue;
+            }
+        }
+
+        int depth = inst.state;
+
+        // Spreading on the sides
+        if (inst.state < 8) {
+            if (!(registries[NEIGHBOR_LEFT]->flags & BLOCK_FLAG_SOLID) && !(registries[NEIGHBOR_LEFT]->flags & (BLOCK_FLAG_LIQUID_SOURCE | BLOCK_FLAG_LIQUID_FLOWING))) {
+                BlockExtraResult result = chunk_set_block_extrapolating(chunk, (Vector2i) { x - 1, y }, (BlockInstance) { BLOCK_WATER_FLOWING, depth + 1 }, false);
+                if (result.chunk) {
+                    //liquid_spread_list_remove(&chunk->liquidSpreadList, idx);
+                    //i--; count--;
+                    uint8_t otherIdx = result.position.x + (result.position.y * CHUNK_WIDTH);
+                    liquid_spread_list_add(&result.chunk->liquidSpreadList, otherIdx);
+                }
+            }
+            if (!(registries[NEIGHBOR_RIGHT]->flags & BLOCK_FLAG_SOLID) && !(registries[NEIGHBOR_RIGHT]->flags & (BLOCK_FLAG_LIQUID_SOURCE | BLOCK_FLAG_LIQUID_FLOWING))) {
+                BlockExtraResult result = chunk_set_block_extrapolating(chunk, (Vector2i) { x + 1, y }, (BlockInstance) { BLOCK_WATER_FLOWING, depth + 1 }, false);
+                if (result.chunk) {
+                    //liquid_spread_list_remove(&chunk->liquidSpreadList, idx);
+                    //i--; count--;
+                    uint8_t otherIdx = result.position.x + (result.position.y * CHUNK_WIDTH);
+                    liquid_spread_list_add(&result.chunk->liquidSpreadList, otherIdx);
+                }
+            }
+        }
+    }
+}
+
+void chunk_free(Chunk* chunk)
+{
+    if (!chunk) return;
+    if (chunk->initializedMeshes) {
+        UnloadMesh(chunk->wallMesh);
+        UnloadMesh(chunk->blockMesh);
+        chunk->initializedMeshes = false;
+    }
+
+    container_vector_free(&chunk->containerVec);
+	liquid_spread_list_free(&chunk->liquidSpreadList);
 }
 
 void chunk_fill_light(Chunk* chunk, Vector2u startPoint, uint8_t newLightValue) {
@@ -88,41 +300,217 @@ void chunk_fill_light(Chunk* chunk, Vector2u startPoint, uint8_t newLightValue) 
     }
 }
 
-void chunk_set_block(Chunk* chunk, Vector2u position, BlockInstance blockValue, bool isWall) {
-    if (!chunk) return;
-    if (position.x >= CHUNK_WIDTH || position.y >= CHUNK_WIDTH) return;
-
-    BlockInstance current = chunk_get_block(chunk, position, isWall);
-	if (current.id == blockValue.id && current.state == blockValue.state) return;
-
+BlockInstance* chunk_get_block_ptr(Chunk* chunk, Vector2u position, bool isWall) {
+    if (!chunk) return NULL;
+    if (position.x < 0 || position.x >= CHUNK_WIDTH || position.y < 0 || position.y >= CHUNK_WIDTH) return NULL;
     if (!isWall)
-        chunk->blocks[position.x + (position.y * CHUNK_WIDTH)] = blockValue;
+        return &chunk->blocks[position.x + (position.y * CHUNK_WIDTH)];
     else
-        chunk->walls[position.x + (position.y * CHUNK_WIDTH)] = blockValue;
+        return &chunk->walls[position.x + (position.y * CHUNK_WIDTH)];
+}
+
+BlockExtraResult chunk_get_block_extrapolating_ptr(Chunk* chunk, Vector2i position, bool isWall) {
+    if (!chunk) return (BlockExtraResult){ NULL, NULL, { UINT8_MAX, UINT8_MAX } };
+
+    if (position.x >= 0 && position.y >= 0 && position.x < CHUNK_WIDTH && position.y < CHUNK_WIDTH) {
+		return (BlockExtraResult) {
+            .block = chunk_get_block_ptr(chunk, (Vector2u) { position.x, position.y }, isWall),
+            .chunk = chunk,
+            .position = (Vector2u) { (unsigned int)position.x, (unsigned int)position.y }
+        };
+    }
+    else {
+        Chunk* neighbor = NULL;
+
+        if (position.x < 0 && position.y < 0) neighbor = (Chunk*)chunk->neighbors.upLeft;
+        else if (position.x >= CHUNK_WIDTH && position.y < 0) neighbor = (Chunk*)chunk->neighbors.upRight;
+        else if (position.x < 0 && position.y >= CHUNK_WIDTH) neighbor = (Chunk*)chunk->neighbors.downLeft;
+        else if (position.x >= CHUNK_WIDTH && position.y >= CHUNK_WIDTH) neighbor = (Chunk*)chunk->neighbors.downRight;
+        else if (position.x < 0) neighbor = (Chunk*)chunk->neighbors.left;
+        else if (position.x >= CHUNK_WIDTH) neighbor = (Chunk*)chunk->neighbors.right;
+        else if (position.y < 0) neighbor = (Chunk*)chunk->neighbors.up;
+        else if (position.y >= CHUNK_WIDTH) neighbor = (Chunk*)chunk->neighbors.down;
+
+        if (neighbor == NULL) return (BlockExtraResult) { NULL, NULL, { UINT8_MAX, UINT8_MAX } };
+
+        Vector2u relPos = {
+            .x = posmod(position.x, CHUNK_WIDTH),
+            .y = posmod(position.y, CHUNK_WIDTH)
+        };
+
+		return (BlockExtraResult) {
+            .block = chunk_get_block_ptr(neighbor, relPos, isWall),
+            .chunk = neighbor,
+            .position = relPos
+        };
+    }
+}
+
+uint8_t* chunk_get_light_ptr(Chunk* chunk, Vector2u position) {
+    if (!chunk) return NULL;
+    if (position.x < 0 || position.x >= CHUNK_WIDTH || position.y < 0 || position.y >= CHUNK_WIDTH) return NULL;
+    return &chunk->light[position.x + (position.y * CHUNK_WIDTH)];
+}
+
+LightExtraResult chunk_get_light_extrapolating_ptr(Chunk* chunk, Vector2i position) {
+    if (!chunk) return (LightExtraResult){ NULL, NULL, { UINT8_MAX, UINT8_MAX } };
+
+    if (position.x >= 0 && position.y >= 0 && position.x < CHUNK_WIDTH && position.y < CHUNK_WIDTH) {
+        return (LightExtraResult) {
+            .light = chunk_get_light_ptr(chunk, (Vector2u) { position.x, position.y }),
+            .chunk = chunk,
+            .position = (Vector2u) { (unsigned int)position.x, (unsigned int)position.y }
+        };
+    }
+    else {
+        Chunk* neighbor = NULL;
+
+        if (position.x < 0 && position.y < 0) neighbor = (Chunk*)chunk->neighbors.upLeft;
+        else if (position.x >= CHUNK_WIDTH && position.y < 0) neighbor = (Chunk*)chunk->neighbors.upRight;
+        else if (position.x < 0 && position.y >= CHUNK_WIDTH) neighbor = (Chunk*)chunk->neighbors.downLeft;
+        else if (position.x >= CHUNK_WIDTH && position.y >= CHUNK_WIDTH) neighbor = (Chunk*)chunk->neighbors.downRight;
+        else if (position.x < 0) neighbor = (Chunk*)chunk->neighbors.left;
+        else if (position.x >= CHUNK_WIDTH) neighbor = (Chunk*)chunk->neighbors.right;
+        else if (position.y < 0) neighbor = (Chunk*)chunk->neighbors.up;
+        else if (position.y >= CHUNK_WIDTH) neighbor = (Chunk*)chunk->neighbors.down;
+
+        if (neighbor == NULL) return (LightExtraResult) { NULL, NULL, { UINT8_MAX, UINT8_MAX } };
+
+        Vector2u relPos = {
+            .x = posmod(position.x, CHUNK_WIDTH),
+            .y = posmod(position.y, CHUNK_WIDTH)
+        };
+
+        return (LightExtraResult) {
+            .light = chunk_get_light_ptr(neighbor, relPos),
+            .chunk = neighbor,
+            .position = relPos
+        };
+    }
+}
+
+void chunk_set_block(Chunk* chunk, Vector2u position, BlockInstance blockValue, bool isWall) {
+    BlockInstance* ptr = chunk_get_block_ptr(chunk, position, isWall);
+    if (!ptr) return;
+    if (ptr->id == blockValue.id && ptr->state == blockValue.state) return;
+
+    *ptr = blockValue;
+
+    BlockExtraResult neighbors[4];
+	chunk_get_block_neighbors_extra(chunk, position, isWall, neighbors);
+    for (int i = 0; i < 4; i++) {
+        if (neighbors[i].block == NULL) continue;
+		BlockRegistry* brg = br_get_block_registry(neighbors[i].block->id);
+        if (brg->state_resolver) {
+            BlockInstance neighbors2[4];
+            chunk_get_block_neighbors(neighbors[i].chunk, neighbors[i].position, isWall, neighbors2);
+
+            bool result = brg->state_resolver(
+                neighbors[i].block,
+                neighbors[i].chunk,
+                neighbors[i].position.x + (neighbors[i].position.y * CHUNK_WIDTH),
+                neighbors2,
+                isWall
+            );
+
+            if (!result) *neighbors[i].block = (BlockInstance){ 0, 0 };
+        }
+    }
 
     chunk_manager_update_lighting();
 }
 
+BlockExtraResult chunk_set_block_extrapolating(Chunk* chunk, Vector2i position, BlockInstance blockValue, bool isWall) {
+    BlockExtraResult result = chunk_get_block_extrapolating_ptr(chunk, position, isWall);
+    if (!result.block || !result.chunk) return result;
+    chunk_set_block(result.chunk, result.position, blockValue, isWall);
+    return result;
+}
+
 BlockInstance chunk_get_block(Chunk* chunk, Vector2u position, bool isWall) {
-    if (!chunk) return (BlockInstance){ 0, 0 };
-    if (position.x >= CHUNK_WIDTH || position.y >= CHUNK_WIDTH) return (BlockInstance) { 0, 0 };
-    if (!isWall)
-        return chunk->blocks[position.x + (position.y * CHUNK_WIDTH)];
-    else
-        return chunk->walls[position.x + (position.y * CHUNK_WIDTH)];
+    BlockInstance* ptr = chunk_get_block_ptr(chunk, position, isWall);
+    if (!ptr) return (BlockInstance){ 0, 0 };
+    return *ptr;
+}
+
+BlockInstance chunk_get_block_extrapolating(Chunk* chunk, Vector2i position, bool isWall) {
+    BlockExtraResult result = chunk_get_block_extrapolating_ptr(chunk, (Vector2i) { position.x, position.y }, isWall);
+    if (!result.block || !result.chunk) return (BlockInstance){ 0, 0 };
+    return chunk_get_block(result.chunk, result.position, isWall);
 }
 
 void chunk_set_light(Chunk* chunk, Vector2u position, uint8_t value) {
-    if (!chunk) return;
-    if (position.x < 0 || position.x >= CHUNK_WIDTH || position.y < 0 || position.y >= CHUNK_WIDTH) return;
+    uint8_t* ptr = chunk_get_light_ptr(chunk, position);
+    if (!ptr) return;
+    *ptr = value;
+}
 
-    chunk->light[position.x + (position.y * CHUNK_WIDTH)] = value;
+void chunk_set_light_extrapolating(Chunk* chunk, Vector2i position, uint8_t value) {
+    LightExtraResult result = chunk_get_light_extrapolating_ptr(chunk, (Vector2i) { position.x, position.y });
+    if (!result.light || !result.chunk) return;
+    chunk_set_light(result.chunk, result.position, value);
 }
 
 uint8_t chunk_get_light(Chunk* chunk, Vector2u position) {
-    if (!chunk) return 0;
-    if (position.x >= CHUNK_WIDTH || position.y >= CHUNK_WIDTH) return 0;
-    return chunk->light[position.x + (position.y * CHUNK_WIDTH)];
+    uint8_t* ptr = chunk_get_light_ptr(chunk, position);
+    if (!ptr) return 0;
+    return *ptr;
+}
+
+uint8_t chunk_get_light_extrapolating(Chunk* chunk, Vector2i position) {
+    LightExtraResult result = chunk_get_light_extrapolating_ptr(chunk, (Vector2i) { position.x, position.y });
+    if (!result.light || !result.chunk) return 0;
+    return chunk_get_light(result.chunk, result.position);
+}
+
+void chunk_get_block_neighbors(Chunk* chunk, Vector2u position, bool isWall, BlockInstance output[4]) {
+    output[NEIGHBOR_TOP] = chunk_get_block_extrapolating(chunk, (Vector2i) { position.x, position.y - 1 }, isWall);
+    output[NEIGHBOR_RIGHT] = chunk_get_block_extrapolating(chunk, (Vector2i) { position.x + 1, position.y }, isWall);
+    output[NEIGHBOR_BOTTOM] = chunk_get_block_extrapolating(chunk, (Vector2i) { position.x, position.y + 1 }, isWall);
+    output[NEIGHBOR_LEFT] = chunk_get_block_extrapolating(chunk, (Vector2i) { position.x - 1, position.y }, isWall);
+}
+
+void chunk_get_block_neighbors_extra(Chunk* chunk, Vector2u position, bool isWall, BlockExtraResult output[4]) {
+    output[NEIGHBOR_TOP] = chunk_get_block_extrapolating_ptr(chunk, (Vector2i) { position.x, position.y - 1 }, isWall);
+    output[NEIGHBOR_RIGHT] = chunk_get_block_extrapolating_ptr(chunk, (Vector2i) { position.x + 1, position.y }, isWall);
+    output[NEIGHBOR_BOTTOM] = chunk_get_block_extrapolating_ptr(chunk, (Vector2i) { position.x, position.y + 1 }, isWall);
+    output[NEIGHBOR_LEFT] = chunk_get_block_extrapolating_ptr(chunk, (Vector2i) { position.x - 1, position.y }, isWall);
+}
+
+void chunk_get_block_neighbors_with_corners(Chunk* chunk, Vector2u position, bool isWall, BlockInstance output[8]) {
+    output[NEIGHBOR_TOP] = chunk_get_block_extrapolating(chunk, (Vector2i) { position.x, position.y - 1 }, isWall);
+    output[NEIGHBOR_RIGHT] = chunk_get_block_extrapolating(chunk, (Vector2i) { position.x + 1, position.y }, isWall);
+    output[NEIGHBOR_BOTTOM] = chunk_get_block_extrapolating(chunk, (Vector2i) { position.x, position.y + 1 }, isWall);
+    output[NEIGHBOR_LEFT] = chunk_get_block_extrapolating(chunk, (Vector2i) { position.x - 1, position.y }, isWall);
+
+    output[NEIGHBOR_TOP_LEFT] = chunk_get_block_extrapolating(chunk, (Vector2i) { position.x - 1, position.y - 1 }, isWall);
+    output[NEIGHBOR_TOP_RIGHT] = chunk_get_block_extrapolating(chunk, (Vector2i) { position.x + 1, position.y - 1 }, isWall);
+    output[NEIGHBOR_BOTTOM_RIGHT] = chunk_get_block_extrapolating(chunk, (Vector2i) { position.x + 1, position.y + 1 }, isWall);
+    output[NEIGHBOR_BOTTOM_LEFT] = chunk_get_block_extrapolating(chunk, (Vector2i) { position.x - 1, position.y + 1 }, isWall);
+}
+
+void chunk_get_light_neighbors(Chunk* chunk, Vector2u position, uint8_t output[4]) {
+    output[NEIGHBOR_TOP] = chunk_get_light_extrapolating(chunk, (Vector2i) { position.x, position.y - 1 });
+    output[NEIGHBOR_RIGHT] = chunk_get_light_extrapolating(chunk, (Vector2i) { position.x + 1, position.y });
+    output[NEIGHBOR_BOTTOM] = chunk_get_light_extrapolating(chunk, (Vector2i) { position.x, position.y + 1 });
+    output[NEIGHBOR_LEFT] = chunk_get_light_extrapolating(chunk, (Vector2i) { position.x - 1, position.y });
+}
+
+void chunk_get_light_neighbors_with_corners(Chunk* chunk, Vector2u position, uint8_t output[8]) {
+    output[NEIGHBOR_TOP] = chunk_get_light_extrapolating(chunk, (Vector2i) { position.x, position.y - 1 });
+    output[NEIGHBOR_RIGHT] = chunk_get_light_extrapolating(chunk, (Vector2i) { position.x + 1, position.y });
+    output[NEIGHBOR_BOTTOM] = chunk_get_light_extrapolating(chunk, (Vector2i) { position.x, position.y + 1 });
+    output[NEIGHBOR_LEFT] = chunk_get_light_extrapolating(chunk, (Vector2i) { position.x - 1, position.y });
+
+    output[NEIGHBOR_TOP_LEFT] = chunk_get_light_extrapolating(chunk, (Vector2i) { position.x - 1, position.y - 1 });
+    output[NEIGHBOR_TOP_RIGHT] = chunk_get_light_extrapolating(chunk, (Vector2i) { position.x + 1, position.y - 1 });
+    output[NEIGHBOR_BOTTOM_RIGHT] = chunk_get_light_extrapolating(chunk, (Vector2i) { position.x + 1, position.y + 1 });
+    output[NEIGHBOR_BOTTOM_LEFT] = chunk_get_light_extrapolating(chunk, (Vector2i) { position.x - 1, position.y + 1 });
+}
+
+unsigned int posmod(int v, int m) {
+    int r = v % m;
+    return (unsigned int)(r < 0 ? r + m : r);
 }
 
 void reset_meshes(Chunk* chunk, int blockVertexCount, int wallVertexCount) {
@@ -153,16 +541,6 @@ void reset_meshes(Chunk* chunk, int blockVertexCount, int wallVertexCount) {
     chunk->wallMesh.colors = (unsigned char*)MemAlloc(wallVertexCount * 4 * sizeof(unsigned char));
 
     chunk->initializedMeshes = true;
-}
-
-void chunk_init(Chunk* chunk)
-{
-    if (chunk == NULL) return;
-
-    container_vector_init(&chunk->containerVec);
-    liquid_spread_list_init(&chunk->liquidSpreadList);
-
-    chunk->initializedMeshes = false;
 }
 
 void build_quad(Chunk* chunk, size_t* offsets, BlockInstance* blocks, Mesh* mesh, bool isWall, uint8_t x, uint8_t y, uint8_t brightness) {
@@ -260,7 +638,7 @@ void build_quad(Chunk* chunk, size_t* offsets, BlockInstance* blocks, Mesh* mesh
         };
 
         for (int dir = 0; dir < 8; dir++) {
-            if (BLOCK_IS_SOLID_DARK(dir)) {
+            if ((!(registries[dir]->flags & BLOCK_FLAG_TRANSPARENT) && (registries[dir]->lightLevel <= 0))) {
                 for (int c = 0; c < 2; c++) {
                     int corner = aoRules[dir].corners[c];
                     if (corner >= 0) {
@@ -287,348 +665,4 @@ void build_quad(Chunk* chunk, size_t* offsets, BlockInstance* blocks, Mesh* mesh
     BlockVariant bvar = br_get_block_variant(blocks[i].id, blocks[i].state);
 
     bm_set_block_model(offsets, mesh, (Vector2u) { x, y }, colors, bvar.model_idx, bvar.atlas_idx, flipUVH, flipUVV, bvar.flipH, bvar.flipV, bvar.rotation);
-}
-
-void chunk_genmesh(Chunk* chunk) {
-    if (chunk == NULL) return;
-
-    int blockVertexCount = 0;
-    int wallVertexCount = 0;
-
-    for (int i = 0; i < CHUNK_AREA; i++) {
-        BlockRegistry* rg = br_get_block_registry(chunk->blocks[i].id);
-        BlockVariant bvar = br_get_block_variant(chunk->blocks[i].id, chunk->blocks[i].state);
-        chunk->blockOffsets[i] = blockVertexCount;
-        blockVertexCount += block_models_get_vertex_count(bvar.model_idx);
-
-        rg = br_get_block_registry(chunk->walls[i].id);
-        chunk->wallOffsets[i] = wallVertexCount;
-        wallVertexCount += block_models_get_vertex_count(bvar.model_idx);
-    }
-
-    reset_meshes(chunk, blockVertexCount, wallVertexCount);
-
-    for (int i = 0; i < CHUNK_AREA; i++) {
-        int x = i % CHUNK_WIDTH;
-        int y = i / CHUNK_WIDTH;
-
-        BlockRegistry* brg = br_get_block_registry(chunk->walls[i].id);
-
-        // Blocks that emit light will not be darkened when its placed as a wall.
-        build_quad(chunk, chunk->wallOffsets, chunk->walls, &chunk->wallMesh, true, x, y, brg->lightLevel <= 0 ? wallBrightness : 255);
-        build_quad(chunk, chunk->blockOffsets, chunk->blocks, &chunk->blockMesh, false, x, y, 255);
-    }
-
-    UploadMesh(&chunk->blockMesh, false);
-    UploadMesh(&chunk->wallMesh, false);
-}
-
-void chunk_free(Chunk* chunk)
-{
-    if (!chunk) return;
-    if (chunk->initializedMeshes) {
-        UnloadMesh(chunk->wallMesh);
-        UnloadMesh(chunk->blockMesh);
-        chunk->initializedMeshes = false;
-    }
-
-    container_vector_free(&chunk->containerVec);
-	liquid_spread_list_free(&chunk->liquidSpreadList);
-}
-
-void chunk_regenerate(Chunk* chunk) {
-    if (!chunk) return;
-
-    fnl_state noise = fnlCreateState();
-    noise.seed = seed;
-    noise.frequency = -0.025f;
-    noise.noise_type = FNL_NOISE_OPENSIMPLEX2;
-    noise.fractal_type = FNL_FRACTAL_FBM;
-
-    for (int x = 0; x < CHUNK_WIDTH; x++) {
-        float value = fnlGetNoise2D(&noise, (chunk->position.x * CHUNK_WIDTH) + x, 0.0f);
-        value /= 2.0f;
-        value += 0.5;
-        value *= (CHUNK_WIDTH * 2);
-        value = round(value);
-
-        for (int y = 0; y < CHUNK_WIDTH; y++) {
-            int i = x + (y * CHUNK_WIDTH);
-            Vector2i globalBlockPos = {
-                chunk->position.x * CHUNK_WIDTH + (i % CHUNK_WIDTH),
-                chunk->position.y * CHUNK_WIDTH + (i / CHUNK_WIDTH)
-            };
-
-            if (globalBlockPos.y == value) {
-                chunk->blocks[i] = (BlockInstance){ 1, 0 };
-                chunk->walls[i] = (BlockInstance){ 1, 0 };
-            }
-            else if (globalBlockPos.y > value && globalBlockPos.y <= (value + 16)) {
-                chunk->blocks[i] = (BlockInstance){ 2, 0 };
-                chunk->walls[i] = (BlockInstance){ 2, 0 };
-            } 
-            else if (globalBlockPos.y > (value + 16)) {
-                chunk->blocks[i] = (BlockInstance){ 3, 0 };
-                chunk->walls[i] = (BlockInstance){ 3, 0 };
-            }
-            else {
-                chunk->blocks[i] = (BlockInstance){ 0, 0 };
-                chunk->walls[i] = (BlockInstance){ 0, 0 };
-            }
-
-            chunk->light[i] = 0;
-        }
-    }
-}
-
-void chunk_draw(Chunk* chunk) {
-    if (!chunk) return;
-
-    rlPushMatrix();
-
-    rlTranslatef(
-        chunk->position.x * CHUNK_WIDTH * TILE_SIZE,
-        chunk->position.y * CHUNK_WIDTH * TILE_SIZE,
-        0.0f
-    );
-
-    if (chunk->initializedMeshes) {
-        DrawMesh(chunk->wallMesh, texture_atlas_get_material(), MatrixIdentity());
-        DrawMesh(chunk->blockMesh, texture_atlas_get_material(), MatrixIdentity());
-    }
-
-    for (int i = 0; i < CHUNK_AREA; i++) {
-		BlockRegistry* brg = br_get_block_registry(chunk->blocks[i].id);
-
-        if (brg->flags & BLOCK_FLAG_LIQUID_SOURCE) {
-            int x = i % CHUNK_WIDTH;
-            int y = i / CHUNK_WIDTH;
-            DrawRectangle(
-                x * TILE_SIZE,
-                y * TILE_SIZE,
-                TILE_SIZE,
-                TILE_SIZE,
-                (Color){ 0, 0, 255, 100 }
-			);
-		} else if (brg->flags & BLOCK_FLAG_LIQUID_FLOWING) {
-            int x = i % CHUNK_WIDTH;
-            int y = i / CHUNK_WIDTH;
-
-            float value = chunk->blocks[i].state / 9.0f;
-
-            DrawTriangle(
-                (Vector2) { x * TILE_SIZE, y * TILE_SIZE + (TILE_SIZE * value) },
-                (Vector2) { x * TILE_SIZE, y * TILE_SIZE + TILE_SIZE },
-                (Vector2) { x * TILE_SIZE + TILE_SIZE, y * TILE_SIZE + TILE_SIZE },
-                (Color) { 255, 0, 0, 100 }
-            );
-
-            DrawTriangle(
-                (Vector2) { x * TILE_SIZE, y * TILE_SIZE + (TILE_SIZE * value) },
-                (Vector2) { x * TILE_SIZE + TILE_SIZE, y * TILE_SIZE + TILE_SIZE },
-                (Vector2) { x * TILE_SIZE + TILE_SIZE, y * TILE_SIZE + (TILE_SIZE * value) },
-                (Color) { 255, 0, 0, 100 }
-            );
-        }
-    }
-
-    rlPopMatrix();
-}
-
-void chunk_tick(Chunk* chunk) {
-    if (!chunk) return;
-
-    int count = chunk->liquidSpreadList.count;
-    for (int i = 0; i < count; i++) {
-		uint8_t idx = chunk->liquidSpreadList.indices[i];
-		int x = idx % CHUNK_WIDTH;
-        int y = idx / CHUNK_WIDTH;
-
-        BlockInstance inst = chunk->blocks[idx];
-		BlockRegistry* brg = br_get_block_registry(inst.id);
-		if (!(brg->flags & BLOCK_FLAG_LIQUID_SOURCE) && !(brg->flags & BLOCK_FLAG_LIQUID_FLOWING)) {
-			liquid_spread_list_remove(&chunk->liquidSpreadList, idx);
-            i--; count--;
-			continue;
-		}
-		
-        BlockInstance neighbors[4];
-		chunk_get_block_neighbors(chunk, (Vector2u) { x, y }, false, neighbors);
-		BlockRegistry* registries[4];
-        for (int n = 0; n < 4; n++) registries[n] = br_get_block_registry(neighbors[n].id);
-        
-		// Spreading downwards
-        if (!(registries[NEIGHBOR_BOTTOM]->flags & BLOCK_FLAG_SOLID)) {
-            SetBlockResult result = chunk_set_block_extrapolating(chunk, (Vector2i) { x, y + 1 }, (BlockInstance) { BLOCK_WATER_FLOWING, 0 }, false);
-            if (result.chunk) {
-                //liquid_spread_list_remove(&chunk->liquidSpreadList, idx);
-                //i--; count--;
-				uint8_t otherIdx = result.position.x + (result.position.y * CHUNK_WIDTH);
-                liquid_spread_list_add(&result.chunk->liquidSpreadList, otherIdx);
-                continue;
-            }
-        }
-
-        int depth = inst.state;
-
-        // Spreading on the sides
-        if (inst.state < 8) {
-            if (!(registries[NEIGHBOR_LEFT]->flags & BLOCK_FLAG_SOLID) && !(registries[NEIGHBOR_LEFT]->flags & (BLOCK_FLAG_LIQUID_SOURCE | BLOCK_FLAG_LIQUID_FLOWING))) {
-                SetBlockResult result = chunk_set_block_extrapolating(chunk, (Vector2i) { x - 1, y }, (BlockInstance) { BLOCK_WATER_FLOWING, depth + 1 }, false);
-                if (result.chunk) {
-                    //liquid_spread_list_remove(&chunk->liquidSpreadList, idx);
-                    //i--; count--;
-                    uint8_t otherIdx = result.position.x + (result.position.y * CHUNK_WIDTH);
-                    liquid_spread_list_add(&result.chunk->liquidSpreadList, otherIdx);
-                }
-            }
-            if (!(registries[NEIGHBOR_RIGHT]->flags & BLOCK_FLAG_SOLID) && !(registries[NEIGHBOR_RIGHT]->flags & (BLOCK_FLAG_LIQUID_SOURCE | BLOCK_FLAG_LIQUID_FLOWING))) {
-                SetBlockResult result = chunk_set_block_extrapolating(chunk, (Vector2i) { x + 1, y }, (BlockInstance) { BLOCK_WATER_FLOWING, depth + 1 }, false);
-                if (result.chunk) {
-                    //liquid_spread_list_remove(&chunk->liquidSpreadList, idx);
-                    //i--; count--;
-                    uint8_t otherIdx = result.position.x + (result.position.y * CHUNK_WIDTH);
-                    liquid_spread_list_add(&result.chunk->liquidSpreadList, otherIdx);
-                }
-            }
-        }
-    }
-}
-
-BlockInstance chunk_get_block_extrapolating(Chunk* chunk, Vector2i position, bool isWall) {
-    if (!chunk) return (BlockInstance) { 0, 0 };
-
-    if (position.x >= 0 && position.y >= 0 && position.x < CHUNK_WIDTH && position.y < CHUNK_WIDTH) {
-		return chunk_get_block(chunk, (Vector2u) { position.x, position.y }, isWall);
-    }
-    else {
-        Chunk* neighbor = NULL;
-
-        if (position.x < 0 && position.y < 0) neighbor = (Chunk*)chunk->neighbors.upLeft;
-        else if (position.x >= CHUNK_WIDTH && position.y < 0) neighbor = (Chunk*)chunk->neighbors.upRight;
-        else if (position.x < 0 && position.y >= CHUNK_WIDTH) neighbor = (Chunk*)chunk->neighbors.downLeft;
-        else if (position.x >= CHUNK_WIDTH && position.y >= CHUNK_WIDTH) neighbor = (Chunk*)chunk->neighbors.downRight;
-        else if (position.x < 0) neighbor = (Chunk*)chunk->neighbors.left;
-        else if (position.x >= CHUNK_WIDTH) neighbor = (Chunk*)chunk->neighbors.right;
-        else if (position.y < 0) neighbor = (Chunk*)chunk->neighbors.up;
-        else if (position.y >= CHUNK_WIDTH) neighbor = (Chunk*)chunk->neighbors.down;
-
-        if (neighbor == NULL) return (BlockInstance) { 0, 0 };
-
-        Vector2u relPos = {
-            .x = posmod(position.x, CHUNK_WIDTH),
-            .y = posmod(position.y, CHUNK_WIDTH)
-        };
-
-		return chunk_get_block(neighbor, relPos, isWall);
-    }
-}
-
-SetBlockResult chunk_set_block_extrapolating(Chunk* chunk, Vector2i position, BlockInstance blockValue, bool isWall) {
-    if (!chunk) return (SetBlockResult) {
-        .chunk = NULL, .position = (Vector2u){ UINT8_MAX, UINT8_MAX }
-    };
-
-    if (position.x >= 0 && position.y >= 0 && position.x < CHUNK_WIDTH && position.y < CHUNK_WIDTH) {
-	    chunk_set_block(chunk, (Vector2u) { position.x, position.y }, blockValue, isWall);
-        return (SetBlockResult) {
-            .chunk = chunk, .position = (Vector2u){ position.x, position.y }
-        };
-    }
-    else {
-        Chunk* neighbor = NULL;
-
-        if (position.x < 0 && position.y < 0) neighbor = (Chunk*)chunk->neighbors.upLeft;
-        else if (position.x >= CHUNK_WIDTH && position.y < 0) neighbor = (Chunk*)chunk->neighbors.upRight;
-        else if (position.x < 0 && position.y >= CHUNK_WIDTH) neighbor = (Chunk*)chunk->neighbors.downLeft;
-        else if (position.x >= CHUNK_WIDTH && position.y >= CHUNK_WIDTH) neighbor = (Chunk*)chunk->neighbors.downRight;
-        else if (position.x < 0) neighbor = (Chunk*)chunk->neighbors.left;
-        else if (position.x >= CHUNK_WIDTH) neighbor = (Chunk*)chunk->neighbors.right;
-        else if (position.y < 0) neighbor = (Chunk*)chunk->neighbors.up;
-        else if (position.y >= CHUNK_WIDTH) neighbor = (Chunk*)chunk->neighbors.down;
-
-        Vector2u relPos = {
-            .x = posmod(position.x, CHUNK_WIDTH),
-            .y = posmod(position.y, CHUNK_WIDTH)
-        };
-
-        if (neighbor == NULL) {
-            return (SetBlockResult) {
-                .chunk = NULL, .position = relPos
-            };
-        }
-
-		chunk_set_block(neighbor, relPos, blockValue, isWall);
-        return (SetBlockResult) {
-            .chunk = neighbor, .position = relPos
-        };
-    }
-}
-
-uint8_t chunk_get_light_extrapolating(Chunk* chunk, Vector2i position)
-{
-    if (!chunk) return 0;
-
-    if (position.x >= 0 && position.y >= 0 && position.x < CHUNK_WIDTH && position.y < CHUNK_WIDTH) {
-        return chunk->light[position.x + (position.y * CHUNK_WIDTH)];
-    }
-    else {
-        Chunk* neighbor = NULL;
-
-        if (position.x < 0 && position.y < 0) neighbor = (Chunk*)chunk->neighbors.upLeft;
-        else if (position.x >= CHUNK_WIDTH && position.y < 0) neighbor = (Chunk*)chunk->neighbors.upRight;
-        else if (position.x < 0 && position.y >= CHUNK_WIDTH) neighbor = (Chunk*)chunk->neighbors.downLeft;
-        else if (position.x >= CHUNK_WIDTH && position.y >= CHUNK_WIDTH) neighbor = (Chunk*)chunk->neighbors.downRight;
-        else if (position.x < 0) neighbor = (Chunk*)chunk->neighbors.left;
-        else if (position.x >= CHUNK_WIDTH) neighbor = (Chunk*)chunk->neighbors.right;
-        else if (position.y < 0) neighbor = (Chunk*)chunk->neighbors.up;
-        else if (position.y >= CHUNK_WIDTH) neighbor = (Chunk*)chunk->neighbors.down;
-
-        if (neighbor == NULL) return 0;
-
-        Vector2u relPos = {
-            .x = posmod(position.x, CHUNK_WIDTH),
-            .y = posmod(position.y, CHUNK_WIDTH)
-        };
-
-        return neighbor->light[relPos.x + (relPos.y * CHUNK_WIDTH)];
-    }
-}
-
-void chunk_get_block_neighbors(Chunk* chunk, Vector2u position, bool isWall, BlockInstance output[4]) {
-    output[NEIGHBOR_TOP] = chunk_get_block_extrapolating(chunk, (Vector2i) { position.x, position.y - 1 }, isWall);
-    output[NEIGHBOR_RIGHT] = chunk_get_block_extrapolating(chunk, (Vector2i) { position.x + 1, position.y }, isWall);
-    output[NEIGHBOR_BOTTOM] = chunk_get_block_extrapolating(chunk, (Vector2i) { position.x, position.y + 1 }, isWall);
-    output[NEIGHBOR_LEFT] = chunk_get_block_extrapolating(chunk, (Vector2i) { position.x - 1, position.y }, isWall);
-}
-
-void chunk_get_block_neighbors_with_corners(Chunk* chunk, Vector2u position, bool isWall, BlockInstance output[8]) {
-    output[NEIGHBOR_TOP] = chunk_get_block_extrapolating(chunk, (Vector2i) { position.x, position.y - 1 }, isWall);
-    output[NEIGHBOR_RIGHT] = chunk_get_block_extrapolating(chunk, (Vector2i) { position.x + 1, position.y }, isWall);
-    output[NEIGHBOR_BOTTOM] = chunk_get_block_extrapolating(chunk, (Vector2i) { position.x, position.y + 1 }, isWall);
-    output[NEIGHBOR_LEFT] = chunk_get_block_extrapolating(chunk, (Vector2i) { position.x - 1, position.y }, isWall);
-
-    output[NEIGHBOR_TOP_LEFT] = chunk_get_block_extrapolating(chunk, (Vector2i) { position.x - 1, position.y - 1 }, isWall);
-    output[NEIGHBOR_TOP_RIGHT] = chunk_get_block_extrapolating(chunk, (Vector2i) { position.x + 1, position.y - 1 }, isWall);
-    output[NEIGHBOR_BOTTOM_RIGHT] = chunk_get_block_extrapolating(chunk, (Vector2i) { position.x + 1, position.y + 1 }, isWall);
-    output[NEIGHBOR_BOTTOM_LEFT] = chunk_get_block_extrapolating(chunk, (Vector2i) { position.x - 1, position.y + 1 }, isWall);
-}
-
-void chunk_get_light_neighbors(Chunk* chunk, Vector2u position, uint8_t output[4]) {
-    output[NEIGHBOR_TOP] = chunk_get_light_extrapolating(chunk, (Vector2i) { position.x, position.y - 1 });
-    output[NEIGHBOR_RIGHT] = chunk_get_light_extrapolating(chunk, (Vector2i) { position.x + 1, position.y });
-    output[NEIGHBOR_BOTTOM] = chunk_get_light_extrapolating(chunk, (Vector2i) { position.x, position.y + 1 });
-    output[NEIGHBOR_LEFT] = chunk_get_light_extrapolating(chunk, (Vector2i) { position.x - 1, position.y });
-}
-
-void chunk_get_light_neighbors_with_corners(Chunk* chunk, Vector2u position, uint8_t output[8]) {
-    output[NEIGHBOR_TOP] = chunk_get_light_extrapolating(chunk, (Vector2i) { position.x, position.y - 1 });
-    output[NEIGHBOR_RIGHT] = chunk_get_light_extrapolating(chunk, (Vector2i) { position.x + 1, position.y });
-    output[NEIGHBOR_BOTTOM] = chunk_get_light_extrapolating(chunk, (Vector2i) { position.x, position.y + 1 });
-    output[NEIGHBOR_LEFT] = chunk_get_light_extrapolating(chunk, (Vector2i) { position.x - 1, position.y });
-
-    output[NEIGHBOR_TOP_LEFT] = chunk_get_light_extrapolating(chunk, (Vector2i) { position.x - 1, position.y - 1 });
-    output[NEIGHBOR_TOP_RIGHT] = chunk_get_light_extrapolating(chunk, (Vector2i) { position.x + 1, position.y - 1 });
-    output[NEIGHBOR_BOTTOM_RIGHT] = chunk_get_light_extrapolating(chunk, (Vector2i) { position.x + 1, position.y + 1 });
-    output[NEIGHBOR_BOTTOM_LEFT] = chunk_get_light_extrapolating(chunk, (Vector2i) { position.x - 1, position.y + 1 });
 }

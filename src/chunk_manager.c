@@ -1,8 +1,6 @@
 ﻿#include "chunk_manager.h"
 #include "block_registry.h"
 #include "chunk.h"
-#include "container_vector.h"
-#include "item_container.h"
 #include "defines.h"
 
 #include <limits.h>

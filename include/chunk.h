@@ -74,9 +74,16 @@ typedef struct {
 } Chunk;
 
 typedef struct {
+	BlockInstance* block;
 	Chunk* chunk;
 	Vector2u position;
-} SetBlockResult;
+} BlockExtraResult;
+
+typedef struct {
+	uint8_t* light;
+	Chunk* chunk;
+	Vector2u position;
+} LightExtraResult;
 
 void chunk_init(Chunk* chunk);
 void chunk_regenerate(Chunk* chunk);
@@ -87,48 +94,39 @@ void chunk_free(Chunk* chunk);
 
 void chunk_fill_light(Chunk* chunk, Vector2u startPoint, uint8_t newLightValue);
 
-// Position is relative to the chunk origin.
+// The extrapolating functions are functions that checks if the requested position is inside the chunk.
+// if it is, it will return the block relative to that chunk.
+// Otherwise, it will get the block from a neighboring chunk.
+
+// Pointer getter functions
+BlockInstance* chunk_get_block_ptr(Chunk* chunk, Vector2u position, bool isWall);
+BlockExtraResult chunk_get_block_extrapolating_ptr(Chunk* chunk, Vector2i position, bool isWall);
+uint8_t* chunk_get_light_ptr(Chunk* chunk, Vector2u position);
+LightExtraResult chunk_get_light_extrapolating_ptr(Chunk* chunk, Vector2i position);
+
+// Block setter functions
 void chunk_set_block(Chunk* chunk, Vector2u position, BlockInstance blockValue, bool isWall);
-// Position is relative to the chunk origin.
+BlockExtraResult chunk_set_block_extrapolating(Chunk* chunk, Vector2i position, BlockInstance blockValue, bool isWall);
+
+// Block getter functions
 BlockInstance chunk_get_block(Chunk* chunk, Vector2u position, bool isWall);
-// Position is relative to the chunk origin.
-void chunk_set_light(Chunk* chunk, Vector2u position, uint8_t value);
-// Position is relative to the chunk origin.
-uint8_t chunk_get_light(Chunk* chunk, Vector2u position);
-// Position is relative to the chunk origin, but it accepts
-// negative values so that it is used to get the block from the neighboring
-// chunk.
-// This function returns a struct that tells in which chunk it was placed, and the relative position.
-SetBlockResult chunk_set_block_extrapolating(Chunk* chunk, Vector2i position, BlockInstance blockValue, bool isWall);
-// Position is relative to the chunk origin, but it accepts
-// negative values so that it is used to get the block from the neighboring
-// chunk.
 BlockInstance chunk_get_block_extrapolating(Chunk* chunk, Vector2i position, bool isWall);
-// Position is relative to the chunk origin, but it accepts
-// negative values so that it is used to get the light from the neighboring
-// chunk.
+
+// Light setter functions
+void chunk_set_light(Chunk* chunk, Vector2u position, uint8_t value);
+void chunk_set_light_extrapolating(Chunk* chunk, Vector2i position, uint8_t value);
+
+// Light getter functions
+uint8_t chunk_get_light(Chunk* chunk, Vector2u position);
 uint8_t chunk_get_light_extrapolating(Chunk* chunk, Vector2i position);
 
-// Get the 4 neighbors in a specific relative position in the chunk,
-// and outputs to a BlockInstance array with 4 elements.
-// Uses the extrapolating function.
+// Neighbor (4 corners) getter functions
 void chunk_get_block_neighbors(Chunk* chunk, Vector2u position, bool isWall, BlockInstance output[4]);
-
-// Get the 8 neighbors in a specific relative position in the chunk,
-// and outputs to a BlockInstance array with 8 elements.
-// Uses the extrapolating function.
-// This is the version that gets the diagonal corners.
-void chunk_get_block_neighbors_with_corners(Chunk* chunk, Vector2u position, bool isWall, BlockInstance output[8]);
-
-// Get the 4 neighboring light values in a specific relative position in the chunk,
-// and outputs to a uint8_t array with 4 elements.
-// Uses the extrapolating function.
+void chunk_get_block_neighbors_extra(Chunk* chunk, Vector2u position, bool isWall, BlockExtraResult output[4]);
 void chunk_get_light_neighbors(Chunk* chunk, Vector2u position, uint8_t output[4]);
 
-// Get the 4 neighboring light values in a specific relative position in the chunk,
-// and outputs to a uint8_t array with 4 elements.
-// Uses the extrapolating function.
-// This is the version that gets the diagonal corners.
+// Neighbor (8 corners) getter functions
+void chunk_get_block_neighbors_with_corners(Chunk* chunk, Vector2u position, bool isWall, BlockInstance output[8]);
 void chunk_get_light_neighbors_with_corners(Chunk* chunk, Vector2u position, uint8_t output[8]);
 
 #endif

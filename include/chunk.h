@@ -77,6 +77,7 @@ typedef struct {
 	BlockInstance* block;
 	Chunk* chunk;
 	Vector2u position;
+	uint8_t idx;
 } BlockExtraResult;
 
 typedef struct {

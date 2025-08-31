@@ -6,6 +6,7 @@
 #include "texture_atlas.h"
 #include "block_models.h"
 #include "liquid_spread.h"
+#include "block_state_bitfields.h"
 
 #include <math.h>
 #include <stdint.h>
@@ -152,21 +153,16 @@ void chunk_draw(Chunk* chunk) {
             int x = i % CHUNK_WIDTH;
             int y = i / CHUNK_WIDTH;
 
-            float value = chunk->blocks[i].state / 9.0f;
+			FlowingLiquidState* state = (FlowingLiquidState*)&chunk->blocks[i].state;
+			float value = state->level / 7.0f;
 
-            DrawTriangle(
-                (Vector2) { x * TILE_SIZE, y * TILE_SIZE + (TILE_SIZE * value) },
-                (Vector2) { x * TILE_SIZE, y * TILE_SIZE + TILE_SIZE },
-                (Vector2) { x * TILE_SIZE + TILE_SIZE, y * TILE_SIZE + TILE_SIZE },
-                (Color) { 255, 0, 0, 100 }
-            );
-
-            DrawTriangle(
-                (Vector2) { x * TILE_SIZE, y * TILE_SIZE + (TILE_SIZE * value) },
-                (Vector2) { x * TILE_SIZE + TILE_SIZE, y * TILE_SIZE + TILE_SIZE },
-                (Vector2) { x * TILE_SIZE + TILE_SIZE, y * TILE_SIZE + (TILE_SIZE * value) },
-                (Color) { 255, 0, 0, 100 }
-            );
+            DrawRectangle(
+                x * TILE_SIZE,
+                ceilf(y * TILE_SIZE + (TILE_SIZE * (1.0f - value))),
+                TILE_SIZE,
+                TILE_SIZE * value,
+                (Color){ state->falling ? 0 : 255, state->falling ? 255 : 0, 0, 100 }
+             );
         }
     }
 
@@ -176,61 +172,99 @@ void chunk_draw(Chunk* chunk) {
 void chunk_tick(Chunk* chunk) {
     if (!chunk) return;
 
+    bool changed = false;
+
     int count = chunk->liquidSpreadList.count;
     for (int i = 0; i < count; i++) {
-		uint8_t idx = chunk->liquidSpreadList.indices[i];
-		int x = idx % CHUNK_WIDTH;
+        uint8_t idx = chunk->liquidSpreadList.indices[i];
+        int x = idx % CHUNK_WIDTH;
         int y = idx / CHUNK_WIDTH;
 
-        BlockInstance inst = chunk->blocks[idx];
-		BlockRegistry* brg = br_get_block_registry(inst.id);
-		if (!(brg->flags & BLOCK_FLAG_LIQUID_SOURCE) && !(brg->flags & BLOCK_FLAG_LIQUID_FLOWING)) {
-			liquid_spread_list_remove(&chunk->liquidSpreadList, idx);
-            i--; count--;
-			continue;
-		}
+		BlockInstance* binst = chunk_get_block_ptr(chunk, (Vector2u) { x, y }, false);
+        if (binst == NULL) {
+			liquid_spread_list_remove(&chunk->liquidSpreadList, i);
+            continue;
+        }
 		
-        BlockInstance neighbors[4];
-		chunk_get_block_neighbors(chunk, (Vector2u) { x, y }, false, neighbors);
-		BlockRegistry* registries[4];
-        for (int n = 0; n < 4; n++) registries[n] = br_get_block_registry(neighbors[n].id);
-        
-		// Spreading downwards
-        if (!(registries[NEIGHBOR_BOTTOM]->flags & BLOCK_FLAG_SOLID)) {
-            BlockExtraResult result = chunk_set_block_extrapolating(chunk, (Vector2i) { x, y + 1 }, (BlockInstance) { BLOCK_WATER_FLOWING, 0 }, false);
-            if (result.chunk) {
-                //liquid_spread_list_remove(&chunk->liquidSpreadList, idx);
-                //i--; count--;
-				uint8_t otherIdx = result.position.x + (result.position.y * CHUNK_WIDTH);
-                liquid_spread_list_add(&result.chunk->liquidSpreadList, otherIdx);
-                continue;
-            }
+		BlockRegistry* br = br_get_block_registry(binst->id);
+		if (br == NULL) {
+            liquid_spread_list_remove(&chunk->liquidSpreadList, i);
+            continue;
+        }
+        if (!(br->flags & (BLOCK_FLAG_LIQUID_SOURCE | BLOCK_FLAG_LIQUID_FLOWING))) {
+            liquid_spread_list_remove(&chunk->liquidSpreadList, i);
+            continue;
         }
 
-        int depth = inst.state;
+        BlockExtraResult neighbors[4];
+        chunk_get_block_neighbors_extra(chunk, (Vector2u) { x, y }, false, neighbors);
+        BlockRegistry* registries[4];
+        for (int i = 0; i < 4; i++) registries[i] = br_get_block_registry(neighbors[i].block->id);
 
-        // Spreading on the sides
-        if (inst.state < 8) {
-            if (!(registries[NEIGHBOR_LEFT]->flags & BLOCK_FLAG_SOLID) && !(registries[NEIGHBOR_LEFT]->flags & (BLOCK_FLAG_LIQUID_SOURCE | BLOCK_FLAG_LIQUID_FLOWING))) {
-                BlockExtraResult result = chunk_set_block_extrapolating(chunk, (Vector2i) { x - 1, y }, (BlockInstance) { BLOCK_WATER_FLOWING, depth + 1 }, false);
-                if (result.chunk) {
-                    //liquid_spread_list_remove(&chunk->liquidSpreadList, idx);
-                    //i--; count--;
-                    uint8_t otherIdx = result.position.x + (result.position.y * CHUNK_WIDTH);
-                    liquid_spread_list_add(&result.chunk->liquidSpreadList, otherIdx);
-                }
+        if (br->flags & BLOCK_FLAG_LIQUID_SOURCE) {
+            if (registries[NEIGHBOR_LEFT]->flags & BLOCK_FLAG_REPLACEABLE) {
+                *neighbors[NEIGHBOR_LEFT].block = (BlockInstance){ .id = BLOCK_WATER_FLOWING, .state = get_flowing_liquid_state(7, false) };
+                liquid_spread_list_add(&neighbors[NEIGHBOR_LEFT].chunk->liquidSpreadList, neighbors[NEIGHBOR_LEFT].idx);
+                changed = true;
             }
-            if (!(registries[NEIGHBOR_RIGHT]->flags & BLOCK_FLAG_SOLID) && !(registries[NEIGHBOR_RIGHT]->flags & (BLOCK_FLAG_LIQUID_SOURCE | BLOCK_FLAG_LIQUID_FLOWING))) {
-                BlockExtraResult result = chunk_set_block_extrapolating(chunk, (Vector2i) { x + 1, y }, (BlockInstance) { BLOCK_WATER_FLOWING, depth + 1 }, false);
-                if (result.chunk) {
-                    //liquid_spread_list_remove(&chunk->liquidSpreadList, idx);
-                    //i--; count--;
-                    uint8_t otherIdx = result.position.x + (result.position.y * CHUNK_WIDTH);
-                    liquid_spread_list_add(&result.chunk->liquidSpreadList, otherIdx);
+        }
+        else if (br->flags & BLOCK_FLAG_LIQUID_FLOWING) {
+            FlowingLiquidState* binst_state = &binst->state;
+            printf("%d\n", binst_state->level);
+
+            if (registries[NEIGHBOR_LEFT]->flags & BLOCK_FLAG_REPLACEABLE && binst_state->level > 0) {
+                *neighbors[NEIGHBOR_LEFT].block = (BlockInstance){ .id = BLOCK_WATER_FLOWING, .state = get_flowing_liquid_state(binst_state->level - 1, false) };
+                liquid_spread_list_add(&neighbors[NEIGHBOR_LEFT].chunk->liquidSpreadList, neighbors[NEIGHBOR_LEFT].idx);
+                changed = true;
+            }
+        }
+        /*
+        if (br->flags & BLOCK_FLAG_LIQUID_SOURCE) {
+            if (registries[NEIGHBOR_BOTTOM]->flags & BLOCK_FLAG_REPLACEABLE) {
+                if (registries[NEIGHBOR_BOTTOM]->flags & BLOCK_FLAG_LIQUID_SOURCE) continue;
+                *neighbors[NEIGHBOR_BOTTOM].block = (BlockInstance){ .id = BLOCK_WATER_FLOWING, .state = get_flowing_liquid_state(8, true) };
+				liquid_spread_list_add(&neighbors[NEIGHBOR_BOTTOM].chunk->liquidSpreadList, neighbors[NEIGHBOR_BOTTOM].idx);
+                changed = true;
+            }
+            else {
+				NeighborDirection directions[] = { NEIGHBOR_LEFT, NEIGHBOR_RIGHT };
+                for (int d = 0; d < 2; d++) {
+					NeighborDirection dir = directions[d];
+                    if (registries[dir]->flags & BLOCK_FLAG_REPLACEABLE || registries[dir]->flags & BLOCK_FLAG_LIQUID_FLOWING) {
+                        *neighbors[dir].block = (BlockInstance){ .id = BLOCK_WATER_FLOWING, .state = get_flowing_liquid_state(8, false) };
+                        liquid_spread_list_add(&neighbors[dir].chunk->liquidSpreadList, neighbors[dir].idx);
+                        changed = true;
+                    }
                 }
             }
         }
+        else if (br->flags & BLOCK_FLAG_LIQUID_FLOWING) {
+            if (registries[NEIGHBOR_BOTTOM]->flags & BLOCK_FLAG_REPLACEABLE) {
+                if (!(registries[NEIGHBOR_BOTTOM]->flags & BLOCK_FLAG_LIQUID_SOURCE)) {
+                    *neighbors[NEIGHBOR_BOTTOM].block = (BlockInstance){ .id = BLOCK_WATER_FLOWING, .state = get_flowing_liquid_state(8, true) };
+                    liquid_spread_list_add(&neighbors[NEIGHBOR_BOTTOM].chunk->liquidSpreadList, neighbors[NEIGHBOR_BOTTOM].idx);
+                    changed = true;
+                }
+            }
+            else if (binst->state > 0) {
+                NeighborDirection directions[] = { NEIGHBOR_LEFT, NEIGHBOR_RIGHT };
+                for (int d = 0; d < 2; d++) {
+                    NeighborDirection dir = directions[d];
+                    if (registries[dir]->flags & BLOCK_FLAG_REPLACEABLE && !(registries[dir]->flags & BLOCK_FLAG_LIQUID_SOURCE)) {
+                        if (registries[dir]->flags & BLOCK_FLAG_LIQUID_FLOWING) {
+                            if (neighbors[dir].block->state >= binst->state - 1) continue;
+						}
+                        *neighbors[dir].block = (BlockInstance){ .id = BLOCK_WATER_FLOWING, .state = get_flowing_liquid_state(binst_state->level - 1, false)};
+                        liquid_spread_list_add(&neighbors[dir].chunk->liquidSpreadList, neighbors[dir].idx);
+                        changed = true;
+                    }
+                }
+            }
+        }
+        */
     }
+
+    if (changed == true) chunk_manager_update_lighting();
 }
 
 void chunk_free(Chunk* chunk)
@@ -310,13 +344,14 @@ BlockInstance* chunk_get_block_ptr(Chunk* chunk, Vector2u position, bool isWall)
 }
 
 BlockExtraResult chunk_get_block_extrapolating_ptr(Chunk* chunk, Vector2i position, bool isWall) {
-    if (!chunk) return (BlockExtraResult){ NULL, NULL, { UINT8_MAX, UINT8_MAX } };
+    if (!chunk) return (BlockExtraResult){ NULL, NULL, { UINT8_MAX, UINT8_MAX }, UINT8_MAX };
 
     if (position.x >= 0 && position.y >= 0 && position.x < CHUNK_WIDTH && position.y < CHUNK_WIDTH) {
 		return (BlockExtraResult) {
             .block = chunk_get_block_ptr(chunk, (Vector2u) { position.x, position.y }, isWall),
             .chunk = chunk,
-            .position = (Vector2u) { (unsigned int)position.x, (unsigned int)position.y }
+            .position = (Vector2u) { (unsigned int)position.x, (unsigned int)position.y },
+			.idx = (uint8_t)(position.x + (position.y * CHUNK_WIDTH))
         };
     }
     else {
@@ -331,7 +366,7 @@ BlockExtraResult chunk_get_block_extrapolating_ptr(Chunk* chunk, Vector2i positi
         else if (position.y < 0) neighbor = (Chunk*)chunk->neighbors.up;
         else if (position.y >= CHUNK_WIDTH) neighbor = (Chunk*)chunk->neighbors.down;
 
-        if (neighbor == NULL) return (BlockExtraResult) { NULL, NULL, { UINT8_MAX, UINT8_MAX } };
+        if (neighbor == NULL) return (BlockExtraResult) { NULL, NULL, { UINT8_MAX, UINT8_MAX }, UINT8_MAX };
 
         Vector2u relPos = {
             .x = posmod(position.x, CHUNK_WIDTH),
@@ -341,7 +376,8 @@ BlockExtraResult chunk_get_block_extrapolating_ptr(Chunk* chunk, Vector2i positi
 		return (BlockExtraResult) {
             .block = chunk_get_block_ptr(neighbor, relPos, isWall),
             .chunk = neighbor,
-            .position = relPos
+            .position = relPos,
+			.idx = (uint8_t)(relPos.x + (relPos.y * CHUNK_WIDTH))
         };
     }
 }

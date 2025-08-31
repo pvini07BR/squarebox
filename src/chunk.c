@@ -138,6 +138,7 @@ void chunk_draw(Chunk* chunk) {
 
     for (int i = 0; i < CHUNK_AREA; i++) {
 		BlockRegistry* brg = br_get_block_registry(chunk->blocks[i].id);
+		float lightFactor = chunk->light[i] / 15.0f;
 
         if (brg->flags & BLOCK_FLAG_LIQUID_SOURCE) {
             int x = i % CHUNK_WIDTH;
@@ -147,7 +148,7 @@ void chunk_draw(Chunk* chunk) {
                 y * TILE_SIZE,
                 TILE_SIZE,
                 TILE_SIZE,
-                (Color){ 0, 0, 255, 100 }
+                (Color){ 0, 0, 255 * lightFactor, 100 }
 			);
 		} else if (brg->flags & BLOCK_FLAG_LIQUID_FLOWING) {
             int x = i % CHUNK_WIDTH;
@@ -161,7 +162,7 @@ void chunk_draw(Chunk* chunk) {
                 ceilf(y * TILE_SIZE + (TILE_SIZE * (1.0f - value))),
                 TILE_SIZE,
                 TILE_SIZE * value,
-                (Color){ state->falling ? 0 : 255, state->falling ? 255 : 0, 0, 100 }
+                (Color){ state->falling ? 0 : 255 * lightFactor, state->falling ? 255 * lightFactor : 0, 0, 100 }
              );
         }
     }
@@ -409,15 +410,15 @@ void chunk_fill_light(Chunk* chunk, Vector2u startPoint, uint8_t newLightValue) 
 
     chunk_set_light(chunk, startPoint, newLightValue);
 
-    uint8_t decayAmount = 1;
+    uint8_t decayAmount = 4;
 
     BlockInstance binst = chunk_get_block(chunk, startPoint, false);
     BlockRegistry* br = br_get_block_registry(binst.id);
     BlockVariant bvar = br_get_block_variant(binst.id, binst.state);
 
-    if ((!(br->lightLevel == BLOCK_LIGHT_TRANSPARENT) && bvar.model_idx == BLOCK_MODEL_QUAD) || br->flags & (BLOCK_FLAG_LIQUID_SOURCE | BLOCK_FLAG_LIQUID_FLOWING)) {
-        decayAmount = 4;
-	}
+    if (br->lightLevel == BLOCK_LIGHT_TRANSPARENT || !(br->flags & BLOCK_FLAG_FULL_BLOCK)) {
+        decayAmount = 1;
+    }
 
     Vector2i neighbors[] = {
         { -1, 0 }, { 1, 0 }, { 0, 1 }, { 0, -1 }

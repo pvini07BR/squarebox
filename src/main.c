@@ -58,7 +58,7 @@ int main() {
     
     Texture2D place_mode_icon = LoadTexture(ASSETS_PATH "place_modes.png");
 
-    texture_atlas_load(ASSETS_PATH "atlas.png", 2, 10);
+    texture_atlas_load(ASSETS_PATH "atlas.png", 2, 11);
 
     block_models_init();
 

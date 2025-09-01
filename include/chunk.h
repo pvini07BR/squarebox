@@ -86,6 +86,11 @@ typedef struct {
 	Vector2u position;
 } LightExtraResult;
 
+typedef struct {
+	BlockExtraResult replaced;
+	BlockExtraResult down;
+} DownProjectionResult;
+
 void chunk_init(Chunk* chunk);
 void chunk_regenerate(Chunk* chunk);
 void chunk_decorate(Chunk* chunk);
@@ -96,7 +101,7 @@ void chunk_free(Chunk* chunk);
 
 void chunk_fill_light(Chunk* chunk, Vector2u startPoint, uint8_t newLightValue);
 
-BlockExtraResult chunk_get_block_projected_downwards(Chunk* chunk, Vector2u startPoint, bool isWall);
+DownProjectionResult chunk_get_block_projected_downwards(Chunk* chunk, Vector2u startPoint, bool isWall);
 
 // The extrapolating functions are functions that checks if the requested position is inside the chunk.
 // if it is, it will return the block relative to that chunk.

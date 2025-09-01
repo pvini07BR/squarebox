@@ -41,6 +41,14 @@ void chunk_init(Chunk* chunk)
     chunk->initializedMeshes = false;
 }
 
+static bool chance_at(int gx, int gy, float threshold, int seed_offset) {
+    fnl_state noise = fnlCreateState();
+    noise.seed = seed + seed_offset;
+    noise.frequency = 0.1f;
+    noise.noise_type = FNL_NOISE_OPENSIMPLEX2;
+    return fnlGetNoise2D(&noise, gx, gy) > threshold;
+}
+
 void chunk_regenerate(Chunk* chunk) {
     if (!chunk) return;
 
@@ -96,9 +104,14 @@ void chunk_regenerate(Chunk* chunk) {
 
 void chunk_decorate(Chunk* chunk) {
     for (int x = 0; x < CHUNK_WIDTH; x++) {
-        BlockExtraResult result = chunk_get_block_projected_downwards(chunk, (Vector2u) { x, 0 }, false);
-        if (result.block) {
-            result.block->id = BLOCK_GRASS;
+        int gx = chunk->position.x * CHUNK_WIDTH + x;
+
+        DownProjectionResult result = chunk_get_block_projected_downwards(chunk, (Vector2u) { x, 0 }, false);
+        if (result.replaced.block && result.down.block) {
+            BlockRegistry* brg = br_get_block_registry(result.down.block->id);
+            if (brg->flags & BLOCK_FLAG_PLANTABLE) {
+                *result.replaced.block = (BlockInstance){ BLOCK_GRASS, 0 };
+            }
         }
     }
 }
@@ -471,8 +484,8 @@ void chunk_fill_light(Chunk* chunk, Vector2u startPoint, uint8_t newLightValue) 
     }
 }
 
-BlockExtraResult chunk_get_block_projected_downwards(Chunk* chunk, Vector2u startPoint, bool isWall) {
-    BlockExtraResult empty = { NULL, NULL, { UINT8_MAX, UINT8_MAX }, UINT8_MAX };
+DownProjectionResult chunk_get_block_projected_downwards(Chunk* chunk, Vector2u startPoint, bool isWall) {
+    DownProjectionResult empty = { { NULL, NULL, { UINT8_MAX, UINT8_MAX }, UINT8_MAX }, { NULL, NULL, { UINT8_MAX, UINT8_MAX }, UINT8_MAX } };
     if (!chunk) return empty;
 
     for (int y = startPoint.y; y < CHUNK_WIDTH; y++) {
@@ -489,11 +502,14 @@ BlockExtraResult chunk_get_block_projected_downwards(Chunk* chunk, Vector2u star
 
         if (!(br->flags & BLOCK_FLAG_REPLACEABLE)) {
             uint8_t idx = startPoint.x + (y * CHUNK_WIDTH);
-            return (BlockExtraResult) {
-                .block = &chunk->blocks[idx],
-                .chunk = chunk,
-                .position = (Vector2u){ startPoint.x, y },
-                .idx = idx
+            return (DownProjectionResult) {
+                .replaced = (BlockExtraResult){
+                    .block = &chunk->blocks[idx],
+                    .chunk = chunk,
+                    .position = (Vector2u){ startPoint.x, y },
+                    .idx = idx
+                },
+                .down = down
             };
         }
         else { continue; }
@@ -603,12 +619,12 @@ void chunk_set_block(Chunk* chunk, Vector2u position, BlockInstance blockValue, 
 
 	BlockRegistry* brg = br_get_block_registry(blockValue.id);
     if (brg->flags & BLOCK_FLAG_GRAVITY_AFFECTED) {
-		BlockExtraResult where = chunk_get_block_projected_downwards(chunk, position, isWall);
-        if (where.block && where.chunk) {
-            *where.block = blockValue;
-            ptr = where.block;
-            chunk = where.chunk;
-            position = where.position;
+		DownProjectionResult where = chunk_get_block_projected_downwards(chunk, position, isWall);
+        if (where.replaced.block && where.replaced.chunk) {
+            *where.replaced.block = blockValue;
+            ptr = where.replaced.block;
+            chunk = where.replaced.chunk;
+            position = where.replaced.position;
 		}
     }
     else {

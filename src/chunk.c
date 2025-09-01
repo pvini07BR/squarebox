@@ -76,7 +76,7 @@ void chunk_regenerate(Chunk* chunk) {
             float base = fnlGetNoise2D(&terrainNoise, gx * 0.5f, 0.0f);
             float detail = fnlGetNoise2D(&detailNoise, gx, 0.0f);
             int surfaceY = (int)roundf(base * 32.0f + detail * 8.0f);
-            if (w == 1) surfaceY += (w * 2);
+            //if (w == 1) surfaceY += w;
 
             for (int y = 0; y < CHUNK_WIDTH; y++) {
                 int i = x + y * CHUNK_WIDTH;
@@ -107,12 +107,15 @@ void chunk_decorate(Chunk* chunk) {
 
     for (int x = 0; x < CHUNK_WIDTH; x++) {
         int gx = chunk->position.x * CHUNK_WIDTH + x;
+        for (int w = 0; w < 2; w++) {
+            if (!chance_at(gx, chunk->position.y * CHUNK_WIDTH, -0.5f, w)) continue;
 
-        DownProjectionResult result = chunk_get_block_projected_downwards(chunk, (Vector2u) { x, 0 }, false, false);
-        if (result.replaced.block && result.down.block) {
-            BlockRegistry* brg = br_get_block_registry(result.down.block->id);
-            if (brg->flags & BLOCK_FLAG_PLANTABLE) {
-                *result.replaced.block = (BlockInstance){ BLOCK_GRASS, 0 };
+            DownProjectionResult result = chunk_get_block_projected_downwards(chunk, (Vector2u) { x, 0 }, w == 1, false);
+            if (result.replaced.block && result.down.block) {
+                BlockRegistry* brg = br_get_block_registry(result.down.block->id);
+                if (brg->flags & BLOCK_FLAG_PLANTABLE) {
+                    *result.replaced.block = (BlockInstance){ BLOCK_GRASS, 0 };
+                }
             }
         }
     }
@@ -506,7 +509,7 @@ DownProjectionResult chunk_get_block_projected_downwards(Chunk* chunk, Vector2u 
             uint8_t idx = startPoint.x + (y * CHUNK_WIDTH);
             return (DownProjectionResult) {
                 .replaced = (BlockExtraResult){
-                    .block = &chunk->blocks[idx],
+                    .block = isWall ? &chunk->walls[idx] : &chunk->blocks[idx],
                     .chunk = chunk,
                     .position = (Vector2u){ startPoint.x, y },
                     .idx = idx

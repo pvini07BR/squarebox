@@ -88,6 +88,7 @@ typedef struct {
 
 void chunk_init(Chunk* chunk);
 void chunk_regenerate(Chunk* chunk);
+void chunk_decorate(Chunk* chunk);
 void chunk_genmesh(Chunk* chunk);
 void chunk_draw(Chunk* chunk);
 void chunk_tick(Chunk* chunk);

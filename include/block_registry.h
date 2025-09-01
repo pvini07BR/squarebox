@@ -61,20 +61,23 @@ typedef enum {
 
 	// Tells if the block is replaceable, like water, grass, flowers, etc.
 	BLOCK_FLAG_REPLACEABLE = (1 << 5),
+	
+	// Tells if you can place plants like grass or flowers on top of the block.
+	BLOCK_FLAG_PLANTABLE = (1 << 6),
 
 	// Tells if the block is affected by gravity, like sand or gravel.
-	BLOCK_FLAG_GRAVITY_AFFECTED = (1 << 6),
+	BLOCK_FLAG_GRAVITY_AFFECTED = (1 << 7),
 
 	// Tells if the block is a liquid source.
 	// this will make the block render differently from
 	// other blocks, and will render only if it is in the
 	// block layer.
-	BLOCK_FLAG_LIQUID_SOURCE = (1 << 7),
+	BLOCK_FLAG_LIQUID_SOURCE = (1 << 8),
 	// Tells if the block is a flowing liquid.
 	// this will make the block render differently from
 	// other blocks, and will render only if it is in the
 	// block layer.
-	BLOCK_FLAG_LIQUID_FLOWING = (1 << 8)
+	BLOCK_FLAG_LIQUID_FLOWING = (1 << 9)
 } BlockFlag;
 
 typedef enum {

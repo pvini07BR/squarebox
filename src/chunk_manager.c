@@ -6,6 +6,8 @@
 #include <limits.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <stdio.h>
+#include <memory.h>
 
 #include <raylib.h>
 #include <rlgl.h>
@@ -85,24 +87,42 @@ void chunk_manager_relocate(Vector2i newCenter) {
     int startChunkX = currentChunkPos.x - CHUNK_VIEW_WIDTH / 2;
     int startChunkY = currentChunkPos.y - CHUNK_VIEW_HEIGHT / 2;
 
-    Chunk tempChunks[CHUNK_COUNT] = { 0 };
+    Chunk* tempChunks = calloc(CHUNK_COUNT, sizeof(Chunk));
+    if (!tempChunks) {
+        printf("[ERROR] Could not allocate memory for tempChunks.\n");
+        return;
+    };
 
-    bool chunkUsed[CHUNK_COUNT] = { false };
+    memset(tempChunks, 0, sizeof(tempChunks));
 
-    for (int i = 0; i < CHUNK_COUNT; i++) {
+    bool oldUsed[CHUNK_COUNT];
+    for (int i = 0; i < CHUNK_COUNT; ++i) oldUsed[i] = false;
+
+    bool isNew[CHUNK_COUNT];
+    for (int i = 0; i < CHUNK_COUNT; ++i) isNew[i] = false;
+
+    for (int i = 0; i < CHUNK_COUNT; ++i) {
         int x = i % CHUNK_VIEW_WIDTH;
         int y = i / CHUNK_VIEW_WIDTH;
-
         Vector2i newPos = { startChunkX + x, startChunkY + y };
 
         bool found = false;
-        for (int j = 0; j < CHUNK_COUNT; j++) {
-            if (chunks[j].position.x == newPos.x && chunks[j].position.y == newPos.y) {
+        for (int j = 0; j < CHUNK_COUNT; ++j) {
+            if (!oldUsed[j] &&
+                chunks[j].position.x == newPos.x &&
+                chunks[j].position.y == newPos.y) {
                 tempChunks[i] = chunks[j];
-                chunkUsed[j] = true;
+                oldUsed[j] = true;
                 found = true;
+                isNew[i] = false;
                 break;
             }
+        }
+
+        if (!found) {
+            memset(&tempChunks[i], 0, sizeof(Chunk));
+            tempChunks[i].position = newPos;
+            isNew[i] = true;
         }
 
         tempChunks[i].neighbors.up = NULL;
@@ -113,71 +133,51 @@ void chunk_manager_relocate(Vector2i newCenter) {
         tempChunks[i].neighbors.upRight = NULL;
         tempChunks[i].neighbors.downLeft = NULL;
         tempChunks[i].neighbors.downRight = NULL;
+    }
 
-        if (!found) {
-            tempChunks[i].position = newPos;
-            chunk_init(&tempChunks[i]);
-            chunk_regenerate(&tempChunks[i]);
+    for (int j = 0; j < CHUNK_COUNT; ++j) {
+        if (!oldUsed[j]) {
+            chunk_free(&chunks[j]);
         }
     }
 
-    for (int i = 0; i < CHUNK_COUNT; i++) {
-        if (!chunkUsed[i]) {
-            chunk_free(&chunks[i]);
-        }
-    }
-
-    for (int i = 0; i < CHUNK_COUNT; i++) {
+    for (int i = 0; i < CHUNK_COUNT; ++i) {
         chunks[i] = tempChunks[i];
     }
 
-    for (int i = 0; i < CHUNK_COUNT; i++) {
+    for (int i = 0; i < CHUNK_COUNT; ++i) {
         int x = i % CHUNK_VIEW_WIDTH;
         int y = i / CHUNK_VIEW_WIDTH;
 
-        if (y > 0) {
-            int upIndex = (y - 1) * CHUNK_VIEW_WIDTH + x;
-            chunks[i].neighbors.up = &chunks[upIndex];
-        }
+        chunks[i].neighbors.up = (y > 0) ? &chunks[(y - 1) * CHUNK_VIEW_WIDTH + x] : NULL;
+        chunks[i].neighbors.right = (x < CHUNK_VIEW_WIDTH - 1) ? &chunks[y * CHUNK_VIEW_WIDTH + (x + 1)] : NULL;
+        chunks[i].neighbors.down = (y < CHUNK_VIEW_HEIGHT - 1) ? &chunks[(y + 1) * CHUNK_VIEW_WIDTH + x] : NULL;
+        chunks[i].neighbors.left = (x > 0) ? &chunks[y * CHUNK_VIEW_WIDTH + (x - 1)] : NULL;
 
-        if (x < CHUNK_VIEW_WIDTH - 1) {
-            int rightIndex = y * CHUNK_VIEW_WIDTH + (x + 1);
-            chunks[i].neighbors.right = &chunks[rightIndex];
-        }
+        chunks[i].neighbors.upLeft = (x > 0 && y > 0) ? &chunks[(y - 1) * CHUNK_VIEW_WIDTH + (x - 1)] : NULL;
+        chunks[i].neighbors.upRight = (x < CHUNK_VIEW_WIDTH - 1 && y > 0) ? &chunks[(y - 1) * CHUNK_VIEW_WIDTH + (x + 1)] : NULL;
+        chunks[i].neighbors.downLeft = (x > 0 && y < CHUNK_VIEW_HEIGHT - 1) ? &chunks[(y + 1) * CHUNK_VIEW_WIDTH + (x - 1)] : NULL;
+        chunks[i].neighbors.downRight = (x < CHUNK_VIEW_WIDTH - 1 && y < CHUNK_VIEW_HEIGHT - 1) ? &chunks[(y + 1) * CHUNK_VIEW_WIDTH + (x + 1)] : NULL;
+    }
 
-        if (y < CHUNK_VIEW_HEIGHT - 1) {
-            int downIndex = (y + 1) * CHUNK_VIEW_WIDTH + x;
-            chunks[i].neighbors.down = &chunks[downIndex];
+    for (int i = 0; i < CHUNK_COUNT; ++i) {
+        if (isNew[i]) {
+            chunk_init(&chunks[i]);
+            chunk_regenerate(&chunks[i]);
         }
+    }
 
-        if (x > 0) {
-            int leftIndex = y * CHUNK_VIEW_WIDTH + (x - 1);
-            chunks[i].neighbors.left = &chunks[leftIndex];
-        }
-
-        if (x > 0 && y > 0) {
-            int upLeftIndex = (y - 1) * CHUNK_VIEW_WIDTH + (x - 1);
-            chunks[i].neighbors.upLeft = &chunks[upLeftIndex];
-        }
-
-        if (x < CHUNK_VIEW_WIDTH - 1 && y > 0) {
-            int upRightIndex = (y - 1) * CHUNK_VIEW_WIDTH + (x + 1);
-            chunks[i].neighbors.upRight = &chunks[upRightIndex];
-        }
-
-        if (x > 0 && y < CHUNK_VIEW_HEIGHT - 1) {
-            int downLeftIndex = (y + 1) * CHUNK_VIEW_WIDTH + (x - 1);
-            chunks[i].neighbors.downLeft = &chunks[downLeftIndex];
-        }
-
-        if (x < CHUNK_VIEW_WIDTH - 1 && y < CHUNK_VIEW_HEIGHT - 1) {
-            int downRightIndex = (y + 1) * CHUNK_VIEW_WIDTH + (x + 1);
-            chunks[i].neighbors.downRight = &chunks[downRightIndex];
+    for (int i = 0; i < CHUNK_COUNT; ++i) {
+        if (isNew[i]) {
+            chunk_decorate(&chunks[i]);
         }
     }
 
     chunk_manager_update_lighting();
+
+    free(tempChunks);
 }
+
 
 void chunk_manager_update_lighting() {
     for (int c = 0; c < CHUNK_COUNT; c++) {

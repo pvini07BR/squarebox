@@ -44,44 +44,61 @@ void chunk_init(Chunk* chunk)
 void chunk_regenerate(Chunk* chunk) {
     if (!chunk) return;
 
-    fnl_state noise = fnlCreateState();
-    noise.seed = seed;
-    noise.frequency = -0.025f;
-    noise.noise_type = FNL_NOISE_OPENSIMPLEX2;
-    noise.fractal_type = FNL_FRACTAL_FBM;
+    for (int i = 0; i < CHUNK_AREA; i++) {
+        chunk->blocks[i] = (BlockInstance){ 0, 0 };
+        chunk->walls[i] = (BlockInstance){ 0, 0 };
+    }
 
+    fnl_state terrainNoise = fnlCreateState();
+    terrainNoise.seed = seed;
+    terrainNoise.frequency = 0.008f;
+    terrainNoise.noise_type = FNL_NOISE_OPENSIMPLEX2;
+    terrainNoise.fractal_type = FNL_FRACTAL_FBM;
+
+    fnl_state detailNoise = fnlCreateState();
+    detailNoise.seed = seed + 1337;
+    detailNoise.frequency = 0.025f;
+    detailNoise.noise_type = FNL_NOISE_OPENSIMPLEX2;
+    detailNoise.fractal_type = FNL_FRACTAL_FBM;
+
+    for (int w = 0; w < 2; w++) {
+        for (int x = 0; x < CHUNK_WIDTH; x++) {
+            int gx = chunk->position.x * CHUNK_WIDTH + x;
+
+            float base = fnlGetNoise2D(&terrainNoise, gx * 0.5f, 0.0f);
+            float detail = fnlGetNoise2D(&detailNoise, gx, 0.0f);
+            int surfaceY = (int)roundf(base * 32.0f + detail * 8.0f);
+            if (w == 1) surfaceY += (w * 2);
+
+            for (int y = 0; y < CHUNK_WIDTH; y++) {
+                int i = x + y * CHUNK_WIDTH;
+                int gy = chunk->position.y * CHUNK_WIDTH + y;
+
+                BlockInstance newInst = { 0,0 };
+
+                if (gy == surfaceY) {
+                    newInst.id = BLOCK_GRASS_BLOCK;
+                }
+                else if (gy > surfaceY && gy <= surfaceY + 4) {
+                    newInst.id = BLOCK_DIRT;
+                }
+                else if (gy > surfaceY + 4) {
+                    newInst.id = BLOCK_STONE;
+                }
+
+                if (w == 0) chunk->blocks[i] = newInst;
+                else chunk->walls[i] = newInst;
+                chunk->light[i] = 0;
+            }
+        }
+    }
+}
+
+void chunk_decorate(Chunk* chunk) {
     for (int x = 0; x < CHUNK_WIDTH; x++) {
-        float value = fnlGetNoise2D(&noise, (chunk->position.x * CHUNK_WIDTH) + x, 0.0f);
-        value /= 2.0f;
-        value += 0.5;
-        value *= (CHUNK_WIDTH * 2);
-        value = round(value);
-
-        for (int y = 0; y < CHUNK_WIDTH; y++) {
-            int i = x + (y * CHUNK_WIDTH);
-            Vector2i globalBlockPos = {
-                chunk->position.x * CHUNK_WIDTH + (i % CHUNK_WIDTH),
-                chunk->position.y * CHUNK_WIDTH + (i / CHUNK_WIDTH)
-            };
-
-            if (globalBlockPos.y == value) {
-                chunk->blocks[i] = (BlockInstance){ 1, 0 };
-                chunk->walls[i] = (BlockInstance){ 1, 0 };
-            }
-            else if (globalBlockPos.y > value && globalBlockPos.y <= (value + 16)) {
-                chunk->blocks[i] = (BlockInstance){ 2, 0 };
-                chunk->walls[i] = (BlockInstance){ 2, 0 };
-            }
-            else if (globalBlockPos.y > (value + 16)) {
-                chunk->blocks[i] = (BlockInstance){ 3, 0 };
-                chunk->walls[i] = (BlockInstance){ 3, 0 };
-            }
-            else {
-                chunk->blocks[i] = (BlockInstance){ 0, 0 };
-                chunk->walls[i] = (BlockInstance){ 0, 0 };
-            }
-
-            chunk->light[i] = 0;
+        BlockExtraResult result = chunk_get_block_projected_downwards(chunk, (Vector2u) { x, 0 }, false);
+        if (result.block) {
+            result.block->id = BLOCK_GRASS;
         }
     }
 }
@@ -138,6 +155,7 @@ void chunk_draw(Chunk* chunk) {
 
     for (int i = 0; i < CHUNK_AREA; i++) {
 		BlockRegistry* brg = br_get_block_registry(chunk->blocks[i].id);
+        if (!brg) continue;
 		float lightFactor = chunk->light[i] / 15.0f;
 
         if (brg->flags & BLOCK_FLAG_LIQUID_SOURCE) {
@@ -454,21 +472,37 @@ void chunk_fill_light(Chunk* chunk, Vector2u startPoint, uint8_t newLightValue) 
 }
 
 BlockExtraResult chunk_get_block_projected_downwards(Chunk* chunk, Vector2u startPoint, bool isWall) {
-    if (!chunk) return (BlockExtraResult){ NULL, NULL, { UINT8_MAX, UINT8_MAX }, UINT8_MAX };
+    BlockExtraResult empty = { NULL, NULL, { UINT8_MAX, UINT8_MAX }, UINT8_MAX };
+    if (!chunk) return empty;
+
     for (int y = startPoint.y; y < CHUNK_WIDTH; y++) {
-		BlockExtraResult down = chunk_get_block_extrapolating_ptr(chunk, (Vector2i) { startPoint.x, y + 1 }, isWall);
-        if (down.block == NULL) return (BlockExtraResult){ NULL, NULL, { UINT8_MAX, UINT8_MAX }, UINT8_MAX };
-		BlockRegistry* br = br_get_block_registry(down.block->id);
+        if (y == startPoint.y) {
+            BlockRegistry* br = br_get_block_registry(chunk_get_block(chunk, startPoint, isWall).id);
+            if (!(br->flags & BLOCK_FLAG_REPLACEABLE)) return empty;
+        }
+
+        BlockExtraResult down = chunk_get_block_extrapolating_ptr(chunk, (Vector2i) { startPoint.x, y + 1 }, isWall);
+        if (down.block == NULL) return empty;
+
+        BlockRegistry* br = br_get_block_registry(down.block->id);
+        if (br == NULL) return empty;
+
         if (!(br->flags & BLOCK_FLAG_REPLACEABLE)) {
+            uint8_t idx = startPoint.x + (y * CHUNK_WIDTH);
             return (BlockExtraResult) {
-                .block = &chunk->blocks[startPoint.x + (y * CHUNK_WIDTH)],
+                .block = &chunk->blocks[idx],
                 .chunk = chunk,
                 .position = (Vector2u){ startPoint.x, y },
-                .idx = (uint8_t)(startPoint.x + (y * CHUNK_WIDTH))
+                .idx = idx
             };
         }
+        else { continue; }
     }
-	return chunk_get_block_projected_downwards(chunk->neighbors.down, (Vector2u) { startPoint.x, 0 }, isWall);
+    
+    if (chunk->neighbors.down) {
+        return chunk_get_block_projected_downwards(chunk->neighbors.down, (Vector2u) { startPoint.x, 0 }, isWall);
+    }
+    else { return empty; }
 }
 
 BlockInstance* chunk_get_block_ptr(Chunk* chunk, Vector2u position, bool isWall) {
@@ -823,6 +857,7 @@ void build_quad(Chunk* chunk, size_t* offsets, BlockInstance* blocks, Mesh* mesh
         };
 
         for (int dir = 0; dir < 8; dir++) {
+            if (registries[dir] == NULL) continue;
             if ((!(registries[dir]->lightLevel == BLOCK_LIGHT_TRANSPARENT) && (registries[dir]->lightLevel <= 0))) {
                 for (int c = 0; c < 2; c++) {
                     int corner = aoRules[dir].corners[c];

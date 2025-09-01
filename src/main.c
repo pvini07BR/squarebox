@@ -130,6 +130,32 @@ int main() {
                 }
             }
 
+            if (IsKeyPressed(KEY_C)) {
+                Vector2i chunkPos = {
+                    (int)floorf((float)mouseBlockPos.x / (float)CHUNK_WIDTH),
+                    (int)floorf((float)mouseBlockPos.y / (float)CHUNK_WIDTH)
+                };
+                Chunk* chunk = chunk_manager_get_chunk(chunkPos);
+                if (chunk) {
+                    printf(
+                        "========\n"
+                        "%d|%d|%d\n"
+                        "%d| |%d\n"
+                        "%d|%d|%d\n"
+                        "========\n",
+
+                        chunk->neighbors.upLeft != NULL,
+                        chunk->neighbors.up != NULL,
+                        chunk->neighbors.upRight != NULL,
+                        chunk->neighbors.left != NULL,
+                        chunk->neighbors.right != NULL,
+                        chunk->neighbors.downLeft != NULL,
+                        chunk->neighbors.down != NULL,
+                        chunk->neighbors.downRight != NULL
+                    );
+                }
+            }
+
             Vector2 input = { 0 };
 
             if (IsKeyDown(KEY_A) || IsKeyDown(KEY_LEFT)) input.x = -1.0f;

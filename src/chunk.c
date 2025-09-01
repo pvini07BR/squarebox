@@ -453,6 +453,24 @@ void chunk_fill_light(Chunk* chunk, Vector2u startPoint, uint8_t newLightValue) 
     }
 }
 
+BlockExtraResult chunk_get_block_projected_downwards(Chunk* chunk, Vector2u startPoint, bool isWall) {
+    if (!chunk) return (BlockExtraResult){ NULL, NULL, { UINT8_MAX, UINT8_MAX }, UINT8_MAX };
+    for (int y = startPoint.y; y < CHUNK_WIDTH; y++) {
+		BlockExtraResult down = chunk_get_block_extrapolating_ptr(chunk, (Vector2i) { startPoint.x, y + 1 }, isWall);
+        if (down.block == NULL) return (BlockExtraResult){ NULL, NULL, { UINT8_MAX, UINT8_MAX }, UINT8_MAX };
+		BlockRegistry* br = br_get_block_registry(down.block->id);
+        if (!(br->flags & BLOCK_FLAG_REPLACEABLE)) {
+            return (BlockExtraResult) {
+                .block = &chunk->blocks[startPoint.x + (y * CHUNK_WIDTH)],
+                .chunk = chunk,
+                .position = (Vector2u){ startPoint.x, y },
+                .idx = (uint8_t)(startPoint.x + (y * CHUNK_WIDTH))
+            };
+        }
+    }
+	return chunk_get_block_projected_downwards(chunk->neighbors.down, (Vector2u) { startPoint.x, 0 }, isWall);
+}
+
 BlockInstance* chunk_get_block_ptr(Chunk* chunk, Vector2u position, bool isWall) {
     if (!chunk) return NULL;
     if (position.x < 0 || position.x >= CHUNK_WIDTH || position.y < 0 || position.y >= CHUNK_WIDTH) return NULL;
@@ -549,7 +567,19 @@ void chunk_set_block(Chunk* chunk, Vector2u position, BlockInstance blockValue, 
     if (!ptr) return;
     if (ptr->id == blockValue.id && ptr->state == blockValue.state) return;
 
-    *ptr = blockValue;
+	BlockRegistry* brg = br_get_block_registry(blockValue.id);
+    if (brg->flags & BLOCK_FLAG_GRAVITY_AFFECTED) {
+		BlockExtraResult where = chunk_get_block_projected_downwards(chunk, position, isWall);
+        if (where.block && where.chunk) {
+            *where.block = blockValue;
+            ptr = where.block;
+            chunk = where.chunk;
+            position = where.position;
+		}
+    }
+    else {
+        *ptr = blockValue;
+    }
 
     BlockExtraResult neighbors[4];
 	chunk_get_block_neighbors_extra(chunk, position, isWall, neighbors);

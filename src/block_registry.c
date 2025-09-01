@@ -116,7 +116,7 @@ void block_registry_init() {
     blockRegistry[BLOCK_SAND] = (BlockRegistry){
         .variant_count = 1,
         .variants = { {.atlas_idx = 2, .model_idx = BLOCK_MODEL_QUAD, .flipH = false, .flipV = false, .rotation = 0 } },
-        .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FLIP_H | BLOCK_FLAG_FLIP_V | BLOCK_FLAG_FULL_BLOCK,
+        .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FLIP_H | BLOCK_FLAG_FLIP_V | BLOCK_FLAG_FULL_BLOCK | BLOCK_FLAG_GRAVITY_AFFECTED,
         .lightLevel = BLOCK_LIGHT_NO_LIGHT,
         .state_resolver = NULL
     };

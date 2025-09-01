@@ -101,7 +101,9 @@ void chunk_free(Chunk* chunk);
 
 void chunk_fill_light(Chunk* chunk, Vector2u startPoint, uint8_t newLightValue);
 
-DownProjectionResult chunk_get_block_projected_downwards(Chunk* chunk, Vector2u startPoint, bool isWall);
+// This function will project downards from a starting point until it finds a replaceable block (like grass or air).
+// The returned value is a struct that contains pointers to the replaceable block, and the block below it.
+DownProjectionResult chunk_get_block_projected_downwards(Chunk* chunk, Vector2u startPoint, bool isWall, bool goToNeighbor);
 
 // The extrapolating functions are functions that checks if the requested position is inside the chunk.
 // if it is, it will return the block relative to that chunk.

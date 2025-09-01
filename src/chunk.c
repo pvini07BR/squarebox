@@ -103,10 +103,12 @@ void chunk_regenerate(Chunk* chunk) {
 }
 
 void chunk_decorate(Chunk* chunk) {
+    if (!chunk) return;
+
     for (int x = 0; x < CHUNK_WIDTH; x++) {
         int gx = chunk->position.x * CHUNK_WIDTH + x;
 
-        DownProjectionResult result = chunk_get_block_projected_downwards(chunk, (Vector2u) { x, 0 }, false);
+        DownProjectionResult result = chunk_get_block_projected_downwards(chunk, (Vector2u) { x, 0 }, false, false);
         if (result.replaced.block && result.down.block) {
             BlockRegistry* brg = br_get_block_registry(result.down.block->id);
             if (brg->flags & BLOCK_FLAG_PLANTABLE) {
@@ -484,7 +486,7 @@ void chunk_fill_light(Chunk* chunk, Vector2u startPoint, uint8_t newLightValue) 
     }
 }
 
-DownProjectionResult chunk_get_block_projected_downwards(Chunk* chunk, Vector2u startPoint, bool isWall) {
+DownProjectionResult chunk_get_block_projected_downwards(Chunk* chunk, Vector2u startPoint, bool isWall, bool goToNeighbor) {
     DownProjectionResult empty = { { NULL, NULL, { UINT8_MAX, UINT8_MAX }, UINT8_MAX }, { NULL, NULL, { UINT8_MAX, UINT8_MAX }, UINT8_MAX } };
     if (!chunk) return empty;
 
@@ -515,8 +517,8 @@ DownProjectionResult chunk_get_block_projected_downwards(Chunk* chunk, Vector2u 
         else { continue; }
     }
     
-    if (chunk->neighbors.down) {
-        return chunk_get_block_projected_downwards(chunk->neighbors.down, (Vector2u) { startPoint.x, 0 }, isWall);
+    if (goToNeighbor) {
+        return chunk_get_block_projected_downwards(chunk->neighbors.down, (Vector2u) { startPoint.x, 0 }, isWall, goToNeighbor);
     }
     else { return empty; }
 }
@@ -619,7 +621,7 @@ void chunk_set_block(Chunk* chunk, Vector2u position, BlockInstance blockValue, 
 
 	BlockRegistry* brg = br_get_block_registry(blockValue.id);
     if (brg->flags & BLOCK_FLAG_GRAVITY_AFFECTED) {
-		DownProjectionResult where = chunk_get_block_projected_downwards(chunk, position, isWall);
+		DownProjectionResult where = chunk_get_block_projected_downwards(chunk, position, isWall, true);
         if (where.replaced.block && where.replaced.chunk) {
             *where.replaced.block = blockValue;
             ptr = where.replaced.block;

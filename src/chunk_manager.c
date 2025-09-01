@@ -93,7 +93,7 @@ void chunk_manager_relocate(Vector2i newCenter) {
         return;
     };
 
-    memset(tempChunks, 0, sizeof(tempChunks));
+    memset(tempChunks, 0, CHUNK_AREA);
 
     bool oldUsed[CHUNK_COUNT];
     for (int i = 0; i < CHUNK_COUNT; ++i) oldUsed[i] = false;
@@ -108,9 +108,7 @@ void chunk_manager_relocate(Vector2i newCenter) {
 
         bool found = false;
         for (int j = 0; j < CHUNK_COUNT; ++j) {
-            if (!oldUsed[j] &&
-                chunks[j].position.x == newPos.x &&
-                chunks[j].position.y == newPos.y) {
+            if (!oldUsed[j] && chunks[j].position.x == newPos.x && chunks[j].position.y == newPos.y) {
                 tempChunks[i] = chunks[j];
                 oldUsed[j] = true;
                 found = true;
@@ -160,14 +158,14 @@ void chunk_manager_relocate(Vector2i newCenter) {
         chunks[i].neighbors.downRight = (x < CHUNK_VIEW_WIDTH - 1 && y < CHUNK_VIEW_HEIGHT - 1) ? &chunks[(y + 1) * CHUNK_VIEW_WIDTH + (x + 1)] : NULL;
     }
 
-    for (int i = 0; i < CHUNK_COUNT; ++i) {
+    for (int i = 0; i < CHUNK_COUNT; i++) {
         if (isNew[i]) {
             chunk_init(&chunks[i]);
             chunk_regenerate(&chunks[i]);
         }
     }
 
-    for (int i = 0; i < CHUNK_COUNT; ++i) {
+    for (int i = 0; i < CHUNK_COUNT; i++) {
         if (isNew[i]) {
             chunk_decorate(&chunks[i]);
         }

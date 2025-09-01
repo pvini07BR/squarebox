@@ -2,6 +2,7 @@
 #define BLOCK_STATE_BITFIELDS_H
 
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 
 typedef struct {

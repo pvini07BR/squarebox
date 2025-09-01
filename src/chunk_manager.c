@@ -12,8 +12,9 @@
 #include <raymath.h>
 
 static Chunk* chunks = NULL;
-static Texture2D lightMap;
 static Vector2i currentChunkPos = { 0, 0 };
+
+bool drawChunkLines = true;
 
 void chunk_manager_init() {
     chunks = (Chunk*)malloc(CHUNK_COUNT * sizeof(Chunk));
@@ -30,34 +31,25 @@ void chunk_manager_draw() {
         chunk_draw(&chunks[i]);
     }
 
-    DrawTextureEx(
-        lightMap,
-        (Vector2) {
-            (currentChunkPos.x - (CHUNK_VIEW_WIDTH / 2.0f)) * CHUNK_WIDTH * TILE_SIZE,
-            (currentChunkPos.y - (CHUNK_VIEW_HEIGHT / 2.0f)) * CHUNK_WIDTH * TILE_SIZE
-        },
-        0.0f,
-        TILE_SIZE,
-        WHITE
-    );
+    if (drawChunkLines) {
+        for (int i = 0; i < CHUNK_COUNT; i++) {
+            rlPushMatrix();
+            rlTranslatef(
+                chunks[i].position.x * CHUNK_WIDTH * TILE_SIZE,
+                chunks[i].position.y * CHUNK_WIDTH * TILE_SIZE,
+                0.0f
+            );
 
-    for (int i = 0; i < CHUNK_COUNT; i++) {
-        rlPushMatrix();
-        rlTranslatef(
-            chunks[i].position.x * CHUNK_WIDTH * TILE_SIZE,
-            chunks[i].position.y * CHUNK_WIDTH * TILE_SIZE,
-            0.0f
-        );
+            DrawRectangleLines(
+                0,
+                0,
+                CHUNK_WIDTH * TILE_SIZE,
+                CHUNK_WIDTH * TILE_SIZE,
+                WHITE
+            );
 
-        DrawRectangleLines(
-            0,
-            0,
-            CHUNK_WIDTH * TILE_SIZE,
-            CHUNK_WIDTH * TILE_SIZE,
-            WHITE
-        );
-
-        rlPopMatrix();
+            rlPopMatrix();
+        }
     }
 }
 
@@ -68,7 +60,6 @@ void chunk_manager_tick() {
 }
 
 void chunk_manager_free() {
-    UnloadTexture(lightMap);
     if (chunks) {
         for (int c = 0; c < CHUNK_COUNT; c++) {
             chunk_free(&chunks[c]);

@@ -429,8 +429,24 @@ void item_container_draw() {
 	Vector2 openContSize = item_container_get_size(openedContainer);
 	Vector2 invSize = item_container_get_size(&inventory);
 
-	item_container_draw_specific(openedContainer, center.x - (openContSize.x / 2), center.y - openContSize.y);
-	item_container_draw_specific(&inventory, center.x - (invSize.x / 2), center.y);
+	float spacing = ITEM_SLOT_GAP;
+
+	float totalHeight = openContSize.y + invSize.y + spacing;
+	float totalWidth = fmaxf(openContSize.x, invSize.x);
+
+	Vector2 blockStart = {
+		center.x - (totalWidth / 2.0f),
+		center.y - (totalHeight / 2.0f)
+	};
+
+	float openContX = blockStart.x + (totalWidth - openContSize.x) / 2.0f;
+	float openContY = blockStart.y;
+
+	float invX = blockStart.x + (totalWidth - invSize.x) / 2.0f;
+	float invY = blockStart.y + openContSize.y + spacing;
+
+	item_container_draw_specific(openedContainer, openContX, openContY);
+	item_container_draw_specific(&inventory, invX, invY);
 
 	draw_item(holdingItem, GetMouseX(), GetMouseY(), ((ITEM_SLOT_SIZE - TILE_SIZE) / 2.0f), 1.0f, true);
 }

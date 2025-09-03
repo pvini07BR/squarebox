@@ -13,28 +13,26 @@
 #include <rlgl.h>
 #include <raymath.h>
 
+static size_t chunk_view_width = 5;
+static size_t chunk_view_height = 3;
+static size_t chunk_count = 0;
+
 static Chunk* chunks = NULL;
 static Vector2i currentChunkPos = { 0, 0 };
 
 bool drawChunkLines = true;
 
-void chunk_manager_init() {
-    chunks = (Chunk*)malloc(CHUNK_COUNT * sizeof(Chunk));
-    
-    for (int c = 0; c < CHUNK_COUNT; c++) {
-        chunk_init(&chunks[c]);
-        chunks[c].position = (Vector2i){ INT_MAX, INT_MAX };
-    }
-    chunk_manager_reload_chunks();
+void chunk_manager_init(size_t chunk_view_width, size_t chunk_view_height) {
+    chunk_manager_set_view(chunk_view_width, chunk_view_height);
 }
 
 void chunk_manager_draw() {
-    for (int i = 0; i < CHUNK_COUNT; i++) {
+    for (int i = 0; i < chunk_count; i++) {
         chunk_draw(&chunks[i]);
     }
 
     if (drawChunkLines) {
-        for (int i = 0; i < CHUNK_COUNT; i++) {
+        for (int i = 0; i < chunk_count; i++) {
             rlPushMatrix();
             rlTranslatef(
                 chunks[i].position.x * CHUNK_WIDTH * TILE_SIZE,
@@ -56,14 +54,14 @@ void chunk_manager_draw() {
 }
 
 void chunk_manager_tick() {
-    for (int i = 0; i < CHUNK_COUNT; i++) {
+    for (int i = 0; i < chunk_count; i++) {
 		chunk_tick(&chunks[i]);
     }
 }
 
 void chunk_manager_free() {
     if (chunks) {
-        for (int c = 0; c < CHUNK_COUNT; c++) {
+        for (int c = 0; c < chunk_count; c++) {
             chunk_free(&chunks[c]);
         }
         free(chunks);
@@ -71,9 +69,53 @@ void chunk_manager_free() {
     }
 }
 
+void chunk_manager_set_view(size_t new_view_width, size_t new_view_height) {
+    if (chunks == NULL) {
+        chunk_view_width = new_view_width;
+        chunk_view_height = new_view_height;
+        chunk_count = chunk_view_width * chunk_view_height;
+
+        chunks = (Chunk*)malloc(sizeof(Chunk) * chunk_count);
+        if (!chunks) {
+            fprintf(stderr, "[ERROR] Failed to allocate memory for the Chunks.\n");
+            return;
+        }
+
+        for (int c = 0; c < chunk_count; c++) {
+            chunk_init(&chunks[c]);
+            chunks[c].position = (Vector2i){ .x = INT_MAX, .y = INT_MAX };
+        }
+    }
+    else {
+        for (int c = 0; c < chunk_count; c++) {
+            chunks[c].position = (Vector2i){ .x = INT_MAX, .y = INT_MAX };
+            chunk_free(&chunks[c]);
+        }
+
+        chunk_view_width = new_view_width;
+        chunk_view_height = new_view_height;
+        chunk_count = chunk_view_width * chunk_view_height;
+
+        Chunk* tempChunksPtr = (Chunk*)realloc(chunks, sizeof(Chunk) * chunk_count);
+        if (!tempChunksPtr) {
+            fprintf(stderr, "[ERROR] Failed to reallocate the Chunks.\n");
+            free(chunks);
+            return;
+        }
+        chunks = tempChunksPtr;
+
+        for (int c = 0; c < chunk_count; c++) {
+            chunk_init(&chunks[c]);
+            chunks[c].position = (Vector2i){ .x = INT_MAX, .y = INT_MAX };
+        }
+    }
+
+    chunk_manager_relocate(currentChunkPos);
+}
+
 void chunk_manager_reload_chunks()
 {
-    for (int c = 0; c < CHUNK_COUNT; c++) {
+    for (int c = 0; c < chunk_count; c++) {
         chunks[c].position = (Vector2i){ .x = INT_MAX, .y = INT_MAX };
         chunk_free(&chunks[c]);
     }
@@ -84,10 +126,10 @@ void chunk_manager_reload_chunks()
 void chunk_manager_relocate(Vector2i newCenter) {
     currentChunkPos = newCenter;
 
-    int startChunkX = currentChunkPos.x - CHUNK_VIEW_WIDTH / 2;
-    int startChunkY = currentChunkPos.y - CHUNK_VIEW_HEIGHT / 2;
+    int startChunkX = currentChunkPos.x - chunk_view_width / 2;
+    int startChunkY = currentChunkPos.y - chunk_view_height / 2;
 
-    Chunk* tempChunks = calloc(CHUNK_COUNT, sizeof(Chunk));
+    Chunk* tempChunks = calloc(chunk_count, sizeof(Chunk));
     if (!tempChunks) {
         printf("[ERROR] Could not allocate memory for tempChunks.\n");
         return;
@@ -95,19 +137,19 @@ void chunk_manager_relocate(Vector2i newCenter) {
 
     memset(tempChunks, 0, CHUNK_AREA);
 
-    bool oldUsed[CHUNK_COUNT];
-    for (int i = 0; i < CHUNK_COUNT; ++i) oldUsed[i] = false;
+    bool* oldUsed = calloc(chunk_count, sizeof(bool));
+    for (int i = 0; i < chunk_count; ++i) oldUsed[i] = false;
 
-    bool isNew[CHUNK_COUNT];
-    for (int i = 0; i < CHUNK_COUNT; ++i) isNew[i] = false;
+    bool* isNew = calloc(chunk_count, sizeof(bool));
+    for (int i = 0; i < chunk_count; ++i) isNew[i] = false;
 
-    for (int i = 0; i < CHUNK_COUNT; ++i) {
-        int x = i % CHUNK_VIEW_WIDTH;
-        int y = i / CHUNK_VIEW_WIDTH;
+    for (int i = 0; i < chunk_count; ++i) {
+        int x = i % chunk_view_width;
+        int y = i / chunk_view_width;
         Vector2i newPos = { startChunkX + x, startChunkY + y };
 
         bool found = false;
-        for (int j = 0; j < CHUNK_COUNT; ++j) {
+        for (int j = 0; j < chunk_count; ++j) {
             if (!oldUsed[j] && chunks[j].position.x == newPos.x && chunks[j].position.y == newPos.y) {
                 tempChunks[i] = chunks[j];
                 oldUsed[j] = true;
@@ -133,56 +175,52 @@ void chunk_manager_relocate(Vector2i newCenter) {
         tempChunks[i].neighbors.downRight = NULL;
     }
 
-    for (int j = 0; j < CHUNK_COUNT; ++j) {
+    for (int j = 0; j < chunk_count; ++j) {
         if (!oldUsed[j]) {
             chunk_free(&chunks[j]);
         }
     }
 
-    for (int i = 0; i < CHUNK_COUNT; ++i) {
+    for (int i = 0; i < chunk_count; ++i) {
         chunks[i] = tempChunks[i];
     }
 
-    for (int i = 0; i < CHUNK_COUNT; ++i) {
-        int x = i % CHUNK_VIEW_WIDTH;
-        int y = i / CHUNK_VIEW_WIDTH;
+    for (int i = 0; i < chunk_count; ++i) {
+        int x = i % chunk_view_width;
+        int y = i / chunk_view_width;
 
-        chunks[i].neighbors.up = (y > 0) ? &chunks[(y - 1) * CHUNK_VIEW_WIDTH + x] : NULL;
-        chunks[i].neighbors.right = (x < CHUNK_VIEW_WIDTH - 1) ? &chunks[y * CHUNK_VIEW_WIDTH + (x + 1)] : NULL;
-        chunks[i].neighbors.down = (y < CHUNK_VIEW_HEIGHT - 1) ? &chunks[(y + 1) * CHUNK_VIEW_WIDTH + x] : NULL;
-        chunks[i].neighbors.left = (x > 0) ? &chunks[y * CHUNK_VIEW_WIDTH + (x - 1)] : NULL;
+        chunks[i].neighbors.up = (y > 0) ? &chunks[(y - 1) * chunk_view_width + x] : NULL;
+        chunks[i].neighbors.right = (x < chunk_view_width - 1) ? &chunks[y * chunk_view_width + (x + 1)] : NULL;
+        chunks[i].neighbors.down = (y < chunk_view_height - 1) ? &chunks[(y + 1) * chunk_view_width + x] : NULL;
+        chunks[i].neighbors.left = (x > 0) ? &chunks[y * chunk_view_width + (x - 1)] : NULL;
 
-        chunks[i].neighbors.upLeft = (x > 0 && y > 0) ? &chunks[(y - 1) * CHUNK_VIEW_WIDTH + (x - 1)] : NULL;
-        chunks[i].neighbors.upRight = (x < CHUNK_VIEW_WIDTH - 1 && y > 0) ? &chunks[(y - 1) * CHUNK_VIEW_WIDTH + (x + 1)] : NULL;
-        chunks[i].neighbors.downLeft = (x > 0 && y < CHUNK_VIEW_HEIGHT - 1) ? &chunks[(y + 1) * CHUNK_VIEW_WIDTH + (x - 1)] : NULL;
-        chunks[i].neighbors.downRight = (x < CHUNK_VIEW_WIDTH - 1 && y < CHUNK_VIEW_HEIGHT - 1) ? &chunks[(y + 1) * CHUNK_VIEW_WIDTH + (x + 1)] : NULL;
+        chunks[i].neighbors.upLeft = (x > 0 && y > 0) ? &chunks[(y - 1) * chunk_view_width + (x - 1)] : NULL;
+        chunks[i].neighbors.upRight = (x < chunk_view_width - 1 && y > 0) ? &chunks[(y - 1) * chunk_view_width + (x + 1)] : NULL;
+        chunks[i].neighbors.downLeft = (x > 0 && y < chunk_view_height - 1) ? &chunks[(y + 1) * chunk_view_width + (x - 1)] : NULL;
+        chunks[i].neighbors.downRight = (x < chunk_view_width - 1 && y < chunk_view_height - 1) ? &chunks[(y + 1) * chunk_view_width + (x + 1)] : NULL;
     }
 
-    for (int i = 0; i < CHUNK_COUNT; i++) {
+    for (int i = 0; i < chunk_count; i++) {
         if (isNew[i]) {
             chunk_init(&chunks[i]);
             chunk_regenerate(&chunks[i]);
         }
     }
 
-    for (int i = 0; i < CHUNK_COUNT; i++) {
-        if (isNew[i]) {
-            chunk_decorate(&chunks[i]);
-        }
-    }
-
     chunk_manager_update_lighting();
 
     free(tempChunks);
+    free(oldUsed);
+    free(isNew);
 }
 
 
 void chunk_manager_update_lighting() {
-    for (int c = 0; c < CHUNK_COUNT; c++) {
+    for (int c = 0; c < chunk_count; c++) {
         for (int i = 0; i < CHUNK_AREA; i++) chunks[c].light[i] = 0;
     }
 
-    for (int c = 0; c < CHUNK_COUNT; c++) {
+    for (int c = 0; c < chunk_count; c++) {
         for (int i = 0; i < CHUNK_AREA; i++) {
             BlockInstance b = chunks[c].blocks[i];
             BlockInstance w = chunks[c].walls[i];
@@ -203,7 +241,17 @@ void chunk_manager_update_lighting() {
         }
     }
 
-    for (int c = 0; c < CHUNK_COUNT; c++) chunk_genmesh(&chunks[c]);
+    for (int c = 0; c < chunk_count; c++) chunk_genmesh(&chunks[c]);
+}
+
+size_t chunk_manager_get_view_width()
+{
+    return chunk_view_width;
+}
+
+size_t chunk_manager_get_view_height()
+{
+    return chunk_view_height;
 }
 
 bool chunk_manager_interact(Vector2i position, bool isWall) {
@@ -291,12 +339,12 @@ void chunk_manager_set_block_safe(Vector2i position, BlockInstance blockValue, b
 
 Chunk* chunk_manager_get_chunk(Vector2i position) {
     Vector2i localChunkPos = {
-        position.x - (currentChunkPos.x - (CHUNK_VIEW_WIDTH / 2)),
-        position.y - (currentChunkPos.y - (CHUNK_VIEW_HEIGHT / 2))
+        position.x - (currentChunkPos.x - (chunk_view_width / 2)),
+        position.y - (currentChunkPos.y - (chunk_view_height / 2))
     };
 
-    if (localChunkPos.x >= 0 && localChunkPos.x < CHUNK_VIEW_WIDTH && localChunkPos.y >= 0 && localChunkPos.y < CHUNK_VIEW_HEIGHT) {
-        int chunkIndex = localChunkPos.y * CHUNK_VIEW_WIDTH + localChunkPos.x;
+    if (localChunkPos.x >= 0 && localChunkPos.x < chunk_view_width && localChunkPos.y >= 0 && localChunkPos.y < chunk_view_height) {
+        int chunkIndex = localChunkPos.y * chunk_view_width + localChunkPos.x;
         return &chunks[chunkIndex];
     }
     else {
@@ -311,12 +359,12 @@ void chunk_manager_set_block(Vector2i position, BlockInstance blockValue, bool i
     };
 
     Vector2i localChunkPos = {
-        chunkPos.x - (currentChunkPos.x - CHUNK_VIEW_WIDTH / 2),
-        chunkPos.y - (currentChunkPos.y - CHUNK_VIEW_HEIGHT / 2)
+        chunkPos.x - (currentChunkPos.x - chunk_view_width / 2),
+        chunkPos.y - (currentChunkPos.y - chunk_view_height / 2)
     };
 
-    if (localChunkPos.x >= 0 && localChunkPos.x < CHUNK_VIEW_WIDTH && localChunkPos.y >= 0 && localChunkPos.y < CHUNK_VIEW_HEIGHT) {
-        int chunkIndex = localChunkPos.y * CHUNK_VIEW_WIDTH + localChunkPos.x;
+    if (localChunkPos.x >= 0 && localChunkPos.x < chunk_view_width && localChunkPos.y >= 0 && localChunkPos.y < chunk_view_height) {
+        int chunkIndex = localChunkPos.y * chunk_view_width + localChunkPos.x;
 
         chunk_set_block(
             &chunks[chunkIndex],
@@ -337,12 +385,12 @@ BlockInstance chunk_manager_get_block(Vector2i position, bool isWall) {
     };
 
     Vector2i localChunkPos = {
-        chunkPos.x - (currentChunkPos.x - CHUNK_VIEW_WIDTH / 2),
-        chunkPos.y - (currentChunkPos.y - CHUNK_VIEW_HEIGHT / 2)
+        chunkPos.x - (currentChunkPos.x - chunk_view_width / 2),
+        chunkPos.y - (currentChunkPos.y - chunk_view_height / 2)
     };
 
-    if (localChunkPos.x >= 0 && localChunkPos.x < CHUNK_VIEW_WIDTH && localChunkPos.y >= 0 && localChunkPos.y < CHUNK_VIEW_HEIGHT) {
-        int chunkIndex = localChunkPos.y * CHUNK_VIEW_WIDTH + localChunkPos.x;
+    if (localChunkPos.x >= 0 && localChunkPos.x < chunk_view_width && localChunkPos.y >= 0 && localChunkPos.y < chunk_view_height) {
+        int chunkIndex = localChunkPos.y * chunk_view_width + localChunkPos.x;
 
         return chunk_get_block(
             &chunks[chunkIndex],
@@ -363,12 +411,12 @@ uint8_t chunk_manager_get_light(Vector2i position) {
     };
 
     Vector2i localChunkPos = {
-        chunkPos.x - (currentChunkPos.x - CHUNK_VIEW_WIDTH / 2),
-        chunkPos.y - (currentChunkPos.y - CHUNK_VIEW_HEIGHT / 2)
+        chunkPos.x - (currentChunkPos.x - chunk_view_width / 2),
+        chunkPos.y - (currentChunkPos.y - chunk_view_height / 2)
     };
 
-    if (localChunkPos.x >= 0 && localChunkPos.x < CHUNK_VIEW_WIDTH && localChunkPos.y >= 0 && localChunkPos.y < CHUNK_VIEW_HEIGHT) {
-        int chunkIndex = localChunkPos.y * CHUNK_VIEW_WIDTH + localChunkPos.x;
+    if (localChunkPos.x >= 0 && localChunkPos.x < chunk_view_width && localChunkPos.y >= 0 && localChunkPos.y < chunk_view_height) {
+        int chunkIndex = localChunkPos.y * chunk_view_width + localChunkPos.x;
 
         return chunk_get_light(
             &chunks[chunkIndex],
@@ -388,12 +436,12 @@ void chunk_manager_set_light(Vector2i position, uint8_t value) {
     };
 
     Vector2i localChunkPos = {
-        chunkPos.x - (currentChunkPos.x - CHUNK_VIEW_WIDTH / 2),
-        chunkPos.y - (currentChunkPos.y - CHUNK_VIEW_HEIGHT / 2)
+        chunkPos.x - (currentChunkPos.x - chunk_view_width / 2),
+        chunkPos.y - (currentChunkPos.y - chunk_view_height / 2)
     };
 
-    if (localChunkPos.x >= 0 && localChunkPos.x < CHUNK_VIEW_WIDTH && localChunkPos.y >= 0 && localChunkPos.y < CHUNK_VIEW_HEIGHT) {
-        int chunkIndex = localChunkPos.y * CHUNK_VIEW_WIDTH + localChunkPos.x;
+    if (localChunkPos.x >= 0 && localChunkPos.x < chunk_view_width && localChunkPos.y >= 0 && localChunkPos.y < chunk_view_height) {
+        int chunkIndex = localChunkPos.y * chunk_view_width + localChunkPos.x;
 
         chunk_set_light(
             &chunks[chunkIndex],

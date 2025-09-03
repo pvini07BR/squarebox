@@ -11,11 +11,11 @@
 #include "texture_atlas.h"
 #include "defines.h"
 
-const float TITLE_SIZE = 18.0f;
-const Color BG_COLOR = { 200, 200, 200, 255 };
-const Color SLOT_COLOR = { 130, 130, 130, 255 };
-const Color SLOT_HOVER_COLOR = { 255, 255, 255, 128 };
-const Color TITLE_COLOR = { 80, 80, 80, 255 };
+static const float TITLE_SIZE = 18.0f;
+static const Color BG_COLOR = { 200, 200, 200, 255 };
+static const Color SLOT_COLOR = { 130, 130, 130, 255 };
+static const Color SLOT_HOVER_COLOR = { 255, 255, 255, 128 };
+static const Color TITLE_COLOR = { 80, 80, 80, 255 };
 
 static ItemContainer* openedContainer = NULL;
 

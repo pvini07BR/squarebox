@@ -26,6 +26,9 @@ extern unsigned int wallAOvalue;
 
 extern bool drawChunkLines;
 
+size_t temp_chunk_view_width = 5;
+size_t temp_chunk_view_height = 3;
+
 int main() {
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(1280, 720, "mijocraft");
@@ -51,6 +54,9 @@ int main() {
     bool wallBrightEdit = false;
     bool wallAOEdit = false;
 
+    bool chunkViewWidthEdit = false;
+    bool chunkViewHeightEdit = false;
+
     Rectangle interPanel = {
         .x = 0,
         .y = 0,
@@ -67,7 +73,7 @@ int main() {
     item_registry_init();
     block_registry_init();
 
-    chunk_manager_init();
+    chunk_manager_init(5, 3);
 
     item_container_create(&creativeMenu, "Creative Menu", 3, 10, true);
     for (int i = 1; i < ITEM_COUNT; i++) {
@@ -177,7 +183,7 @@ int main() {
                 if (hotbarIdx > 9) hotbarIdx = 0;
             }
 
-            if (!seedEdit && !wallAOEdit && !wallBrightEdit) {
+            if (!seedEdit && !wallAOEdit && !wallBrightEdit && !chunkViewWidthEdit && !chunkViewHeightEdit) {
                 if (IsKeyPressed(KEY_ONE)) hotbarIdx = 0;
                 if (IsKeyPressed(KEY_TWO)) hotbarIdx = 1;
                 if (IsKeyPressed(KEY_THREE)) hotbarIdx = 2;
@@ -297,8 +303,8 @@ int main() {
             "Wall mode: %s",
 
             GetFPS(),
-            CHUNK_VIEW_WIDTH,
-            CHUNK_VIEW_HEIGHT,
+            chunk_manager_get_view_width(),
+            chunk_manager_get_view_height(),
             camera.zoom,
             mouseWorldPos.x,
             mouseWorldPos.y,
@@ -383,16 +389,15 @@ int main() {
 
             GuiPanel(interPanel, NULL);
             if (GuiValueBox((Rectangle) { MeasureText("Seed ", 8) + padding, textSize.y + (height += sum), 64, elementHeight }, "Seed ", & seed, INT_MIN, INT_MAX, seedEdit)) seedEdit = !seedEdit;
+            if (GuiValueBox((Rectangle) { MeasureText("Chunk View Width ", 8) + padding, textSize.y + (height += sum), 64, elementHeight }, "Chunk View Width ", &temp_chunk_view_width, 0, INT_MAX, chunkViewWidthEdit)) chunkViewWidthEdit = !chunkViewWidthEdit;
+            if (GuiValueBox((Rectangle) { MeasureText("Chunk View Height ", 8) + padding, textSize.y + (height += sum), 64, elementHeight }, "Chunk View Height ", &temp_chunk_view_height, 0, INT_MAX, chunkViewHeightEdit)) chunkViewHeightEdit = !chunkViewHeightEdit;
             GuiCheckBox((Rectangle) { padding, textSize.y + (height += sum), elementHeight, elementHeight }, "Toggle Wall AO", & wallAmbientOcclusion);
             GuiCheckBox((Rectangle) { padding, textSize.y + (height += sum), elementHeight, elementHeight }, "Toggle Smooth Lighting", &smoothLighting);
             GuiCheckBox((Rectangle) { padding, textSize.y + (height += sum), elementHeight, elementHeight }, "Draw Chunk Lines", &drawChunkLines);
             if (GuiValueBox((Rectangle) { MeasureText("Wall Brightness  ", 8) + padding, textSize.y + (height += sum), 64, elementHeight }, "Wall Brightness ", &wallBrightness, 0, 255, wallBrightEdit)) wallBrightEdit = !wallBrightEdit;
             if (GuiValueBox((Rectangle) { MeasureText("Wall AO Value  ", 8) + padding, textSize.y + (height += sum), 64, elementHeight }, "Wall AO Value ", &wallAOvalue, 0, 255, wallAOEdit)) wallAOEdit = !wallAOEdit;
-            if (GuiButton((Rectangle) { padding, textSize.y + (height += sum), interPanel.width - (padding * 2), 32 }, "Reload chunks")) {
-                chunk_manager_reload_chunks();
-            }
-            if (GuiButton((Rectangle) { padding, textSize.y + (height += sum), interPanel.width - (padding * 2), 32 }, "Regenerate Chunk Meshes")) {
-                chunk_manager_update_lighting();
+            if (GuiButton((Rectangle) { padding, textSize.y + (height += sum), interPanel.width - (padding * 2), 32 }, "Apply Settings")) {
+                chunk_manager_set_view(temp_chunk_view_width, temp_chunk_view_height);
             }
 
             interPanel.height = height + sum + 16;

@@ -4,18 +4,17 @@
 #include "chunk.h"
 #include <stdint.h>
 
-#define CHUNK_VIEW_WIDTH 5
-#define CHUNK_VIEW_HEIGHT 3
-
-#define CHUNK_COUNT CHUNK_VIEW_WIDTH*CHUNK_VIEW_HEIGHT
-
-void chunk_manager_init();
+void chunk_manager_init(size_t chunk_view_width, size_t chunk_view_height);
 void chunk_manager_draw();
 void chunk_manager_tick();
 void chunk_manager_free();
+void chunk_manager_set_view(size_t new_view_width, size_t new_view_height);
 void chunk_manager_reload_chunks();
 void chunk_manager_relocate(Vector2i newCenter);
 void chunk_manager_update_lighting();
+
+size_t chunk_manager_get_view_width();
+size_t chunk_manager_get_view_height();
 
 // Returns true when a interaction occurred, false when not.
 bool chunk_manager_interact(Vector2i position, bool isWall);

@@ -3,6 +3,7 @@
 #include "container_vector.h"
 #include "defines.h"
 #include "block_registry.h"
+#include "item_registry.h"
 #include "texture_atlas.h"
 #include "block_models.h"
 #include "liquid_spread.h"
@@ -21,15 +22,23 @@
 #define FNL_IMPL
 #include <thirdparty/FastNoiseLite.h>
 
-unsigned int posmod(int v, int m);
-void reset_meshes(Chunk* chunk, int blockVertexCount, int wallVertexCount);
-void build_quad(Chunk* chunk, size_t* offsets, BlockInstance* blocks, Mesh* mesh, bool isWall, uint8_t x, uint8_t y, uint8_t brightness);
+static unsigned int posmod(int v, int m);
+static void reset_meshes(Chunk* chunk, int blockVertexCount, int wallVertexCount);
+static void build_quad(Chunk* chunk, size_t* offsets, BlockInstance* blocks, Mesh* mesh, bool isWall, uint8_t x, uint8_t y, uint8_t brightness);
 
 int seed = 0;
 bool wallAmbientOcclusion = true;
 bool smoothLighting = true;
 unsigned int wallBrightness = 128;
 unsigned int wallAOvalue = 64;
+
+static bool chance_at(fnl_noise_type noiseType, float frequency, int gx, int gy, float threshold, int seed_offset) {
+    fnl_state noise = fnlCreateState();
+    noise.seed = seed + seed_offset;
+    noise.frequency = frequency;
+    noise.noise_type = noiseType;
+    return fnlGetNoise2D(&noise, gx, gy) > threshold;
+}
 
 void chunk_init(Chunk* chunk)
 {
@@ -39,14 +48,6 @@ void chunk_init(Chunk* chunk)
     liquid_spread_list_init(&chunk->liquidSpreadList);
 
     chunk->initializedMeshes = false;
-}
-
-static bool chance_at(int gx, int gy, float threshold, int seed_offset) {
-    fnl_state noise = fnlCreateState();
-    noise.seed = seed + seed_offset;
-    noise.frequency = 0.1f;
-    noise.noise_type = FNL_NOISE_OPENSIMPLEX2;
-    return fnlGetNoise2D(&noise, gx, gy) > threshold;
 }
 
 void chunk_regenerate(Chunk* chunk) {
@@ -76,7 +77,6 @@ void chunk_regenerate(Chunk* chunk) {
             float base = fnlGetNoise2D(&terrainNoise, gx * 0.5f, 0.0f);
             float detail = fnlGetNoise2D(&detailNoise, gx, 0.0f);
             int surfaceY = (int)roundf(base * 32.0f + detail * 8.0f);
-            //if (w == 1) surfaceY += w;
 
             for (int y = 0; y < CHUNK_WIDTH; y++) {
                 int i = x + y * CHUNK_WIDTH;
@@ -84,7 +84,18 @@ void chunk_regenerate(Chunk* chunk) {
 
                 BlockInstance newInst = { 0,0 };
 
-                if (gy == surfaceY) {
+                if (gy == (surfaceY - 1)) {
+                    if (chance_at(FNL_NOISE_VALUE, 32.0f, gx, gy, 0.0f, w)) {
+                        newInst.id = BLOCK_GRASS;
+                    }
+                    else if (chance_at(FNL_NOISE_VALUE, 32.0f, gx, gy, -0.25f, w)) {
+                        newInst.id = BLOCK_FLOWER;
+                    }
+                    else if (chance_at(FNL_NOISE_VALUE, 32.0f, gx, gy, -0.4f, w)) {
+                        newInst.id = BLOCK_PEBBLES;
+                    }
+                }
+                else if (gy == surfaceY) {
                     newInst.id = BLOCK_GRASS_BLOCK;
                 }
                 else if (gy > surfaceY && gy <= surfaceY + 4) {
@@ -97,25 +108,6 @@ void chunk_regenerate(Chunk* chunk) {
                 if (w == 0) chunk->blocks[i] = newInst;
                 else chunk->walls[i] = newInst;
                 chunk->light[i] = 0;
-            }
-        }
-    }
-}
-
-void chunk_decorate(Chunk* chunk) {
-    if (!chunk) return;
-
-    for (int x = 0; x < CHUNK_WIDTH; x++) {
-        int gx = chunk->position.x * CHUNK_WIDTH + x;
-        for (int w = 0; w < 2; w++) {
-            if (!chance_at(gx, chunk->position.y * CHUNK_WIDTH, -0.5f, w)) continue;
-
-            DownProjectionResult result = chunk_get_block_projected_downwards(chunk, (Vector2u) { x, 0 }, w == 1, false);
-            if (result.replaced.block && result.down.block) {
-                BlockRegistry* brg = br_get_block_registry(result.down.block->id);
-                if (brg->flags & BLOCK_FLAG_PLANTABLE) {
-                    *result.replaced.block = (BlockInstance){ BLOCK_GRASS, 0 };
-                }
             }
         }
     }

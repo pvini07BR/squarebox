@@ -2,8 +2,8 @@
 
 static Texture2D textureAtlas;
 static Material material;
-size_t rows;
-size_t columns;
+static size_t rows;
+static size_t columns;
 
 void texture_atlas_load(const char* path, size_t r, size_t c) {
     rows = r;

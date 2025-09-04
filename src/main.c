@@ -199,7 +199,8 @@ int main() {
 
         player_update(&player, GetFrameTime(), item_container_is_open());
             
-        camera.target = Vector2Add(player_get_position(&player), Vector2Divide(player_get_size(&player), (Vector2) { 2.0f, 2.0f }));
+        Vector2 newTarget = Vector2Add(player_get_position(&player), Vector2Divide(player_get_size(&player), (Vector2) { 2.0f, 2.0f }));
+        camera.target = Vector2Lerp(camera.target, newTarget, 25.0f * GetFrameTime());
 
         if (IsKeyPressed(KEY_E) && !item_container_is_open())
             item_container_open(&creativeMenu);

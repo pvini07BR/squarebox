@@ -6,7 +6,6 @@
 typedef struct {
 	Rectangle rect;
 	Vector2 velocity;
-	Rectangle* contacts[4];
 
 	bool collides;
 	bool grounded;

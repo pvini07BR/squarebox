@@ -4,6 +4,7 @@
 #include "block_registry.h"
 #include "block_colliders.h"
 
+#include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
 
@@ -11,6 +12,20 @@
 #include <rlgl.h>
 
 #define TO_BLOCK_COORDS(value) ((int)floorf((float)value / (float)TILE_SIZE))
+
+typedef struct {
+	Rectangle rect;
+	float t;
+} RectPair;
+
+int compare_rects(const void* a, const void* b) {
+	RectPair* pair_a = (RectPair*)a;
+	RectPair* pair_b = (RectPair*)b;
+
+	if (pair_a->t < pair_b->t) return -1;
+	if (pair_a->t > pair_b->t) return 1;
+	return 0;
+}
 
 static bool ray_vs_rect(const Vector2 ray_origin, const Vector2 ray_dir, const Rectangle* target, Vector2* contact_point, Vector2* contact_normal, float* t_hit_near) {
 	Vector2 rect_pos = (Vector2){
@@ -136,33 +151,58 @@ void entity_update(Entity* entity, float deltaTime) {
 			.y = fmaxf(entity->rect.y, nextPosition.y) + entity->rect.height
 		};
 
-		entity->grounded = false;
+		size_t rect_count = 0;
+		RectPair rects[CHUNK_AREA];
 
 		for (int x = TO_BLOCK_COORDS(topLeft.x); x < TO_BLOCK_COORDS(bottomRight.x) + 1; x++) {
 			for (int y = TO_BLOCK_COORDS(topLeft.y); y < TO_BLOCK_COORDS(bottomRight.y) + 1; y++) {
 				BlockInstance block = chunk_manager_get_block((Vector2i) { x, y }, false);
 				BlockRegistry* reg = br_get_block_registry(block.id);
+				if (!reg) continue;
+				if (!(reg->flags & BLOCK_FLAG_SOLID)) continue;
 
-				if (reg->flags & BLOCK_FLAG_SOLID) {
-					BlockVariant variant = br_get_block_variant(block.id, block.state);
+				BlockVariant variant = br_get_block_variant(block.id, block.state);
 					
-					Rectangle rects[MAX_RECTS_PER_COLLIDER];
-					size_t collider_count = 0;
-					block_colliders_get_rects(variant.collider_idx, variant.rotation, &collider_count, rects);
+				Rectangle collider_rects[MAX_RECTS_PER_COLLIDER];
+				size_t collider_count = 0;
+				block_colliders_get_rects(variant.collider_idx, variant.rotation, &collider_count, collider_rects);
 
-					for (int i = 0; i < collider_count; i++) {
-						Rectangle rect = rects[i];
-						rect.x += x * TILE_SIZE;
-						rect.y += y * TILE_SIZE;
+				for (int i = 0; i < collider_count; i++) {
+					Rectangle rect = collider_rects[i];
+					rect.x += x * TILE_SIZE;
+					rect.y += y * TILE_SIZE;
 
-						Vector2 contact_normal;
-						if (resolve_entity_vs_rect(entity, &rect, deltaTime, &contact_normal)) {
-							if (contact_normal.y < 0.0f) {
-								entity->grounded = true;
-							}
-						}
+					Vector2 cp, cn;
+					float t = 0.0f;
+					if (entity_vs_rect(entity, &rect, deltaTime, &cp, &cn, &t)) {
+						rects[rect_count].rect = rect;
+						rects[rect_count].t = t;
+						rect_count++;
 					}
 				}
+			}
+		}
+
+		qsort(rects, rect_count, sizeof(RectPair), compare_rects);
+
+		entity->grounded = false;
+
+		for (int i = 0; i < rect_count; i++) {
+			Rectangle* rect = &rects[i];
+
+			Vector2 contact_normal;
+			if (resolve_entity_vs_rect(entity, rect, deltaTime, &contact_normal)) {
+				if (contact_normal.y < 0.0f) {
+					entity->grounded = true;
+				}
+				/*
+				if (entity->grounded && contact_normal.x != 0.0f) {
+					float diff = (entity->rect.y + entity->rect.height) - rect->y;
+					if (diff < (entity->rect.height * 0.6f)) {
+						entity->rect.y -= rect->height + 1;
+					}
+				}
+				*/
 			}
 		}
 	}

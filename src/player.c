@@ -42,7 +42,7 @@ void player_update(Player* player, float deltaTime, bool disableInput) {
 		}
 
 		if (!player->flying) {
-			if ((IsKeyPressed(KEY_SPACE) || IsKeyPressed(KEY_W) || IsKeyPressed(KEY_UP)) && player->entity.grounded) {
+			if ((IsKeyDown(KEY_SPACE) || IsKeyDown(KEY_W) || IsKeyDown(KEY_UP)) && player->entity.grounded) {
 				player->entity.velocity.y -= JUMP_FORCE;
 			}
 		}
@@ -116,8 +116,6 @@ void player_draw(Player* player) {
 	DrawRectanglePro(player->entity.rect, Vector2Scale((Vector2) { player->entity.rect.width, player->entity.rect.height }, 0.5f), player->rotation, RED);
 	
 	rlPopMatrix();
-
-	//entity_draw(&player->entity);
 }
 
 Vector2 player_get_position(Player* player) {

@@ -32,7 +32,7 @@ size_t temp_chunk_view_width = 5;
 size_t temp_chunk_view_height = 3;
 
 int main() {
-    SetConfigFlags(FLAG_WINDOW_RESIZABLE);
+    SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT);
     InitWindow(1280, 720, "mijocraft");
     SetExitKey(KEY_NULL);
     SetTraceLogLevel(LOG_WARNING);
@@ -100,7 +100,7 @@ int main() {
     float accumulator = 0.0f;
 
     Player player;
-    player_init(&player, Vector2Zero());
+    player_init(&player, (Vector2){ TILE_SIZE, 0 });
 
     while (!WindowShouldClose()) {
         // Tick chunks
@@ -201,7 +201,7 @@ int main() {
 
         player_update(&player, GetFrameTime(), item_container_is_open());
             
-        Vector2 newTarget = Vector2Add(player_get_position(&player), Vector2Divide(player_get_size(&player), (Vector2) { 2.0f, 2.0f }));
+        Vector2 newTarget = Vector2Add(player_get_position(&player), Vector2Scale(player_get_size(&player), 0.5f));
         camera.target = Vector2Lerp(camera.target, newTarget, 25.0f * GetFrameTime());
 
         if (IsKeyPressed(KEY_E) && !item_container_is_open())

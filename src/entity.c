@@ -117,13 +117,6 @@ static bool resolve_entity_vs_rect(Entity* entity, Rectangle* staticRect, const 
 	Vector2 contact_point;
 	float contact_time = 0.0f;
 	if (entity_vs_rect(entity, staticRect, deltaTime, &contact_point, contact_normal_output, &contact_time)) {
-		/*
-		entity->contacts[0] = contact_normal.y > 0 ? staticRect : NULL;
-		entity->contacts[1] = contact_normal.x < 0 ? staticRect : NULL;
-		entity->contacts[2] = contact_normal.y < 0 ? staticRect : NULL;
-		entity->contacts[3] = contact_normal.x > 0 ? staticRect : NULL;
-		*/
-
 		Vector2 thing = Vector2Scale((Vector2) { fabsf(entity->velocity.x), fabsf(entity->velocity.y) }, 1.0f - contact_time);
 		Vector2 addValue = Vector2Multiply(*contact_normal_output, thing);
 		entity->velocity = Vector2Add(entity->velocity, addValue);

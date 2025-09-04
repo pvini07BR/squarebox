@@ -140,6 +140,10 @@ int main() {
                 }
             }
 
+            if (IsKeyPressed(KEY_F)) {
+                player.flying = !player.flying;
+            }
+
             if (IsKeyPressed(KEY_C)) {
                 Vector2i chunkPos = {
                     (int)floorf((float)mouseBlockPos.x / (float)CHUNK_WIDTH),
@@ -259,6 +263,8 @@ int main() {
         chunk_manager_draw();
 
         player_draw(&player);
+
+        chunk_manager_draw_liquids();
 
         if (!item_container_is_open()) {
             // Draw block model if it is rotatable

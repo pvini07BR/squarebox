@@ -9,6 +9,7 @@ typedef struct {
 	Entity entity;
 	int direction;
 	float rotation;
+	bool flying;
 } Player;
 
 void player_init(Player* player, Vector2 initialPosition);

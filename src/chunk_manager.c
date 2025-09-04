@@ -53,6 +53,12 @@ void chunk_manager_draw() {
     }
 }
 
+void chunk_manager_draw_liquids() {
+    for (int i = 0; i < chunk_count; i++) {
+        chunk_draw_liquids(&chunks[i]);
+    }
+}
+
 void chunk_manager_tick() {
     for (int i = 0; i < chunk_count; i++) {
 		chunk_tick(&chunks[i]);

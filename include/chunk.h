@@ -95,6 +95,7 @@ void chunk_init(Chunk* chunk);
 void chunk_regenerate(Chunk* chunk);
 void chunk_genmesh(Chunk* chunk);
 void chunk_draw(Chunk* chunk);
+void chunk_draw_liquids(Chunk* chunk);
 void chunk_tick(Chunk* chunk);
 void chunk_free(Chunk* chunk);
 

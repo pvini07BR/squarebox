@@ -163,10 +163,24 @@ void chunk_draw(Chunk* chunk) {
         DrawMesh(chunk->blockMesh, texture_atlas_get_material(), MatrixIdentity());
     }
 
+    rlPopMatrix();
+}
+
+void chunk_draw_liquids(Chunk* chunk) {
+    if (!chunk) return;
+
+    rlPushMatrix();
+
+    rlTranslatef(
+        chunk->position.x * CHUNK_WIDTH * TILE_SIZE,
+        chunk->position.y * CHUNK_WIDTH * TILE_SIZE,
+        0.0f
+    );
+
     for (int i = 0; i < CHUNK_AREA; i++) {
-		BlockRegistry* brg = br_get_block_registry(chunk->blocks[i].id);
+        BlockRegistry* brg = br_get_block_registry(chunk->blocks[i].id);
         if (!brg) continue;
-		float lightFactor = chunk->light[i] / 15.0f;
+        float lightFactor = chunk->light[i] / 15.0f;
 
         if (brg->flags & BLOCK_FLAG_LIQUID_SOURCE) {
             int x = i % CHUNK_WIDTH;
@@ -176,52 +190,51 @@ void chunk_draw(Chunk* chunk) {
                 y * TILE_SIZE,
                 TILE_SIZE,
                 TILE_SIZE,
-                (Color){ 0, 0, 255 * lightFactor, 100 }
-			);
-		} else if (brg->flags & BLOCK_FLAG_LIQUID_FLOWING) {
+                (Color) {
+                0, 0, 255 * lightFactor, 100
+            }
+            );
+        }
+        else if (brg->flags & BLOCK_FLAG_LIQUID_FLOWING) {
             int x = i % CHUNK_WIDTH;
             int y = i / CHUNK_WIDTH;
 
-			FlowingLiquidState* state = (FlowingLiquidState*)&chunk->blocks[i].state;
-			float value = state->level / 7.0f;
+            FlowingLiquidState* state = (FlowingLiquidState*)&chunk->blocks[i].state;
+            float value = state->level / 7.0f;
 
             DrawRectangle(
                 x * TILE_SIZE,
                 ceilf(y * TILE_SIZE + (TILE_SIZE * (1.0f - value))),
                 TILE_SIZE,
                 TILE_SIZE * value,
-                (Color){ state->falling ? 0 : 255 * lightFactor, state->falling ? 255 * lightFactor : 0, 0, 100 }
-             );
+                (Color) {
+                state->falling ? 0 : 255 * lightFactor, state->falling ? 255 * lightFactor : 0, 0, 100
+            }
+            );
         }
     }
 
     rlPopMatrix();
 }
 
-// Verifica se pode fluir para baixo
 bool can_flow_down(BlockExtraResult target, BlockRegistry* targetRegistry, int currentLevel) {
-    // Pode fluir para ar
     if (target.block->id == BLOCK_AIR) {
         return true;
     }
 
-    // Pode fluir através de blocos substituíveis (grama, etc.)
     if ((targetRegistry->flags & BLOCK_FLAG_REPLACEABLE) &&
         !(targetRegistry->flags & (BLOCK_FLAG_LIQUID_SOURCE | BLOCK_FLAG_LIQUID_FLOWING))) {
         return true;
     }
 
-    // Pode melhorar líquido flowing existente
     if (targetRegistry->flags & BLOCK_FLAG_LIQUID_FLOWING) {
         FlowingLiquidState* existingState = (FlowingLiquidState*)&target.block->state;
 
-        // Pode fluir se o nível existente é menor que 7 (pode melhorar)
         if (existingState->level < 7) {
             return true;
         }
     }
 
-    // NÃO pode fluir para sources
     return false;
 }
 

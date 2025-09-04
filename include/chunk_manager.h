@@ -6,6 +6,7 @@
 
 void chunk_manager_init(size_t chunk_view_width, size_t chunk_view_height);
 void chunk_manager_draw();
+void chunk_manager_draw_liquids();
 void chunk_manager_tick();
 void chunk_manager_free();
 void chunk_manager_set_view(size_t new_view_width, size_t new_view_height);

@@ -2,6 +2,7 @@
 #include "defines.h"
 #include "chunk_manager.h"
 #include "block_registry.h"
+#include "block_colliders.h"
 
 #include <stdio.h>
 #include <math.h>
@@ -143,17 +144,22 @@ void entity_update(Entity* entity, float deltaTime) {
 				BlockRegistry* reg = br_get_block_registry(block.id);
 
 				if (reg->flags & BLOCK_FLAG_SOLID) {
-					Rectangle blockRect = (Rectangle){
-						.x = x * TILE_SIZE,
-						.y = y * TILE_SIZE,
-						.width = TILE_SIZE,
-						.height = TILE_SIZE
-					};
+					BlockVariant variant = br_get_block_variant(block.id, block.state);
+					
+					Rectangle rects[MAX_RECTS_PER_COLLIDER];
+					size_t collider_count = 0;
+					block_colliders_get_rects(variant.collider_idx, variant.rotation, &collider_count, rects);
 
-					Vector2 contact_normal;
-					if (resolve_entity_vs_rect(entity, &blockRect, deltaTime, &contact_normal)) {
-						if (contact_normal.y < 0.0f) {
-							entity->grounded = true;
+					for (int i = 0; i < collider_count; i++) {
+						Rectangle rect = rects[i];
+						rect.x += x * TILE_SIZE;
+						rect.y += y * TILE_SIZE;
+
+						Vector2 contact_normal;
+						if (resolve_entity_vs_rect(entity, &rect, deltaTime, &contact_normal)) {
+							if (contact_normal.y < 0.0f) {
+								entity->grounded = true;
+							}
 						}
 					}
 				}

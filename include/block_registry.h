@@ -6,6 +6,8 @@
 
 #include <raylib.h>
 
+#include "block_models.h"
+#include "block_colliders.h"
 #include "block_functions.h"
 #include "chunk.h"
 
@@ -108,7 +110,10 @@ typedef struct {
 	size_t atlas_idx;
 	// Index of the model in the block models array.
 	// see block_models.c.
-	size_t model_idx;
+	BlockModelEnum model_idx;
+	// Index of the collider in the block colliders array.
+	// see block_colliders.c.
+	BlockColliderEnum collider_idx;
 	// Determines if the model should flip horizontally in this block state.
 	bool flipH;
 	// Determines if the model should flip vertically in this block state.

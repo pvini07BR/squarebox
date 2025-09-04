@@ -15,6 +15,7 @@
 #include "item_registry.h"
 #include "item_container.h"
 #include "block_models.h"
+#include "block_colliders.h"
 #include "player.h"
 
 #define TICK_DELTA (1.0f / 5.0f)
@@ -70,6 +71,7 @@ int main() {
     texture_atlas_load(ASSETS_PATH "atlas.png", 2, 11);
 
     block_models_init();
+    block_colliders_init();
 
     item_registry_init();
     block_registry_init();

@@ -1,11 +1,13 @@
 #ifndef BLOCK_REGISTRY_H
 #define BLOCK_REGISTRY_H
 
-#include "chunk.h"
 #include <stddef.h>
 #include <stdint.h>
 
 #include <raylib.h>
+
+#include "block_functions.h"
+#include "chunk.h"
 
 #define MAX_BLOCK_VARIANTS 4
 
@@ -130,14 +132,10 @@ typedef struct {
 	int flags;
 	// This value tells if the block is transparent, opaque or emit light.
 	BlockLight lightLevel;
-	// Function pointer to a function that will be called when the block is interacted with.
-	// returns a bool value to indicate if the interaction was successful or not.
-	bool (*interact_callback)(BlockInstance* inst, Chunk* chunk);
-	// Function pointer to a function that will resolve the state of the block.
-	// returns a bool value to indicate if the block can be placed or not.
-	bool (*state_resolver)(BlockInstance* inst, Chunk* chunk, uint8_t idx, BlockInstance neighbors[4], bool isWall);
-	// Function pointer to a function that will be called when the block is destroyed.
-	void (*destroy_callback)(BlockInstance* inst, Chunk* chunk, uint8_t idx);
+
+	BlockInteractionCallback interact_callback;
+	BlockStateResolver state_resolver;
+	BlockDestroyCallback destroy_callback;
 } BlockRegistry;
 
 void block_registry_init();

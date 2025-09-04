@@ -55,6 +55,12 @@ bool fence_resolver(BlockInstance* inst, Chunk* chunk, uint8_t idx, BlockInstanc
     return true;
 }
 
+bool chest_solver(BlockInstance* inst, Chunk* chunk, uint8_t idx, BlockInstance neighbors[4], bool isWall) {
+    inst->state = container_vector_add(&chunk->containerVec, "Chest", 3, 10, false);
+    if (inst->state >= 0) return true;
+    return false;
+}
+
 bool on_chest_interact(BlockInstance* inst, Chunk* chunk) {
     if (inst->state >= 0) {
         item_container_open(container_vector_get(&chunk->containerVec, inst->state));
@@ -63,10 +69,9 @@ bool on_chest_interact(BlockInstance* inst, Chunk* chunk) {
     return false;
 }
 
-bool chest_solver(BlockInstance* inst, Chunk* chunk, uint8_t idx, BlockInstance neighbors[4], bool isWall) {
-    inst->state = container_vector_add(&chunk->containerVec, "Chest", 3, 10, false);
-    if (inst->state >= 0) return true;
-    return false;
+bool liquid_solver(BlockInstance* inst, Chunk* chunk, uint8_t idx, BlockInstance neighbors[4], bool isWall) {
+	liquid_spread_list_add(&chunk->liquidSpreadList, idx);
+    return true;
 }
 
 void on_chest_destroy(BlockInstance* inst, Chunk* chunk, uint8_t idx) {
@@ -74,11 +79,6 @@ void on_chest_destroy(BlockInstance* inst, Chunk* chunk, uint8_t idx) {
         container_vector_remove(&chunk->containerVec, inst->state);
         inst->state = -1;
     }
-}
-
-bool liquid_solver(BlockInstance* inst, Chunk* chunk, uint8_t idx, BlockInstance neighbors[4], bool isWall) {
-	liquid_spread_list_add(&chunk->liquidSpreadList, idx);
-    return true;
 }
 
 void on_liquid_destroy(BlockInstance* inst, Chunk* chunk, uint8_t idx) {

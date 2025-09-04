@@ -15,6 +15,7 @@
 #include "item_registry.h"
 #include "item_container.h"
 #include "block_models.h"
+#include "player.h"
 
 #define TICK_DELTA (1.0f / 5.0f)
 
@@ -96,6 +97,9 @@ int main() {
     char buffer[1024];
     float accumulator = 0.0f;
 
+    Player player;
+    player_init(&player, Vector2Zero());
+
     while (!WindowShouldClose()) {
         // Tick chunks
 		accumulator += GetFrameTime();
@@ -162,14 +166,6 @@ int main() {
                 }
             }
 
-            Vector2 input = { 0 };
-
-            if (IsKeyDown(KEY_A) || IsKeyDown(KEY_LEFT)) input.x = -1.0f;
-            else if (IsKeyDown(KEY_D) || IsKeyDown(KEY_RIGHT)) input.x = 1.0f;
-
-            if (IsKeyDown(KEY_W) || IsKeyDown(KEY_UP)) input.y = -1.0f;
-            else if (IsKeyDown(KEY_S) || IsKeyDown(KEY_DOWN)) input.y = 1.0f;
-
             int scroll = GetMouseWheelMoveV().y;
             if (IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_LEFT_SHIFT)) {
                 if (scroll > 0) camera.zoom *= 1.1f;
@@ -195,17 +191,11 @@ int main() {
                 if (IsKeyPressed(KEY_NINE)) hotbarIdx = 8;
                 if (IsKeyPressed(KEY_ZERO)) hotbarIdx = 9;
             }
-
-            input = Vector2Normalize(input);
-
-            float speed = 500.0;
-            if (IsKeyDown(KEY_LEFT_SHIFT)) {
-                speed *= 4.0;
-            }
-
-            camera.target.x += input.x * speed * GetFrameTime();
-            camera.target.y += input.y * speed * GetFrameTime();
         }
+
+        player_update(&player, GetFrameTime(), item_container_is_open());
+            
+        camera.target = Vector2Add(player_get_position(&player), Vector2Divide(player_get_size(&player), (Vector2) { 2.0f, 2.0f }));
 
         if (IsKeyPressed(KEY_E) && !item_container_is_open())
             item_container_open(&creativeMenu);
@@ -267,6 +257,8 @@ int main() {
         BeginMode2D(camera);
         
         chunk_manager_draw();
+
+        player_draw(&player);
 
         if (!item_container_is_open()) {
             // Draw block model if it is rotatable

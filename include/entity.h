@@ -14,4 +14,6 @@ typedef struct {
 void entity_update(Entity* entity, float deltaTime);
 void entity_draw(Entity* entity);
 
+Vector2 entity_get_center(Entity* entity);
+
 #endif

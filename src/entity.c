@@ -225,3 +225,8 @@ void entity_draw(Entity* entity) {
 
 	rlPopMatrix();
 }
+
+Vector2 entity_get_center(Entity* entity)
+{
+	return Vector2Add((Vector2) { entity->rect.x, entity->rect.y }, Vector2Scale((Vector2) { entity->rect.width, entity->rect.height }, 0.5f));
+}

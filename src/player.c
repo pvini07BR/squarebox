@@ -1,7 +1,9 @@
 #include "player.h"
 #include "defines.h"
+#include "chunk_manager.h"
 
 #include <stdio.h>
+#include <stdint.h>
 
 #include <raymath.h>
 #include <rlgl.h>
@@ -12,6 +14,8 @@
 #define JUMP_FORCE 16.0f * TILE_SIZE
 #define ROTATION_AMOUNT 549.57f
 #define MOVEMENT_ACCEL_RATE 20.0f
+
+#define TO_BLOCK_COORDS(value) ((int)floorf((float)value / (float)TILE_SIZE))
 
 void player_init(Player* player, Vector2 initialPosition) {
 	if (!player) return;
@@ -105,6 +109,10 @@ void player_update(Player* player, float deltaTime, bool disableInput) {
 void player_draw(Player* player) {
 	if (!player) return;
 
+	Vector2 playerCenter = entity_get_center(&player->entity);
+	uint8_t light = chunk_manager_get_light((Vector2i) { TO_BLOCK_COORDS(playerCenter.x), TO_BLOCK_COORDS(playerCenter.y) });
+	if (light < 2) light = 2;
+
 	rlPushMatrix();
 
 	rlTranslatef(
@@ -113,7 +121,12 @@ void player_draw(Player* player) {
 		0.0f
 	);
 
-	DrawRectanglePro(player->entity.rect, Vector2Scale((Vector2) { player->entity.rect.width, player->entity.rect.height }, 0.5f), player->rotation, RED);
+	DrawRectanglePro(
+		player->entity.rect,
+		Vector2Scale((Vector2) { player->entity.rect.width, player->entity.rect.height }, 0.5f),
+		player->rotation,
+		(Color) { 255 * ((float)light / 15.0f), 0, 0, 255 }
+	);
 	
 	rlPopMatrix();
 }

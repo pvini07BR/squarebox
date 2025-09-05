@@ -148,7 +148,7 @@ void block_registry_init() {
             {.atlas_idx = 16, .model_idx = BLOCK_MODEL_QUAD, .collider_idx = BLOCK_COLLIDER_QUAD, .flipH = false, .flipV = false, .rotation = 0 },
             {.atlas_idx = 17, .model_idx = BLOCK_MODEL_QUAD, .collider_idx = BLOCK_COLLIDER_QUAD, .flipH = false, .flipV = false, .rotation = 0 },
         },
-        .flags = 0,
+        .flags = BLOCK_FLAG_REPLACEABLE,
         .lightLevel = BLOCK_LIGHT_TRANSPARENT,
         .state_resolver = fence_resolver
     };

@@ -17,15 +17,15 @@ size_t container_vector_add(ContainerVector* vec, const char* name, uint8_t rows
         if (vec->data) {
             item_container_create(&vec->data[vec->size], name, rows, columns, immutable);
             vec->size++;
-            return vec->size - 1;
-        } else { return -1; }
+            return vec->size;
+        } else { return 0; }
     } else {
         vec->data = realloc(vec->data, (vec->size + 1) * sizeof(ItemContainer));
         if (vec->data) {
             vec->size++;
             item_container_create(&vec->data[vec->size - 1], name, rows, columns, immutable);
-            return vec->size - 1;
-        } else { return -1; }
+            return vec->size;
+        } else { return 0; }
     }
 }
 

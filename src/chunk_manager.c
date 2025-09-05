@@ -318,14 +318,6 @@ void chunk_manager_set_block_safe(Vector2i position, BlockInstance blockValue, b
                 if (br->flags & BLOCK_FLAG_SOLID) canPlace = true;
             }
 
-            // Resolve the state before setting the block
-            BlockRegistry* brg = br_get_block_registry(blockValue.id);
-            if (brg->state_resolver) {
-                BlockInstance neighbors[4];
-                chunk_get_block_neighbors(chunk, relPos, isWall, neighbors);
-                if (canPlace == true) canPlace = brg->state_resolver(&blockValue, chunk, relPos.x + (relPos.y * CHUNK_WIDTH), neighbors, isWall);
-            }
-
             if (canPlace) {
                 chunk_set_block(chunk, relPos, blockValue, isWall);
             }
@@ -334,10 +326,6 @@ void chunk_manager_set_block_safe(Vector2i position, BlockInstance blockValue, b
     else {
         BlockInstance current = chunk_get_block(chunk, relPos, isWall);
         if (current.id > 0) {
-			BlockRegistry* brg = br_get_block_registry(current.id);
-            if (brg->destroy_callback) {
-				brg->destroy_callback(&current, chunk, relPos.x + (relPos.y * CHUNK_WIDTH));
-            }
             chunk_set_block(chunk, relPos, blockValue, isWall);
         }
     }

@@ -627,26 +627,60 @@ void chunk_set_block(Chunk* chunk, Vector2u position, BlockInstance blockValue, 
     if (!ptr) return;
     if (ptr->id == blockValue.id && ptr->state == blockValue.state) return;
 
-	BlockRegistry* brg = br_get_block_registry(blockValue.id);
-    if (brg->flags & BLOCK_FLAG_GRAVITY_AFFECTED) {
-		DownProjectionResult where = chunk_get_block_projected_downwards(chunk, position, isWall, true);
+    bool can_place = true;
+    BlockRegistry* brg = br_get_block_registry(blockValue.id);
+
+    // First resolve the block state before placing it
+    if (blockValue.id > 0) {
+        if (brg->state_resolver != NULL) {
+            BlockExtraResult neighbors[4];
+            chunk_get_block_neighbors_extra(chunk, position, isWall, neighbors);
+            BlockInstance neighInsts[4];
+            for (int i = 0; i < 4; i++) {
+                if (neighbors[i].block != NULL) {
+                    neighInsts[i].id = neighbors[i].block->id;
+                    neighInsts[i].state = neighbors[i].block->state;
+                }
+                else {
+                    neighInsts[i] = (BlockInstance){ 0, 0 };
+                }
+            }
+            can_place = brg->state_resolver(&blockValue, chunk, position.x + (position.y * CHUNK_WIDTH), neighInsts, isWall);
+        }
+    }
+
+    if (!can_place) return;
+
+    if (blockValue.id <= 0) {
+        // Call the destroy callback on the previous block first, then set the new block
+        BlockRegistry* brg = br_get_block_registry(ptr->id);
+        if (brg->destroy_callback) {
+            brg->destroy_callback(ptr, chunk, position.x + (position.y * CHUNK_WIDTH));
+        }
+    }
+
+    // Do a projection downwards if the block is affected by gravity
+    if (brg->flags & BLOCK_FLAG_GRAVITY_AFFECTED && blockValue.id > 0) {
+        DownProjectionResult where = chunk_get_block_projected_downwards(chunk, position, isWall, true);
         if (where.replaced.block && where.replaced.chunk) {
             *where.replaced.block = blockValue;
             ptr = where.replaced.block;
             chunk = where.replaced.chunk;
             position = where.replaced.position;
-		}
+        }
     }
+    // Otherwise just place the block normally
     else {
         *ptr = blockValue;
     }
 
+    // Now resolve state for the neighboring blocks
     BlockExtraResult neighbors[4];
-	chunk_get_block_neighbors_extra(chunk, position, isWall, neighbors);
+    chunk_get_block_neighbors_extra(chunk, position, isWall, neighbors);
     for (int i = 0; i < 4; i++) {
         if (neighbors[i].block == NULL) continue;
 		BlockRegistry* brg = br_get_block_registry(neighbors[i].block->id);
-        if (brg->state_resolver) {
+        if (brg->state_resolver != NULL) {
             BlockInstance neighbors2[4];
             chunk_get_block_neighbors(neighbors[i].chunk, neighbors[i].position, isWall, neighbors2);
 

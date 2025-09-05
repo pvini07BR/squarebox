@@ -2,6 +2,8 @@
 
 #include "block_registry.h"
 
+#include <stdio.h>
+
 bool grounded_block_resolver(BlockInstance* inst, Chunk* chunk, uint8_t idx, BlockInstance neighbors[4], bool isWall) {
     BlockRegistry* bottom_brg = br_get_block_registry(neighbors[NEIGHBOR_BOTTOM].id);
     if (bottom_brg) {
@@ -14,7 +16,7 @@ bool grounded_block_resolver(BlockInstance* inst, Chunk* chunk, uint8_t idx, Blo
 bool plant_block_resolver(BlockInstance* inst, Chunk* chunk, uint8_t idx, BlockInstance neighbors[4], bool isWall) {
     BlockRegistry* bottom_brg = br_get_block_registry(neighbors[NEIGHBOR_BOTTOM].id);
     if (bottom_brg) {
-        return bottom_brg->flags & BLOCK_FLAG_SOLID && bottom_brg->flags & BLOCK_FLAG_FULL_BLOCK && bottom_brg->flags & BLOCK_FLAG_PLANTABLE;
+        return bottom_brg->flags & BLOCK_FLAG_PLANTABLE;
     }
     else {
         return false;
@@ -56,14 +58,19 @@ bool fence_resolver(BlockInstance* inst, Chunk* chunk, uint8_t idx, BlockInstanc
 }
 
 bool chest_solver(BlockInstance* inst, Chunk* chunk, uint8_t idx, BlockInstance neighbors[4], bool isWall) {
-    inst->state = container_vector_add(&chunk->containerVec, "Chest", 3, 10, false);
-    if (inst->state >= 0) return true;
-    return false;
+    if (inst->state <= 0) {
+        inst->state = container_vector_add(&chunk->containerVec, "Chest", 3, 10, false);
+        if (inst->state > 0) return true;
+        else { return false; }
+    }
+    else {
+        return true;
+    }
 }
 
 bool on_chest_interact(BlockInstance* inst, Chunk* chunk) {
-    if (inst->state >= 0) {
-        item_container_open(container_vector_get(&chunk->containerVec, inst->state));
+    if (inst->state > 0) {
+        item_container_open(container_vector_get(&chunk->containerVec, inst->state - 1));
         return true;
     }
     return false;
@@ -75,9 +82,8 @@ bool liquid_solver(BlockInstance* inst, Chunk* chunk, uint8_t idx, BlockInstance
 }
 
 void on_chest_destroy(BlockInstance* inst, Chunk* chunk, uint8_t idx) {
-    if (inst->state >= 0) {
-        container_vector_remove(&chunk->containerVec, inst->state);
-        inst->state = -1;
+    if (inst->state > 0) {
+        container_vector_remove(&chunk->containerVec, inst->state - 1);
     }
 }
 

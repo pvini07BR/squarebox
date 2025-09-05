@@ -1,8 +1,13 @@
 #ifndef CHUNK_MANAGER_H
 #define CHUNK_MANAGER_H
 
-#include "chunk.h"
 #include <stdint.h>
+#include <stddef.h>
+#include <stdbool.h>
+
+#include "types.h"
+
+#include "chunk.h"
 
 void chunk_manager_init(size_t chunk_view_width, size_t chunk_view_height);
 void chunk_manager_draw();

@@ -1,8 +1,7 @@
 #include "player.h"
-#include "defines.h"
+#include "types.h"
 #include "chunk_manager.h"
 
-#include <stdio.h>
 #include <stdint.h>
 
 #include <raymath.h>
@@ -80,6 +79,9 @@ void player_update(Player* player, float deltaTime, bool disableInput) {
 	else {
 		player->entity.velocity.x = Lerp(player->entity.velocity.x, 0.0f, MOVEMENT_ACCEL_RATE * deltaTime);
 		if (player->entity.grounded) player->direction = 0;
+		if (player->flying) {
+			player->entity.velocity.y = Lerp(player->entity.velocity.y, 0.0f, MOVEMENT_ACCEL_RATE * deltaTime);
+		}
 	}
 
 	if (!player->flying) {

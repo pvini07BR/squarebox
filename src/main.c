@@ -8,7 +8,7 @@
 #define RAYGUI_IMPLEMENTATION
 #include "thirdparty/raygui.h"
 
-#include "defines.h"
+#include "types.h"
 #include "texture_atlas.h"
 #include "chunk_manager.h"
 #include "block_registry.h"
@@ -28,8 +28,8 @@ extern unsigned int wallAOvalue;
 
 extern bool drawChunkLines;
 
-size_t temp_chunk_view_width = 5;
-size_t temp_chunk_view_height = 3;
+unsigned int temp_chunk_view_width = 5;
+unsigned int temp_chunk_view_height = 3;
 
 int main() {
     SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT);

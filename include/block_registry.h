@@ -7,9 +7,8 @@
 #include <raylib.h>
 
 #include "block_models.h"
-#include "block_colliders.h"
 #include "block_functions.h"
-#include "chunk.h"
+#include "block_colliders.h"
 
 #define MAX_BLOCK_VARIANTS 4
 

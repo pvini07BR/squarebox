@@ -1,9 +1,8 @@
-﻿#include "chunk.h"
-#include "chunk_manager.h"
+﻿#include "chunk_manager.h"
 #include "container_vector.h"
-#include "defines.h"
+#include "types.h"
 #include "block_registry.h"
-#include "item_registry.h"
+#include "chunk.h"
 #include "texture_atlas.h"
 #include "block_models.h"
 #include "liquid_spread.h"
@@ -495,7 +494,7 @@ void chunk_fill_light(Chunk* chunk, Vector2u startPoint, uint8_t newLightValue) 
 }
 
 DownProjectionResult chunk_get_block_projected_downwards(Chunk* chunk, Vector2u startPoint, bool isWall, bool goToNeighbor) {
-    DownProjectionResult empty = { { NULL, NULL, { UINT8_MAX, UINT8_MAX }, UINT8_MAX }, { NULL, NULL, { UINT8_MAX, UINT8_MAX }, UINT8_MAX } };
+    DownProjectionResult empty = { { NULL, NULL, NULL, { UINT8_MAX, UINT8_MAX }, UINT8_MAX }, { NULL, NULL, NULL, { UINT8_MAX, UINT8_MAX }, UINT8_MAX } };
     if (!chunk) return empty;
 
     for (int y = startPoint.y; y < CHUNK_WIDTH; y++) {
@@ -541,11 +540,13 @@ BlockInstance* chunk_get_block_ptr(Chunk* chunk, Vector2u position, bool isWall)
 }
 
 BlockExtraResult chunk_get_block_extrapolating_ptr(Chunk* chunk, Vector2i position, bool isWall) {
-    if (!chunk) return (BlockExtraResult){ NULL, NULL, { UINT8_MAX, UINT8_MAX }, UINT8_MAX };
+    if (!chunk) return (BlockExtraResult){ NULL, NULL, NULL, { UINT8_MAX, UINT8_MAX }, UINT8_MAX };
 
     if (position.x >= 0 && position.y >= 0 && position.x < CHUNK_WIDTH && position.y < CHUNK_WIDTH) {
+        BlockInstance* inst = chunk_get_block_ptr(chunk, (Vector2u) { position.x, position.y }, isWall);
 		return (BlockExtraResult) {
-            .block = chunk_get_block_ptr(chunk, (Vector2u) { position.x, position.y }, isWall),
+            .block = inst,
+            .reg = br_get_block_registry(inst->id),
             .chunk = chunk,
             .position = (Vector2u) { (unsigned int)position.x, (unsigned int)position.y },
 			.idx = (uint8_t)(position.x + (position.y * CHUNK_WIDTH))
@@ -563,15 +564,17 @@ BlockExtraResult chunk_get_block_extrapolating_ptr(Chunk* chunk, Vector2i positi
         else if (position.y < 0) neighbor = (Chunk*)chunk->neighbors.up;
         else if (position.y >= CHUNK_WIDTH) neighbor = (Chunk*)chunk->neighbors.down;
 
-        if (neighbor == NULL) return (BlockExtraResult) { NULL, NULL, { UINT8_MAX, UINT8_MAX }, UINT8_MAX };
+        if (neighbor == NULL) return (BlockExtraResult) { NULL, NULL, NULL, { UINT8_MAX, UINT8_MAX }, UINT8_MAX };
 
         Vector2u relPos = {
             .x = posmod(position.x, CHUNK_WIDTH),
             .y = posmod(position.y, CHUNK_WIDTH)
         };
 
+        BlockInstance* inst = chunk_get_block_ptr(neighbor, relPos, isWall);
 		return (BlockExtraResult) {
-            .block = chunk_get_block_ptr(neighbor, relPos, isWall),
+            .block = inst,
+            .reg = br_get_block_registry(inst->id),
             .chunk = neighbor,
             .position = relPos,
 			.idx = (uint8_t)(relPos.x + (relPos.y * CHUNK_WIDTH))
@@ -635,17 +638,17 @@ void chunk_set_block(Chunk* chunk, Vector2u position, BlockInstance blockValue, 
         if (brg->state_resolver != NULL) {
             BlockExtraResult neighbors[4];
             chunk_get_block_neighbors_extra(chunk, position, isWall, neighbors);
-            BlockInstance neighInsts[4];
-            for (int i = 0; i < 4; i++) {
-                if (neighbors[i].block != NULL) {
-                    neighInsts[i].id = neighbors[i].block->id;
-                    neighInsts[i].state = neighbors[i].block->state;
-                }
-                else {
-                    neighInsts[i] = (BlockInstance){ 0, 0 };
-                }
-            }
-            can_place = brg->state_resolver(&blockValue, chunk, position.x + (position.y * CHUNK_WIDTH), neighInsts, isWall);
+            can_place = brg->state_resolver(
+                (BlockExtraResult) {
+                    .block = &blockValue,
+                    .reg = brg,
+                    .chunk = chunk,
+                    .position = position,
+                    .idx = position.x + (position.y * CHUNK_WIDTH)
+                },
+                neighbors,
+                isWall
+            );
         }
     }
 
@@ -655,7 +658,14 @@ void chunk_set_block(Chunk* chunk, Vector2u position, BlockInstance blockValue, 
         // Call the destroy callback on the previous block first, then set the new block
         BlockRegistry* brg = br_get_block_registry(ptr->id);
         if (brg->destroy_callback) {
-            brg->destroy_callback(ptr, chunk, position.x + (position.y * CHUNK_WIDTH));
+            BlockExtraResult result = {
+                .block = ptr,
+                .reg = brg,
+                .chunk = chunk,
+                .position = position,
+                .idx = position.x + (position.y * CHUNK_WIDTH)
+            };
+            brg->destroy_callback(result);
         }
     }
 
@@ -679,21 +689,19 @@ void chunk_set_block(Chunk* chunk, Vector2u position, BlockInstance blockValue, 
     chunk_get_block_neighbors_extra(chunk, position, isWall, neighbors);
     for (int i = 0; i < 4; i++) {
         if (neighbors[i].block == NULL) continue;
-		BlockRegistry* brg = br_get_block_registry(neighbors[i].block->id);
-        if (brg->state_resolver != NULL) {
-            BlockInstance neighbors2[4];
-            chunk_get_block_neighbors(neighbors[i].chunk, neighbors[i].position, isWall, neighbors2);
+		BlockRegistry* brg = neighbors[i].reg;
+        if (brg->state_resolver == NULL) continue;
 
-            bool result = brg->state_resolver(
-                neighbors[i].block,
-                neighbors[i].chunk,
-                neighbors[i].position.x + (neighbors[i].position.y * CHUNK_WIDTH),
-                neighbors2,
-                isWall
-            );
+        BlockExtraResult neighbors2[4];
+        chunk_get_block_neighbors_extra(neighbors[i].chunk, neighbors[i].position, isWall, neighbors2);
 
-            if (!result) *neighbors[i].block = (BlockInstance){ 0, 0 };
-        }
+        bool result = brg->state_resolver(
+            neighbors[i],
+            neighbors2,
+            isWall
+        );
+
+        if (!result) *neighbors[i].block = (BlockInstance){ 0, 0 };
     }
 
     chunk_manager_update_lighting();

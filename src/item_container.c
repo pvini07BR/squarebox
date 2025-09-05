@@ -9,7 +9,7 @@
 
 #include "item_registry.h"
 #include "texture_atlas.h"
-#include "defines.h"
+#include "types.h"
 
 static const float TITLE_SIZE = 18.0f;
 static const Color BG_COLOR = { 200, 200, 200, 255 };

@@ -1,9 +1,10 @@
 #ifndef BLOCK_MODELS_H
 #define BLOCK_MODELS_H
 
-#include "chunk.h"
+#include "types.h"
 
 #include <stdint.h>
+#include <stddef.h>
 
 #include <raylib.h>
 

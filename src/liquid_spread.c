@@ -1,5 +1,5 @@
 #include "liquid_spread.h"
-#include "chunk.h"
+#include "types.h"
 #include <stdlib.h>
 
 void liquid_spread_list_init(LiquidSpreadList* list) {

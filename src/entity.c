@@ -1,5 +1,5 @@
 #include "entity.h"
-#include "defines.h"
+#include "types.h"
 #include "chunk_manager.h"
 #include "block_registry.h"
 #include "block_colliders.h"
@@ -181,7 +181,7 @@ void entity_update(Entity* entity, float deltaTime) {
 		entity->grounded = false;
 
 		for (int i = 0; i < rect_count; i++) {
-			Rectangle* rect = &rects[i];
+			Rectangle* rect = &rects[i].rect;
 
 			Vector2 contact_normal;
 			if (resolve_entity_vs_rect(entity, rect, deltaTime, &contact_normal)) {

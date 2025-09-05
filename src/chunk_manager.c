@@ -1,7 +1,7 @@
 ﻿#include "chunk_manager.h"
 #include "block_registry.h"
 #include "chunk.h"
-#include "defines.h"
+#include "types.h"
 
 #include <limits.h>
 #include <stdint.h>
@@ -272,12 +272,20 @@ bool chunk_manager_interact(Vector2i position, bool isWall) {
         .y = ((position.y % CHUNK_WIDTH) + CHUNK_WIDTH) % CHUNK_WIDTH
     };
 
-    BlockInstance inst = chunk_get_block(chunk, relPos, isWall);
-    BlockRegistry* brg = br_get_block_registry(inst.id);
+    BlockInstance* inst = chunk_get_block_ptr(chunk, relPos, isWall);
+    BlockRegistry* brg = br_get_block_registry(inst->id);
 
 	// If the block has an interact callback, call it
     if (brg->interact_callback) {
-        return brg->interact_callback(&inst, chunk);
+        return brg->interact_callback(
+            (BlockExtraResult) {
+                .block = inst,
+                .reg = brg,
+                .chunk = chunk,
+                .position = relPos,
+                .idx = relPos.x + (relPos.y * CHUNK_WIDTH)
+            }
+        );
     }
     return false;
 }

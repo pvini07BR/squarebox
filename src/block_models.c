@@ -2,7 +2,7 @@
 #include "raylib.h"
 #include "raymath.h"
 #include "texture_atlas.h"
-#include "defines.h"
+#include "types.h"
 
 #include <stdlib.h>
 

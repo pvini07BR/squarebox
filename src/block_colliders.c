@@ -1,5 +1,5 @@
 #include "block_colliders.h"
-#include "defines.h"
+#include "types.h"
 
 static BlockCollider colliders[BLOCK_COLLIDER_COUNT];
 

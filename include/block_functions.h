@@ -2,28 +2,29 @@
 #define BLOCK_FUNCTIONS_H
 
 #include <stdbool.h>
+#include <stdint.h>
 
 #include "chunk.h"
 
 // Function pointer to a function that will be called when the block is interacted with.
 // returns a bool value to indicate if the interaction was successful or not.
-typedef bool (*BlockInteractionCallback)(BlockInstance* inst, Chunk* chunk);
+typedef bool (*BlockInteractionCallback)(BlockExtraResult result);
 // Function pointer to a function that will resolve the state of the block.
 // returns a bool value to indicate if the block can be placed or not.
-typedef bool (*BlockStateResolver)(BlockInstance* inst, Chunk* chunk, uint8_t idx, BlockInstance neighbors[4], bool isWall);
+typedef bool (*BlockStateResolver)(BlockExtraResult result, BlockExtraResult neighbors[4], bool isWall);
 // Function pointer to a function that will be called when the block is destroyed.
-typedef void (*BlockDestroyCallback)(BlockInstance* inst, Chunk* chunk, uint8_t idx);
+typedef void (*BlockDestroyCallback)(BlockExtraResult result);
 
-bool grounded_block_resolver(BlockInstance* inst, Chunk* chunk, uint8_t idx, BlockInstance neighbors[4], bool isWall);
-bool plant_block_resolver(BlockInstance* inst, Chunk* chunk, uint8_t idx, BlockInstance neighbors[4], bool isWall);
-bool torch_state_resolver(BlockInstance* inst, Chunk* chunk, uint8_t idx, BlockInstance neighbors[4], bool isWall);
-bool liquid_solver(BlockInstance* inst, Chunk* chunk, uint8_t idx, BlockInstance neighbors[4], bool isWall);
-bool fence_resolver(BlockInstance* inst, Chunk* chunk, uint8_t idx, BlockInstance neighbors[4], bool isWall);
-bool chest_solver(BlockInstance* inst, Chunk* chunk, uint8_t idx, BlockInstance neighbors[4], bool isWall);
+bool grounded_block_resolver(BlockExtraResult result, BlockExtraResult neighbors[4], bool isWall);
+bool plant_block_resolver(BlockExtraResult result, BlockExtraResult neighbors[4], bool isWall);
+bool torch_state_resolver(BlockExtraResult result, BlockExtraResult neighbors[4], bool isWall);
+bool liquid_solver(BlockExtraResult result, BlockExtraResult neighbors[4], bool isWall);
+bool fence_resolver(BlockExtraResult result, BlockExtraResult neighbors[4], bool isWall);
+bool chest_solver(BlockExtraResult result, BlockExtraResult neighbors[4], bool isWall);
 
-bool on_chest_interact(BlockInstance* inst, Chunk* chunk);
+bool on_chest_interact(BlockExtraResult result);
 
-void on_chest_destroy(BlockInstance* inst, Chunk* chunk, uint8_t idx);
-void on_liquid_destroy(BlockInstance* inst, Chunk* chunk, uint8_t idx);
+void on_chest_destroy(BlockExtraResult result);
+void on_liquid_destroy(BlockExtraResult result);
 
 #endif

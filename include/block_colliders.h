@@ -4,6 +4,7 @@
 #define MAX_RECTS_PER_COLLIDER 2
 
 #include <stdint.h>
+#include <stddef.h>
 
 #include <raylib.h>
 

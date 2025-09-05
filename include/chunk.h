@@ -6,11 +6,9 @@
 
 #include <raylib.h>
 
+#include "types.h"
 #include "container_vector.h"
 #include "liquid_spread.h"
-
-#define CHUNK_WIDTH 16
-#define CHUNK_AREA CHUNK_WIDTH*CHUNK_WIDTH
 
 #define CHUNK_VERTEX_COUNT CHUNK_AREA * 6
 
@@ -25,16 +23,6 @@ typedef enum {
 	NEIGHBOR_BOTTOM_RIGHT = 6,
 	NEIGHBOR_BOTTOM_LEFT = 7
 } NeighborDirection;
-
-typedef struct {
-    unsigned int x;
-    unsigned int y;
-} Vector2u;
-
-typedef struct {
-	int x;
-	int y;
-} Vector2i;
 
 typedef struct {
 	void* up;
@@ -75,6 +63,10 @@ typedef struct {
 
 typedef struct {
 	BlockInstance* block;
+	// Pointer to the block registry.
+	// couldn't include the actual type because of stupid
+	// circular dependency.
+	void* reg;
 	Chunk* chunk;
 	Vector2u position;
 	uint8_t idx;

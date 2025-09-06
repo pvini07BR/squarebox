@@ -18,7 +18,7 @@
 #include "block_colliders.h"
 #include "player.h"
 
-#define TICK_DELTA (1.0f / 5.0f)
+#define TICK_DELTA (1.0f / 20.0f)
 
 extern int seed;
 extern bool wallAmbientOcclusion;

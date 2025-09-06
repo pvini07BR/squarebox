@@ -14,6 +14,10 @@ typedef bool (*BlockInteractionCallback)(BlockExtraResult result);
 typedef bool (*BlockStateResolver)(BlockExtraResult result, BlockExtraResult neighbors[4], bool isWall);
 // Function pointer to a function that will be called when the block is destroyed.
 typedef void (*BlockDestroyCallback)(BlockExtraResult result);
+// Function pointer to a function that will define the behavior for a block when it ticks.
+// the returned value determines if the tick result has changed anything or not. This is to prevent
+// unnecessary light and mesh updates.
+typedef bool (*BlockTickCallback)(BlockExtraResult result, BlockExtraResult neighbors[4], bool isWall);
 
 bool grounded_block_resolver(BlockExtraResult result, BlockExtraResult neighbors[4], bool isWall);
 bool plant_block_resolver(BlockExtraResult result, BlockExtraResult neighbors[4], bool isWall);
@@ -26,5 +30,7 @@ bool on_chest_interact(BlockExtraResult result);
 
 void on_chest_destroy(BlockExtraResult result);
 void on_liquid_destroy(BlockExtraResult result);
+
+bool falling_block_tick(BlockExtraResult result, BlockExtraResult neighbors[4], bool isWall);
 
 #endif

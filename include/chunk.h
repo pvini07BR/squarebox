@@ -8,7 +8,7 @@
 
 #include "types.h"
 #include "container_vector.h"
-#include "liquid_spread.h"
+#include "block_tick_list.h"
 
 #define CHUNK_VERTEX_COUNT CHUNK_AREA * 6
 
@@ -37,15 +37,6 @@ typedef struct {
 } ChunkNeighbors;
 
 typedef struct {
-	// ID Number in the Block Registry.
-	uint8_t id;
-	// Member variable used for block states.
-	// Its usage depends on what flag is set
-	// for a specific block.
-	size_t state;
-} BlockInstance;
-
-typedef struct {
 	unsigned int seed;
 	Vector2i position;
 	BlockInstance blocks[CHUNK_AREA];
@@ -54,7 +45,7 @@ typedef struct {
 	size_t blockOffsets[CHUNK_AREA];
 	size_t wallOffsets[CHUNK_AREA];
 	ContainerVector containerVec;
-	LiquidSpreadList liquidSpreadList;
+	BlockTickList blockTickList;
 	ChunkNeighbors neighbors;
 	bool initializedMeshes;
 	Mesh blockMesh;

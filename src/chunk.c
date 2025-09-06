@@ -1,11 +1,12 @@
-﻿#include "chunk_manager.h"
+﻿#include "block_tick_list.h"
+#include "chunk_manager.h"
 #include "container_vector.h"
 #include "types.h"
 #include "block_registry.h"
 #include "chunk.h"
 #include "texture_atlas.h"
 #include "block_models.h"
-#include "liquid_spread.h"
+#include "block_tick_list.h"
 #include "block_state_bitfields.h"
 
 #include <math.h>
@@ -44,7 +45,7 @@ void chunk_init(Chunk* chunk)
     if (chunk == NULL) return;
 
     container_vector_init(&chunk->containerVec);
-    liquid_spread_list_init(&chunk->liquidSpreadList);
+    block_tick_list_init(&chunk->blockTickList);
 
     chunk->initializedMeshes = false;
 }
@@ -251,6 +252,36 @@ void chunk_tick(Chunk* chunk) {
     if (!chunk) return;
 
     bool changed = false;
+    int count = chunk->blockTickList.count;
+    for (int i = 0; i < count; i++) {
+        BlockTickListEntry entry = chunk->blockTickList.instances[i];
+        if (!entry.instance) {
+            block_tick_list_remove(&chunk->blockTickList, entry);
+            continue;
+        }
+
+        BlockRegistry* brg = br_get_block_registry(entry.instance->id);
+        if (brg->tick_callback != NULL) {
+            BlockExtraResult neighbors[4];
+            chunk_get_block_neighbors_extra(chunk, entry.position, entry.isWall, neighbors);
+            if (changed == false) changed = brg->tick_callback(
+                (BlockExtraResult) {
+                    .block = entry.instance,
+                    .reg = brg,
+                    .chunk = chunk,
+                    .position = entry.position,
+                    .idx = entry.position.x + (entry.position.y * CHUNK_WIDTH)
+                },
+                neighbors,
+                entry.isWall
+            );
+        }
+    }
+
+    if (changed) chunk_manager_update_lighting();
+
+    /*
+    bool changed = false;
     int count = chunk->liquidSpreadList.count;
 
     for (int li = count - 1; li >= 0; li--) {
@@ -423,6 +454,7 @@ void chunk_tick(Chunk* chunk) {
     }
 
     if (changed) chunk_manager_update_lighting();
+    */
 }
 
 
@@ -436,7 +468,7 @@ void chunk_free(Chunk* chunk)
     }
 
     container_vector_free(&chunk->containerVec);
-	liquid_spread_list_free(&chunk->liquidSpreadList);
+	block_tick_list_free(&chunk->blockTickList);
 }
 
 void chunk_fill_light(Chunk* chunk, Vector2u startPoint, uint8_t newLightValue) {
@@ -654,9 +686,14 @@ void chunk_set_block(Chunk* chunk, Vector2u position, BlockInstance blockValue, 
 
     if (!can_place) return;
 
+    // Call the destroy callback on the previous block first, then set the new block
     if (blockValue.id <= 0) {
-        // Call the destroy callback on the previous block first, then set the new block
         BlockRegistry* brg = br_get_block_registry(ptr->id);
+        // If the block had a ticking function, remove it from the list
+        if (brg->tick_callback != NULL) {
+            block_tick_list_remove(&chunk->blockTickList, (BlockTickListEntry){.instance = ptr, .position = position, .isWall = isWall});
+        }
+
         if (brg->destroy_callback) {
             BlockExtraResult result = {
                 .block = ptr,
@@ -705,6 +742,11 @@ void chunk_set_block(Chunk* chunk, Vector2u position, BlockInstance blockValue, 
     }
 
     chunk_manager_update_lighting();
+
+    // If the block has a ticking function, then add it to the ticking list
+    if (brg->tick_callback != NULL) {
+        block_tick_list_add(&chunk->blockTickList, (BlockTickListEntry){.instance = ptr, .position = position, .isWall = isWall});
+    }
 }
 
 BlockExtraResult chunk_set_block_extrapolating(Chunk* chunk, Vector2i position, BlockInstance blockValue, bool isWall) {

@@ -43,7 +43,8 @@ void block_registry_init() {
         .variants = { {.atlas_idx = 2, .model_idx = BLOCK_MODEL_QUAD, .collider_idx = BLOCK_COLLIDER_QUAD, .flipH = false, .flipV = false, .rotation = 0 } },
         .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FLIP_H | BLOCK_FLAG_FLIP_V | BLOCK_FLAG_FULL_BLOCK | BLOCK_FLAG_GRAVITY_AFFECTED,
         .lightLevel = BLOCK_LIGHT_NO_LIGHT,
-        .state_resolver = NULL
+        .state_resolver = NULL,
+        .tick_callback = falling_block_tick
     };
 
     blockRegistry[BLOCK_STONE] = (BlockRegistry){
@@ -169,8 +170,8 @@ void block_registry_init() {
         .variants = { {.atlas_idx = 0, .model_idx = BLOCK_MODEL_QUAD, .flipH = false, .flipV = false, .rotation = 0 } },
         .flags = BLOCK_FLAG_REPLACEABLE | BLOCK_FLAG_LIQUID_SOURCE,
         .lightLevel = BLOCK_LIGHT_TRANSPARENT,
-        .state_resolver = liquid_solver,
-        .destroy_callback = on_liquid_destroy
+        //.state_resolver = liquid_solver,
+        //.destroy_callback = on_liquid_destroy
     };
 
     blockRegistry[BLOCK_WATER_FLOWING] = (BlockRegistry){
@@ -178,8 +179,8 @@ void block_registry_init() {
         .variants = { {.atlas_idx = 0, .model_idx = BLOCK_MODEL_QUAD, .flipH = false, .flipV = false, .rotation = 0 } },
         .flags = BLOCK_FLAG_REPLACEABLE | BLOCK_FLAG_LIQUID_FLOWING,
         .lightLevel = BLOCK_LIGHT_TRANSPARENT,
-        .state_resolver = liquid_solver,
-        .destroy_callback = on_liquid_destroy
+        //.state_resolver = liquid_solver,
+        //.destroy_callback = on_liquid_destroy
     };
 
     blockRegistry[BLOCK_DIRT_SLAB] = (BlockRegistry){

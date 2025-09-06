@@ -140,6 +140,7 @@ typedef struct {
 	BlockInteractionCallback interact_callback;
 	BlockStateResolver state_resolver;
 	BlockDestroyCallback destroy_callback;
+	BlockTickCallback tick_callback;
 } BlockRegistry;
 
 void block_registry_init();

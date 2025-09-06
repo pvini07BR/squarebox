@@ -273,7 +273,9 @@ bool chunk_manager_interact(Vector2i position, bool isWall) {
     };
 
     BlockInstance* inst = chunk_get_block_ptr(chunk, relPos, isWall);
+    if (!inst) return false;
     BlockRegistry* brg = br_get_block_registry(inst->id);
+    if (!brg) return false;
 
 	// If the block has an interact callback, call it
     if (brg->interact_callback) {
@@ -327,14 +329,14 @@ void chunk_manager_set_block_safe(Vector2i position, BlockInstance blockValue, b
             }
 
             if (canPlace) {
-                chunk_set_block(chunk, relPos, blockValue, isWall);
+                chunk_set_block(chunk, relPos, blockValue, isWall, true);
             }
         }
     }
     else {
         BlockInstance current = chunk_get_block(chunk, relPos, isWall);
         if (current.id > 0) {
-            chunk_set_block(chunk, relPos, blockValue, isWall);
+            chunk_set_block(chunk, relPos, blockValue, isWall, true);
         }
     }
 }
@@ -375,7 +377,8 @@ void chunk_manager_set_block(Vector2i position, BlockInstance blockValue, bool i
                 .y = ((position.y % CHUNK_WIDTH) + CHUNK_WIDTH) % CHUNK_WIDTH
             },
             blockValue,
-            isWall
+            isWall,
+            true
         );
     }
 }

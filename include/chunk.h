@@ -99,8 +99,8 @@ uint8_t* chunk_get_light_ptr(Chunk* chunk, Vector2u position);
 LightExtraResult chunk_get_light_extrapolating_ptr(Chunk* chunk, Vector2i position);
 
 // Block setter functions
-void chunk_set_block(Chunk* chunk, Vector2u position, BlockInstance blockValue, bool isWall);
-BlockExtraResult chunk_set_block_extrapolating(Chunk* chunk, Vector2i position, BlockInstance blockValue, bool isWall);
+void chunk_set_block(Chunk* chunk, Vector2u position, BlockInstance blockValue, bool isWall, bool update_lighting);
+BlockExtraResult chunk_set_block_extrapolating(Chunk* chunk, Vector2i position, BlockInstance blockValue, bool isWall, bool update_lighting);
 
 // Block getter functions
 BlockInstance chunk_get_block(Chunk* chunk, Vector2u position, bool isWall);

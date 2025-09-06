@@ -2,7 +2,6 @@
 
 #include "block_registry.h"
 #include "chunk.h"
-#include <stdio.h>
 
 bool grounded_block_resolver(BlockExtraResult result, BlockExtraResult neighbors[4], bool isWall) {
     BlockRegistry* reg = neighbors[NEIGHBOR_BOTTOM].reg;
@@ -94,10 +93,11 @@ void on_liquid_destroy(BlockExtraResult result) {
 
 bool falling_block_tick(BlockExtraResult result, BlockExtraResult neighbors[4], bool isWall) {
     BlockRegistry* brg = neighbors[NEIGHBOR_BOTTOM].reg;
+    if (!brg) return false;
     if (brg->flags & BLOCK_FLAG_REPLACEABLE) {
         BlockInstance temp = *result.block;
-        *neighbors[NEIGHBOR_BOTTOM].block = temp;
-        *result.block = (BlockInstance) { 0, 0 };
+        chunk_set_block(neighbors[NEIGHBOR_BOTTOM].chunk, neighbors[NEIGHBOR_BOTTOM].position, temp, isWall, false);
+        chunk_set_block(result.chunk, result.position, (BlockInstance) { 0, 0 }, isWall, false);
         return true;
     }
     return false;

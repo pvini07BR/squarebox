@@ -45,7 +45,7 @@ void chunk_init(Chunk* chunk)
     if (chunk == NULL) return;
 
     container_vector_init(&chunk->containerVec);
-    block_tick_list_init(&chunk->blockTickList);
+    block_tick_list_clear(&chunk->blockTickList);
 
     chunk->initializedMeshes = false;
 }
@@ -252,30 +252,39 @@ void chunk_tick(Chunk* chunk) {
     if (!chunk) return;
 
     bool changed = false;
-    int count = chunk->blockTickList.count;
-    for (int i = 0; i < count; i++) {
-        BlockTickListEntry entry = chunk->blockTickList.instances[i];
-        if (!entry.instance) {
-            block_tick_list_remove(&chunk->blockTickList, entry);
+    int i = 0;
+    while (i < chunk->blockTickList.count) {
+        BlockTickListEntry entry = chunk->blockTickList.entries[i];
+
+        BlockInstance* ptr = chunk_get_block_ptr(chunk, entry.position, entry.isWall);
+        if (!ptr) {
+            block_tick_list_remove_by_index(&chunk->blockTickList, i);
             continue;
         }
 
-        BlockRegistry* brg = br_get_block_registry(entry.instance->id);
-        if (brg->tick_callback != NULL) {
-            BlockExtraResult neighbors[4];
-            chunk_get_block_neighbors_extra(chunk, entry.position, entry.isWall, neighbors);
-            if (changed == false) changed = brg->tick_callback(
-                (BlockExtraResult) {
-                    .block = entry.instance,
-                    .reg = brg,
-                    .chunk = chunk,
-                    .position = entry.position,
-                    .idx = entry.position.x + (entry.position.y * CHUNK_WIDTH)
-                },
-                neighbors,
-                entry.isWall
-            );
+        BlockRegistry* brg = br_get_block_registry(ptr->id);
+        if (!brg || brg->tick_callback == NULL) {
+            i++;
+            continue;
         }
+
+        BlockExtraResult neighbors[4];
+        chunk_get_block_neighbors_extra(chunk, entry.position, entry.isWall, neighbors);
+
+        BlockExtraResult result = {
+            .block = ptr,
+            .reg = brg,
+            .chunk = chunk,
+            .position = entry.position,
+            .idx = entry.position.x + (entry.position.y * CHUNK_WIDTH)
+        };
+
+        if (!changed) {
+            bool did_change = brg->tick_callback(result, neighbors, entry.isWall);
+            if (did_change) changed = true;
+        }
+
+        i++;
     }
 
     if (changed) chunk_manager_update_lighting();
@@ -468,7 +477,6 @@ void chunk_free(Chunk* chunk)
     }
 
     container_vector_free(&chunk->containerVec);
-	block_tick_list_free(&chunk->blockTickList);
 }
 
 void chunk_fill_light(Chunk* chunk, Vector2u startPoint, uint8_t newLightValue) {
@@ -657,102 +665,79 @@ LightExtraResult chunk_get_light_extrapolating_ptr(Chunk* chunk, Vector2i positi
     }
 }
 
-void chunk_set_block(Chunk* chunk, Vector2u position, BlockInstance blockValue, bool isWall) {
+void chunk_set_block(Chunk* chunk, Vector2u position, BlockInstance blockValue, bool isWall, bool update_lighting) {
     BlockInstance* ptr = chunk_get_block_ptr(chunk, position, isWall);
     if (!ptr) return;
     if (ptr->id == blockValue.id && ptr->state == blockValue.state) return;
 
     bool can_place = true;
-    BlockRegistry* brg = br_get_block_registry(blockValue.id);
+    BlockRegistry* new_br = br_get_block_registry(blockValue.id);
 
-    // First resolve the block state before placing it
-    if (blockValue.id > 0) {
-        if (brg->state_resolver != NULL) {
-            BlockExtraResult neighbors[4];
-            chunk_get_block_neighbors_extra(chunk, position, isWall, neighbors);
-            can_place = brg->state_resolver(
-                (BlockExtraResult) {
-                    .block = &blockValue,
-                    .reg = brg,
-                    .chunk = chunk,
-                    .position = position,
-                    .idx = position.x + (position.y * CHUNK_WIDTH)
-                },
-                neighbors,
-                isWall
-            );
-        }
+    // Resolve state for new block before placing
+    if (blockValue.id > 0 && new_br && new_br->state_resolver != NULL) {
+        BlockExtraResult neighbors[4];
+        chunk_get_block_neighbors_extra(chunk, position, isWall, neighbors);
+        BlockExtraResult self = {
+            .block = &blockValue,
+            .reg = new_br,
+            .chunk = chunk,
+            .position = position,
+            .idx = position.x + (position.y * CHUNK_WIDTH)
+        };
+        can_place = new_br->state_resolver(self, neighbors, isWall);
     }
-
     if (!can_place) return;
 
-    // Call the destroy callback on the previous block first, then set the new block
-    if (blockValue.id <= 0) {
-        BlockRegistry* brg = br_get_block_registry(ptr->id);
-        // If the block had a ticking function, remove it from the list
-        if (brg->tick_callback != NULL) {
-            block_tick_list_remove(&chunk->blockTickList, (BlockTickListEntry){.instance = ptr, .position = position, .isWall = isWall});
+    // Handle previous block (destroy)
+    if (ptr->id > 0) {
+        BlockRegistry* old_br = br_get_block_registry(ptr->id);
+        if (old_br && old_br->tick_callback != NULL) {
+            block_tick_list_remove(&chunk->blockTickList, (BlockTickListEntry) { .position = position, .isWall = isWall });
         }
 
-        if (brg->destroy_callback) {
-            BlockExtraResult result = {
+        if (old_br && old_br->destroy_callback) {
+            BlockExtraResult res = {
                 .block = ptr,
-                .reg = brg,
+                .reg = old_br,
                 .chunk = chunk,
                 .position = position,
                 .idx = position.x + (position.y * CHUNK_WIDTH)
             };
-            brg->destroy_callback(result);
+            old_br->destroy_callback(res);
         }
     }
 
-    // Do a projection downwards if the block is affected by gravity
-    if (brg->flags & BLOCK_FLAG_GRAVITY_AFFECTED && blockValue.id > 0) {
-        DownProjectionResult where = chunk_get_block_projected_downwards(chunk, position, isWall, true);
-        if (where.replaced.block && where.replaced.chunk) {
-            *where.replaced.block = blockValue;
-            ptr = where.replaced.block;
-            chunk = where.replaced.chunk;
-            position = where.replaced.position;
-        }
-    }
-    // Otherwise just place the block normally
-    else {
-        *ptr = blockValue;
-    }
+    // Set the block
+    *ptr = blockValue;
 
-    // Now resolve state for the neighboring blocks
     BlockExtraResult neighbors[4];
     chunk_get_block_neighbors_extra(chunk, position, isWall, neighbors);
     for (int i = 0; i < 4; i++) {
         if (neighbors[i].block == NULL) continue;
-		BlockRegistry* brg = neighbors[i].reg;
-        if (brg->state_resolver == NULL) continue;
+        BlockRegistry* nbr_br = neighbors[i].reg;
+        if (!nbr_br || nbr_br->state_resolver == NULL) continue;
 
         BlockExtraResult neighbors2[4];
         chunk_get_block_neighbors_extra(neighbors[i].chunk, neighbors[i].position, isWall, neighbors2);
 
-        bool result = brg->state_resolver(
-            neighbors[i],
-            neighbors2,
-            isWall
-        );
-
-        if (!result) *neighbors[i].block = (BlockInstance){ 0, 0 };
+        bool r = nbr_br->state_resolver(neighbors[i], neighbors2, isWall);
+        if (!r) *neighbors[i].block = (BlockInstance){ 0, 0 };
     }
 
-    chunk_manager_update_lighting();
+    if (update_lighting) chunk_manager_update_lighting();
 
-    // If the block has a ticking function, then add it to the ticking list
-    if (brg->tick_callback != NULL) {
-        block_tick_list_add(&chunk->blockTickList, (BlockTickListEntry){.instance = ptr, .position = position, .isWall = isWall});
+    // Add tick for new block if applicable
+    if (new_br && new_br->tick_callback != NULL) {
+        if (!block_tick_list_contains(&chunk->blockTickList, (BlockTickListEntry){ .position = position, .isWall = isWall })) {
+            block_tick_list_add(&chunk->blockTickList, (BlockTickListEntry){ .position = position, .isWall = isWall });
+        }
     }
 }
 
-BlockExtraResult chunk_set_block_extrapolating(Chunk* chunk, Vector2i position, BlockInstance blockValue, bool isWall) {
+BlockExtraResult chunk_set_block_extrapolating(Chunk* chunk, Vector2i position, BlockInstance blockValue, bool isWall, bool update_lighting) {
     BlockExtraResult result = chunk_get_block_extrapolating_ptr(chunk, position, isWall);
     if (!result.block || !result.chunk) return result;
-    chunk_set_block(result.chunk, result.position, blockValue, isWall);
+    chunk_set_block(result.chunk, result.position, blockValue, isWall, update_lighting);
     return result;
 }
 

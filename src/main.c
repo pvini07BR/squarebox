@@ -86,7 +86,6 @@ int main() {
     init_inventory();
 
     Camera2D camera = {
-        .target =  { (CHUNK_WIDTH*TILE_SIZE)/2.0f, (CHUNK_WIDTH*TILE_SIZE)/2.0f },
         .offset =  { GetScreenWidth() / 2.0f, GetScreenHeight() / 2.0f },
         .rotation = 0.0f,
         .zoom = 1.0f
@@ -101,6 +100,7 @@ int main() {
 
     Player player;
     player_init(&player, (Vector2){ TILE_SIZE, 0 });
+    camera.target = (Vector2){ TILE_SIZE, 0 };
 
     while (!WindowShouldClose()) {
         // Tick chunks

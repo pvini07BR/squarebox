@@ -20,6 +20,8 @@ static size_t chunk_count = 0;
 static Chunk* chunks = NULL;
 static Vector2i currentChunkPos = { 0, 0 };
 
+static unsigned int tick_counter = 0;
+
 bool drawChunkLines = true;
 
 void chunk_manager_init(size_t chunk_view_width, size_t chunk_view_height) {
@@ -61,8 +63,10 @@ void chunk_manager_draw_liquids() {
 
 void chunk_manager_tick() {
     for (int i = 0; i < chunk_count; i++) {
-		chunk_tick(&chunks[i]);
+		chunk_tick(&chunks[i], tick_counter);
     }
+
+    tick_counter++;
 }
 
 void chunk_manager_free() {
@@ -219,7 +223,6 @@ void chunk_manager_relocate(Vector2i newCenter) {
     free(oldUsed);
     free(isNew);
 }
-
 
 void chunk_manager_update_lighting() {
     for (int c = 0; c < chunk_count; c++) {

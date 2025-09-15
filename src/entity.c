@@ -129,6 +129,8 @@ void entity_update(Entity* entity, float deltaTime) {
 	if (!entity) return;
 
 	if (entity->collides) {
+		entity->on_liquid = false;
+
 		Vector2 nextPosition = (Vector2){
 			.x = entity->rect.x + entity->velocity.x * deltaTime,
 			.y = entity->rect.y + entity->velocity.y * deltaTime
@@ -152,6 +154,10 @@ void entity_update(Entity* entity, float deltaTime) {
 				BlockInstance block = chunk_manager_get_block((Vector2i) { x, y }, false);
 				BlockRegistry* reg = br_get_block_registry(block.id);
 				if (!reg) continue;
+				if (reg->flags & BLOCK_FLAG_LIQUID) {
+					entity->on_liquid = true;
+					continue;
+				}
 				if (!(reg->flags & BLOCK_FLAG_SOLID)) continue;
 
 				BlockVariant variant = br_get_block_variant(block.id, block.state);

@@ -35,8 +35,17 @@ void player_init(Player* player, Vector2 initialPosition) {
 void player_update(Player* player, float deltaTime, bool disableInput) {
 	if (!player) return;
 
+	float movement_accel_rate = MOVEMENT_ACCEL_RATE;
+	if (player->entity.on_liquid) {
+		movement_accel_rate /= 4.0f;
+	}
+
 	if (!disableInput) {
 		float speed = SPEED;
+		if (player->entity.on_liquid) {
+			speed /= 2.0f;
+		}
+
 		if (IsKeyDown(KEY_LEFT_SHIFT)) {
 			speed /= 4.0;
 		}
@@ -45,51 +54,64 @@ void player_update(Player* player, float deltaTime, bool disableInput) {
 		}
 
 		if (!player->flying) {
-			if ((IsKeyDown(KEY_SPACE) || IsKeyDown(KEY_W) || IsKeyDown(KEY_UP)) && player->entity.grounded) {
-				player->entity.velocity.y -= JUMP_FORCE;
+			if ((IsKeyDown(KEY_SPACE) || IsKeyDown(KEY_W) || IsKeyDown(KEY_UP))) {
+				if (!player->entity.on_liquid && player->entity.grounded) {
+
+					player->entity.velocity.y -= JUMP_FORCE;
+				}
+				else if (player->entity.on_liquid) {
+					player->entity.velocity.y = Lerp(player->entity.velocity.y, -JUMP_FORCE, movement_accel_rate * deltaTime);
+				}
 			}
 		}
 		else {
 			player->direction = 0;
 
 			if (IsKeyDown(KEY_W) || IsKeyDown(KEY_UP)) {
-				player->entity.velocity.y = Lerp(player->entity.velocity.y, -speed, MOVEMENT_ACCEL_RATE * deltaTime);
+				player->entity.velocity.y = Lerp(player->entity.velocity.y, -speed, movement_accel_rate * deltaTime);
 			}
 			else if (IsKeyDown(KEY_S) || IsKeyDown(KEY_DOWN)) {
-				player->entity.velocity.y = Lerp(player->entity.velocity.y, speed, MOVEMENT_ACCEL_RATE * deltaTime);
+				player->entity.velocity.y = Lerp(player->entity.velocity.y, speed, movement_accel_rate * deltaTime);
 			}
 			else {
-				player->entity.velocity.y = Lerp(player->entity.velocity.y, 0.0f, MOVEMENT_ACCEL_RATE * deltaTime);
+				player->entity.velocity.y = Lerp(player->entity.velocity.y, 0.0f, movement_accel_rate * deltaTime);
 			}
 		}
 
 		if (IsKeyDown(KEY_A) || IsKeyDown(KEY_LEFT)) {
-			player->entity.velocity.x = Lerp(player->entity.velocity.x, -speed, MOVEMENT_ACCEL_RATE * deltaTime);
+			player->entity.velocity.x = Lerp(player->entity.velocity.x, -speed, movement_accel_rate * deltaTime);
 			if (!player->flying) player->direction = -1;
 		}
 		else if (IsKeyDown(KEY_D) || IsKeyDown(KEY_RIGHT)) {
-			player->entity.velocity.x = Lerp(player->entity.velocity.x, speed, MOVEMENT_ACCEL_RATE * deltaTime);
+			player->entity.velocity.x = Lerp(player->entity.velocity.x, speed, movement_accel_rate * deltaTime);
 			if (!player->flying) player->direction = 1;
 		}
 		else {
-			player->entity.velocity.x = Lerp(player->entity.velocity.x, 0.0f, MOVEMENT_ACCEL_RATE * deltaTime);
+			player->entity.velocity.x = Lerp(player->entity.velocity.x, 0.0f, movement_accel_rate * deltaTime);
 			if (player->entity.grounded && !player->flying) player->direction = 0;
 		}
 	}
 	else {
-		player->entity.velocity.x = Lerp(player->entity.velocity.x, 0.0f, MOVEMENT_ACCEL_RATE * deltaTime);
+		player->entity.velocity.x = Lerp(player->entity.velocity.x, 0.0f, movement_accel_rate * deltaTime);
 		if (player->entity.grounded) player->direction = 0;
 		if (player->flying) {
-			player->entity.velocity.y = Lerp(player->entity.velocity.y, 0.0f, MOVEMENT_ACCEL_RATE * deltaTime);
+			player->entity.velocity.y = Lerp(player->entity.velocity.y, 0.0f, movement_accel_rate * deltaTime);
 		}
 	}
 
 	if (!player->flying) {
-		if (player->entity.velocity.y < TERMINAL_GRAVITY) {
-			player->entity.velocity.y += GRAVITY_ACCEL * deltaTime;
+		float gravity_accel = GRAVITY_ACCEL;
+		float terminal_gravity = TERMINAL_GRAVITY;
+		if (player->entity.on_liquid) {
+			gravity_accel /= 2.0f;
+			terminal_gravity /= 8.0f;
 		}
-		else if (player->entity.velocity.y > TERMINAL_GRAVITY) {
-			player->entity.velocity.y = TERMINAL_GRAVITY;
+
+		if (player->entity.velocity.y < terminal_gravity) {
+			player->entity.velocity.y += gravity_accel * deltaTime;
+		}
+		else if (player->entity.velocity.y > terminal_gravity) {
+			player->entity.velocity.y = terminal_gravity;
 		}
 
 		if (!player->entity.grounded) {

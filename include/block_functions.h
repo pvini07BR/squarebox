@@ -22,15 +22,15 @@ typedef bool (*BlockTickCallback)(BlockExtraResult result, BlockExtraResult neig
 bool grounded_block_resolver(BlockExtraResult result, BlockExtraResult neighbors[4], bool isWall);
 bool plant_block_resolver(BlockExtraResult result, BlockExtraResult neighbors[4], bool isWall);
 bool torch_state_resolver(BlockExtraResult result, BlockExtraResult neighbors[4], bool isWall);
-bool liquid_solver(BlockExtraResult result, BlockExtraResult neighbors[4], bool isWall);
 bool fence_resolver(BlockExtraResult result, BlockExtraResult neighbors[4], bool isWall);
 bool chest_solver(BlockExtraResult result, BlockExtraResult neighbors[4], bool isWall);
 
 bool on_chest_interact(BlockExtraResult result);
 
 void on_chest_destroy(BlockExtraResult result);
-void on_liquid_destroy(BlockExtraResult result);
 
 bool falling_block_tick(BlockExtraResult result, BlockExtraResult neighbors[4], bool isWall);
+bool water_source_tick(BlockExtraResult result, BlockExtraResult neighbors[4], bool isWall);
+bool water_flowing_tick(BlockExtraResult result, BlockExtraResult neighbors[4], bool isWall);
 
 #endif

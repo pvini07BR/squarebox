@@ -71,16 +71,11 @@ typedef enum {
 	// Tells if the block is affected by gravity, like sand or gravel.
 	BLOCK_FLAG_GRAVITY_AFFECTED = (1 << 7),
 
-	// Tells if the block is a liquid source.
+	// Tells if the block is a liquid.
 	// this will make the block render differently from
 	// other blocks, and will render only if it is in the
 	// block layer.
-	BLOCK_FLAG_LIQUID_SOURCE = (1 << 8),
-	// Tells if the block is a flowing liquid.
-	// this will make the block render differently from
-	// other blocks, and will render only if it is in the
-	// block layer.
-	BLOCK_FLAG_LIQUID_FLOWING = (1 << 9)
+	BLOCK_FLAG_LIQUID = (1 << 8),
 } BlockFlag;
 
 typedef enum {
@@ -141,6 +136,12 @@ typedef struct {
 	BlockStateResolver state_resolver;
 	BlockDestroyCallback destroy_callback;
 	BlockTickCallback tick_callback;
+
+	// This member variable will only be used if tick_callback is defined.
+	// 
+	// In a value between 1-20, it determines the nth tick this block will tick, in a 20-tick cycle.
+	// for example, when setting the value to 5, the block will tick every 5th tick.
+	uint8_t tick_speed;
 } BlockRegistry;
 
 void block_registry_init();

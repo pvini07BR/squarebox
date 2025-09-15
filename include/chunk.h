@@ -79,7 +79,7 @@ void chunk_regenerate(Chunk* chunk);
 void chunk_genmesh(Chunk* chunk);
 void chunk_draw(Chunk* chunk);
 void chunk_draw_liquids(Chunk* chunk);
-void chunk_tick(Chunk* chunk);
+void chunk_tick(Chunk* chunk, uint8_t tick_value);
 void chunk_free(Chunk* chunk);
 
 void chunk_fill_light(Chunk* chunk, Vector2u startPoint, uint8_t newLightValue);

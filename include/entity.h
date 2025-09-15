@@ -9,6 +9,7 @@ typedef struct {
 
 	bool collides;
 	bool grounded;
+	bool on_liquid;
 } Entity;
 
 void entity_update(Entity* entity, float deltaTime);

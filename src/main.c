@@ -95,6 +95,10 @@ int main() {
     Vector2i mouseBlockPos = { 0, 0 };
     Vector2i currentChunkPos = { 0, 0 };
 
+    Rectangle blockPlacerRect = {
+        0, 0, TILE_SIZE, TILE_SIZE
+    };
+
     char buffer[1024];
     float accumulator = 0.0f;
 
@@ -120,6 +124,8 @@ int main() {
             (int)floorf((float)mouseWorldPos.x / (float)TILE_SIZE),
             (int)floorf((float)mouseWorldPos.y / (float)TILE_SIZE)
         };
+        blockPlacerRect.x = mouseBlockPos.x * TILE_SIZE;
+        blockPlacerRect.y = mouseBlockPos.y * TILE_SIZE;
 
         if (!item_container_is_open()) {
             if (IsKeyPressed(KEY_TAB)) wall_mode = !wall_mode;
@@ -127,7 +133,7 @@ int main() {
             if (!mouseIsInUI) {
                 if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
                     chunk_manager_set_block_safe(mouseBlockPos, (BlockInstance) { 0, 0 }, wall_mode);
-                else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {
+                else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT) && !CheckCollisionRecs(blockPlacerRect, player.entity.rect)) {
                     if (!chunk_manager_interact(mouseBlockPos, wall_mode)) {
                         ItemRegistry* itr = ir_get_item_registry(inventory_get_item(0, hotbarIdx).item_id);
                         if (itr->blockId > 0 && !(itr->placingFlags & (wall_mode ? ITEM_PLACE_FLAG_NOT_WALL : ITEM_PLACE_FLAG_NOT_BLOCK))) {
@@ -281,15 +287,7 @@ int main() {
 
             float cos = 47.5f * cosf(GetTime() * 4.0f) + 79.5f;
 
-            DrawRectangle(
-                mouseBlockPos.x * TILE_SIZE,
-                mouseBlockPos.y * TILE_SIZE,
-                TILE_SIZE,
-                TILE_SIZE,
-                (Color) {
-                255, 255, 255, cos
-            }
-            );
+            DrawRectangleRec(blockPlacerRect, (Color) { 255, 255, 255, cos });
         }
 
         EndMode2D();

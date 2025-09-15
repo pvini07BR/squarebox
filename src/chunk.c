@@ -6,7 +6,6 @@
 #include "chunk.h"
 #include "texture_atlas.h"
 #include "block_models.h"
-#include "block_tick_list.h"
 #include "block_state_bitfields.h"
 
 #include <math.h>
@@ -182,7 +181,7 @@ void chunk_draw_liquids(Chunk* chunk) {
         if (!brg) continue;
         float lightFactor = chunk->light[i] / 15.0f;
 
-        if (brg->flags & BLOCK_FLAG_LIQUID_SOURCE) {
+        if (chunk->blocks[i].id == BLOCK_WATER_SOURCE) {
             int x = i % CHUNK_WIDTH;
             int y = i / CHUNK_WIDTH;
             DrawRectangle(
@@ -195,7 +194,7 @@ void chunk_draw_liquids(Chunk* chunk) {
             }
             );
         }
-        else if (brg->flags & BLOCK_FLAG_LIQUID_FLOWING) {
+        else if (chunk->blocks[i].id == BLOCK_WATER_FLOWING) {
             int x = i % CHUNK_WIDTH;
             int y = i / CHUNK_WIDTH;
 
@@ -217,43 +216,13 @@ void chunk_draw_liquids(Chunk* chunk) {
     rlPopMatrix();
 }
 
-bool can_flow_down(BlockExtraResult target, BlockRegistry* targetRegistry, int currentLevel) {
-    if (target.block->id == BLOCK_AIR) {
-        return true;
-    }
-
-    if ((targetRegistry->flags & BLOCK_FLAG_REPLACEABLE) &&
-        !(targetRegistry->flags & (BLOCK_FLAG_LIQUID_SOURCE | BLOCK_FLAG_LIQUID_FLOWING))) {
-        return true;
-    }
-
-    if (targetRegistry->flags & BLOCK_FLAG_LIQUID_FLOWING) {
-        FlowingLiquidState* existingState = (FlowingLiquidState*)&target.block->state;
-
-        if (existingState->level < 7) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-static inline bool is_replaceable(BlockRegistry* r) {
-    return r && (r->flags & BLOCK_FLAG_REPLACEABLE);
-}
-static inline bool is_source(BlockRegistry* r) {
-    return r && (r->flags & BLOCK_FLAG_LIQUID_SOURCE);
-}
-static inline bool is_flowing(BlockRegistry* r) {
-    return r && (r->flags & BLOCK_FLAG_LIQUID_FLOWING);
-}
-
-void chunk_tick(Chunk* chunk) {
+void chunk_tick(Chunk* chunk, uint8_t tick_value) {
     if (!chunk) return;
 
     bool changed = false;
-    int i = 0;
-    while (i < chunk->blockTickList.count) {
+    size_t count = chunk->blockTickList.count;
+
+    for (int i = 0; i < count; i++) {
         BlockTickListEntry entry = chunk->blockTickList.entries[i];
 
         BlockInstance* ptr = chunk_get_block_ptr(chunk, entry.position, entry.isWall);
@@ -264,7 +233,7 @@ void chunk_tick(Chunk* chunk) {
 
         BlockRegistry* brg = br_get_block_registry(ptr->id);
         if (!brg || brg->tick_callback == NULL) {
-            i++;
+            block_tick_list_remove_by_index(&chunk->blockTickList, i);
             continue;
         }
 
@@ -279,193 +248,18 @@ void chunk_tick(Chunk* chunk) {
             .idx = entry.position.x + (entry.position.y * CHUNK_WIDTH)
         };
 
-        if (!changed) {
+        uint8_t mod = tick_value % brg->tick_speed;
+        if (mod == (brg->tick_speed-1)) {
             bool did_change = brg->tick_callback(result, neighbors, entry.isWall);
-            if (did_change) changed = true;
-        }
-
-        i++;
-    }
-
-    if (changed) chunk_manager_update_lighting();
-
-    /*
-    bool changed = false;
-    int count = chunk->liquidSpreadList.count;
-
-    for (int li = count - 1; li >= 0; li--) {
-        uint8_t idx = chunk->liquidSpreadList.indices[li];
-        int x = idx % CHUNK_WIDTH;
-        int y = idx / CHUNK_WIDTH;
-
-        BlockInstance* binst = chunk_get_block_ptr(chunk, (Vector2u) { x, y }, false);
-        if (!binst) {
-            liquid_spread_list_remove(&chunk->liquidSpreadList, li);
-            continue;
-        }
-
-        BlockRegistry* br = br_get_block_registry(binst->id);
-        if (!br || !(br->flags & (BLOCK_FLAG_LIQUID_SOURCE | BLOCK_FLAG_LIQUID_FLOWING))) {
-            liquid_spread_list_remove(&chunk->liquidSpreadList, li);
-            continue;
-        }
-
-        BlockExtraResult neighbors[4];
-        chunk_get_block_neighbors_extra(chunk, (Vector2u) { x, y }, false, neighbors);
-
-        BlockRegistry* registries[4];
-        for (int j = 0; j < 4; j++) {
-            if (neighbors[j].block == NULL) {
-                registries[j] = NULL;
-                continue;
-            }
-            registries[j] = br_get_block_registry(neighbors[j].block->id);
-        }
-
-        if (br->flags & BLOCK_FLAG_LIQUID_FLOWING) {
-            bool left_is_source = registries[NEIGHBOR_LEFT] && is_source(registries[NEIGHBOR_LEFT]);
-            bool right_is_source = registries[NEIGHBOR_RIGHT] && is_source(registries[NEIGHBOR_RIGHT]);
-            if (left_is_source && right_is_source) {
-                binst->id = BLOCK_WATER_SOURCE;
-                binst->state = 0;
-                br = br_get_block_registry(binst->id);
-                changed = true;
-
-                bool bottom_was_replaceable = is_replaceable(registries[NEIGHBOR_BOTTOM]);
-                bool placed_bottom = false;
-                bool bottom_is_source = registries[NEIGHBOR_BOTTOM] && is_source(registries[NEIGHBOR_BOTTOM]);
-
-                if (bottom_was_replaceable &&
-                    !(registries[NEIGHBOR_BOTTOM] && (registries[NEIGHBOR_BOTTOM]->flags & BLOCK_FLAG_LIQUID_SOURCE)))
-                {
-                    if (!(registries[NEIGHBOR_BOTTOM] && is_flowing(registries[NEIGHBOR_BOTTOM]) &&
-                        ((FlowingLiquidState*)&neighbors[NEIGHBOR_BOTTOM].block->state)->falling == true))
-                    {
-                        *neighbors[NEIGHBOR_BOTTOM].block =
-                            (BlockInstance){ .id = BLOCK_WATER_FLOWING, .state = get_flowing_liquid_state(7, true) };
-                        liquid_spread_list_add(&neighbors[NEIGHBOR_BOTTOM].chunk->liquidSpreadList, neighbors[NEIGHBOR_BOTTOM].idx);
-                        changed = true;
-                        placed_bottom = true;
-                    }
-                }
-
-                if (!bottom_was_replaceable || placed_bottom || bottom_is_source) {
-                    NeighborDirection dirs[] = { NEIGHBOR_LEFT, NEIGHBOR_RIGHT };
-                    for (int d = 0; d < 2; d++) {
-                        NeighborDirection dir = dirs[d];
-                        BlockRegistry* r = registries[dir];
-                        if (!r) continue;
-                        if (r->flags & BLOCK_FLAG_LIQUID_SOURCE) continue;
-
-                        bool neighbor_is_flowing = (r->flags & BLOCK_FLAG_LIQUID_FLOWING) != 0;
-                        uint8_t newLevel = 6;
-
-                        if ((r->flags & BLOCK_FLAG_REPLACEABLE) || neighbor_is_flowing) {
-                            if (neighbor_is_flowing) {
-                                FlowingLiquidState* ns = (FlowingLiquidState*)&neighbors[dir].block->state;
-                                if (ns->level >= newLevel) continue;
-                            }
-                            *neighbors[dir].block = (BlockInstance){ .id = BLOCK_WATER_FLOWING, .state = get_flowing_liquid_state(newLevel, false) };
-                            liquid_spread_list_add(&neighbors[dir].chunk->liquidSpreadList, neighbors[dir].idx);
-                            changed = true;
-                        }
-                    }
-                }
-
-                continue;
-            }
-        }
-
-        if (br->flags & BLOCK_FLAG_LIQUID_SOURCE) {
-            bool bottom_was_replaceable = is_replaceable(registries[NEIGHBOR_BOTTOM]);
-            bool placed_bottom = false;
-            bool bottom_is_source = registries[NEIGHBOR_BOTTOM] && is_source(registries[NEIGHBOR_BOTTOM]); // NOVO: detecta source embaixo
-
-            if (bottom_was_replaceable &&
-                !(registries[NEIGHBOR_BOTTOM] && (registries[NEIGHBOR_BOTTOM]->flags & BLOCK_FLAG_LIQUID_SOURCE)))
-            {
-                if (!(registries[NEIGHBOR_BOTTOM] && is_flowing(registries[NEIGHBOR_BOTTOM]) &&
-                    ((FlowingLiquidState*)&neighbors[NEIGHBOR_BOTTOM].block->state)->falling == true))
-                {
-                    *neighbors[NEIGHBOR_BOTTOM].block =
-                        (BlockInstance){ .id = BLOCK_WATER_FLOWING, .state = get_flowing_liquid_state(7, true) };
-                    liquid_spread_list_add(&neighbors[NEIGHBOR_BOTTOM].chunk->liquidSpreadList, neighbors[NEIGHBOR_BOTTOM].idx);
-                    changed = true;
-                    placed_bottom = true;
-                }
-            }
-
-            if (!bottom_was_replaceable || placed_bottom || bottom_is_source) {
-                NeighborDirection dirs[] = { NEIGHBOR_LEFT, NEIGHBOR_RIGHT };
-                for (int d = 0; d < 2; d++) {
-                    NeighborDirection dir = dirs[d];
-                    BlockRegistry* r = registries[dir];
-                    if (!r) continue;
-
-                    if (r->flags & BLOCK_FLAG_LIQUID_SOURCE) continue;
-
-                    bool neighbor_is_flowing = (r->flags & BLOCK_FLAG_LIQUID_FLOWING) != 0;
-                    uint8_t newLevel = 6;
-
-                    if ((r->flags & BLOCK_FLAG_REPLACEABLE) || neighbor_is_flowing) {
-                        if (neighbor_is_flowing) {
-                            FlowingLiquidState* ns = (FlowingLiquidState*)&neighbors[dir].block->state;
-                            if (ns->level >= newLevel) continue;
-                        }
-                        *neighbors[dir].block = (BlockInstance){ .id = BLOCK_WATER_FLOWING, .state = get_flowing_liquid_state(newLevel, false) };
-                        liquid_spread_list_add(&neighbors[dir].chunk->liquidSpreadList, neighbors[dir].idx);
-                        changed = true;
-                    }
-                }
-            }
-        }
-
-        else if (br->flags & BLOCK_FLAG_LIQUID_FLOWING) {
-            FlowingLiquidState* fs = (FlowingLiquidState*)&binst->state;
-
-            if (is_replaceable(registries[NEIGHBOR_BOTTOM]) &&
-                !(registries[NEIGHBOR_BOTTOM] && (registries[NEIGHBOR_BOTTOM]->flags & BLOCK_FLAG_LIQUID_SOURCE)))
-            {
-                if (!(is_flowing(registries[NEIGHBOR_BOTTOM]) &&
-                    ((FlowingLiquidState*)&neighbors[NEIGHBOR_BOTTOM].block->state)->falling == true))
-                {
-                    *neighbors[NEIGHBOR_BOTTOM].block =
-                        (BlockInstance){ .id = BLOCK_WATER_FLOWING, .state = get_flowing_liquid_state(7, true) };
-                    liquid_spread_list_add(&neighbors[NEIGHBOR_BOTTOM].chunk->liquidSpreadList, neighbors[NEIGHBOR_BOTTOM].idx);
-                    changed = true;
-                    continue;
-                }
-            }
-
-            if (fs->level > 0 && !is_replaceable(registries[NEIGHBOR_BOTTOM])) {
-                NeighborDirection dirs[] = { NEIGHBOR_LEFT, NEIGHBOR_RIGHT };
-                for (int d = 0; d < 2; d++) {
-                    NeighborDirection dir = dirs[d];
-                    BlockRegistry* r = registries[dir];
-                    if (!r) continue;
-                    if (r->flags & BLOCK_FLAG_LIQUID_SOURCE) continue;
-
-                    uint8_t targetLevel = fs->level - 1;
-                    bool neighbor_is_flowing = (r->flags & BLOCK_FLAG_LIQUID_FLOWING) != 0;
-
-                    if ((r->flags & BLOCK_FLAG_REPLACEABLE) || neighbor_is_flowing) {
-                        if (neighbor_is_flowing) {
-                            FlowingLiquidState* ns = (FlowingLiquidState*)&neighbors[dir].block->state;
-                            if (ns->level >= targetLevel) continue;
-                        }
-                        *neighbors[dir].block = (BlockInstance){ .id = BLOCK_WATER_FLOWING, .state = get_flowing_liquid_state(targetLevel, false) };
-                        liquid_spread_list_add(&neighbors[dir].chunk->liquidSpreadList, neighbors[dir].idx);
-                        changed = true;
-                    }
-                }
-            }
+            if (changed == false) changed = did_change;
         }
     }
 
-    if (changed) chunk_manager_update_lighting();
-    */
+    if (changed) {
+        printf("Changed\n");
+        chunk_manager_update_lighting();
+    }
 }
-
 
 void chunk_free(Chunk* chunk)
 {
@@ -672,9 +466,10 @@ void chunk_set_block(Chunk* chunk, Vector2u position, BlockInstance blockValue, 
 
     bool can_place = true;
     BlockRegistry* new_br = br_get_block_registry(blockValue.id);
+    if (!new_br) return;
 
     // Resolve state for new block before placing
-    if (blockValue.id > 0 && new_br && new_br->state_resolver != NULL) {
+    if (new_br->state_resolver != NULL) {
         BlockExtraResult neighbors[4];
         chunk_get_block_neighbors_extra(chunk, position, isWall, neighbors);
         BlockExtraResult self = {
@@ -691,25 +486,28 @@ void chunk_set_block(Chunk* chunk, Vector2u position, BlockInstance blockValue, 
     // Handle previous block (destroy)
     if (ptr->id > 0) {
         BlockRegistry* old_br = br_get_block_registry(ptr->id);
-        if (old_br && old_br->tick_callback != NULL) {
-            block_tick_list_remove(&chunk->blockTickList, (BlockTickListEntry) { .position = position, .isWall = isWall });
-        }
+        if (old_br) {
+            if (old_br->tick_callback != NULL) {
+                block_tick_list_remove(&chunk->blockTickList, (BlockTickListEntry) { .position = position, .isWall = isWall });
+            }
 
-        if (old_br && old_br->destroy_callback) {
-            BlockExtraResult res = {
-                .block = ptr,
-                .reg = old_br,
-                .chunk = chunk,
-                .position = position,
-                .idx = position.x + (position.y * CHUNK_WIDTH)
-            };
-            old_br->destroy_callback(res);
+            if (old_br->destroy_callback) {
+                BlockExtraResult res = {
+                    .block = ptr,
+                    .reg = old_br,
+                    .chunk = chunk,
+                    .position = position,
+                    .idx = position.x + (position.y * CHUNK_WIDTH)
+                };
+                old_br->destroy_callback(res);
+            }
         }
     }
 
     // Set the block
     *ptr = blockValue;
 
+    // Resolve state for neighboring blocks
     BlockExtraResult neighbors[4];
     chunk_get_block_neighbors_extra(chunk, position, isWall, neighbors);
     for (int i = 0; i < 4; i++) {
@@ -727,9 +525,9 @@ void chunk_set_block(Chunk* chunk, Vector2u position, BlockInstance blockValue, 
     if (update_lighting) chunk_manager_update_lighting();
 
     // Add tick for new block if applicable
-    if (new_br && new_br->tick_callback != NULL) {
+    if (new_br->tick_callback != NULL) {
         if (!block_tick_list_contains(&chunk->blockTickList, (BlockTickListEntry){ .position = position, .isWall = isWall })) {
-            block_tick_list_add(&chunk->blockTickList, (BlockTickListEntry){ .position = position, .isWall = isWall });
+            bool ret = block_tick_list_add(&chunk->blockTickList, (BlockTickListEntry){ .position = position, .isWall = isWall });
         }
     }
 }
@@ -860,7 +658,7 @@ void reset_meshes(Chunk* chunk, int blockVertexCount, int wallVertexCount) {
 void build_quad(Chunk* chunk, size_t* offsets, BlockInstance* blocks, Mesh* mesh, bool isWall, uint8_t x, uint8_t y, uint8_t brightness) {
     int i = x + (y * CHUNK_WIDTH);
 	BlockRegistry* brg = br_get_block_registry(blocks[i].id);
-    if (blocks[i].id <= 0 || brg->flags & BLOCK_FLAG_LIQUID_SOURCE || brg->flags & BLOCK_FLAG_LIQUID_FLOWING) return;
+    if (blocks[i].id <= 0 || brg->flags & BLOCK_FLAG_LIQUID) return;
     
     // Start by brightness value
     uint8_t cornerValues[4] = { brightness, brightness, brightness, brightness };

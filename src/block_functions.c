@@ -115,7 +115,9 @@ bool flow_to_bottom(BlockExtraResult bottom) {
     return false;
 }
 
-bool flow_to_sides(BlockExtraResult neighbors[4]) {
+bool flow_to_sides(BlockExtraResult neighbors[4], uint8_t startLevel) {
+    if (startLevel <= 1) return false;
+
     NeighborDirection dirs[] = { NEIGHBOR_LEFT, NEIGHBOR_RIGHT };
     bool placed = false;
 
@@ -126,13 +128,13 @@ bool flow_to_sides(BlockExtraResult neighbors[4]) {
         if (!neighrg) continue;
 
         if (neighrg->flags & BLOCK_FLAG_REPLACEABLE && !(neighrg->flags & BLOCK_FLAG_LIQUID)) {
-            chunk_set_block(neighbor.chunk, neighbor.position, (BlockInstance) { BLOCK_WATER_FLOWING, get_flowing_liquid_state(6, false) }, false, false);
+            chunk_set_block(neighbor.chunk, neighbor.position, (BlockInstance) { BLOCK_WATER_FLOWING, get_flowing_liquid_state(startLevel - 1, false) }, false, false);
             placed = true;
         }
         else if (neighrg->flags & BLOCK_FLAG_LIQUID && neighbor.block->id == BLOCK_WATER_FLOWING) {
             FlowingLiquidState* neighState = &neighbor.block->state;
-            if (neighState->level < 6) {
-                chunk_set_block(neighbor.chunk, neighbor.position, (BlockInstance) { BLOCK_WATER_FLOWING, get_flowing_liquid_state(6, false) }, false, false);
+            if (!neighState->falling && neighState->level < (startLevel - 1)) {
+                chunk_set_block(neighbor.chunk, neighbor.position, (BlockInstance) { BLOCK_WATER_FLOWING, get_flowing_liquid_state(startLevel - 1, false) }, false, false);
                 placed = true;
             }
         }
@@ -151,8 +153,7 @@ bool water_source_tick(BlockExtraResult result, BlockExtraResult neighbors[4], b
     if (flow_to_bottom(bottom)) return true;
 
     // Flowing to the sides
-    if (flow_to_sides(neighbors)) return true;
-    return false;
+    return flow_to_sides(neighbors, 7);
 }
 
 bool water_flowing_tick(BlockExtraResult result, BlockExtraResult neighbors[4], bool isWall) {
@@ -160,20 +161,38 @@ bool water_flowing_tick(BlockExtraResult result, BlockExtraResult neighbors[4], 
 
     FlowingLiquidState* curState = &result.block->state;
     if (curState->falling == true) {
-        BlockExtraResult bottom = neighbors[NEIGHBOR_BOTTOM];
-        BlockRegistry* brg = bottom.reg;
-        if (!brg) return false;
-        if (flow_to_bottom(bottom)) return true;
-
         BlockExtraResult top = neighbors[NEIGHBOR_TOP];
         BlockRegistry* trg = top.reg;
         if (!trg) return false;
+
         if (!(trg->flags & BLOCK_FLAG_LIQUID)) {
             chunk_set_block(result.chunk, result.position, (BlockInstance) { BLOCK_AIR, 0 }, false, false);
             return true;
         }
+        
+        BlockExtraResult bottom = neighbors[NEIGHBOR_BOTTOM];
+        BlockRegistry* brg = bottom.reg;
+        if (!brg) return false;
+
+        bool ret = flow_to_bottom(bottom);
+        if (ret) return true;
+
+        if (!(brg->flags & BLOCK_FLAG_REPLACEABLE)) {
+            FlowingLiquidState* curState = &result.block->state;
+            return flow_to_sides(neighbors, curState->level);
+        }
+        else {
+            return false;
+        }
     }
     else {
+        if (neighbors[NEIGHBOR_LEFT].block && neighbors[NEIGHBOR_RIGHT].block) {
+            if (neighbors[NEIGHBOR_LEFT].block->id == BLOCK_WATER_SOURCE && neighbors[NEIGHBOR_RIGHT].block->id == BLOCK_WATER_SOURCE) {
+                chunk_set_block(result.chunk, result.position, (BlockInstance) { BLOCK_WATER_SOURCE, 0 }, false, false);
+                return true;
+            }
+        }
+
         // Flowing to the bottom
         BlockExtraResult bottom = neighbors[NEIGHBOR_BOTTOM];
         BlockRegistry* brg = bottom.reg;
@@ -181,74 +200,69 @@ bool water_flowing_tick(BlockExtraResult result, BlockExtraResult neighbors[4], 
         if (flow_to_bottom(bottom)) return true;
 
         // Flowing to the sides
-        if (!(brg->flags & BLOCK_FLAG_REPLACEABLE)) {
-            if (flow_to_sides(neighbors)) return true;
-        }
-        return false;
-    }
-
-    /*if (neighbors[NEIGHBOR_LEFT].block && neighbors[NEIGHBOR_RIGHT].block) {
-        if (neighbors[NEIGHBOR_LEFT].block->id == BLOCK_WATER_SOURCE && neighbors[NEIGHBOR_RIGHT].block->id == BLOCK_WATER_SOURCE) {
-            chunk_set_block(result.chunk, result.position, (BlockInstance) { BLOCK_WATER_SOURCE, 0 }, false, false);
-            return true;
-        }
-    }
-
-    NeighborDirection dirs[] = { NEIGHBOR_LEFT, NEIGHBOR_RIGHT };
-    int max_neighbor_level = 0;
-    for (int i = 0; i < 2; i++) {
-        BlockExtraResult neighbor = neighbors[dirs[i]];
-        if (neighbor.block) {
-            if (neighbor.block->id == BLOCK_WATER_SOURCE) {
-                max_neighbor_level = 7;
-                break;
+        if (neighbors[NEIGHBOR_LEFT].block && neighbors[NEIGHBOR_RIGHT].block) {
+            if (neighbors[NEIGHBOR_LEFT].block->id == BLOCK_WATER_SOURCE && neighbors[NEIGHBOR_RIGHT].block->id == BLOCK_WATER_SOURCE) {
+                chunk_set_block(result.chunk, result.position, (BlockInstance) { BLOCK_WATER_SOURCE, 0 }, false, false);
+                return true;
             }
-            else if (neighbor.block->id == BLOCK_WATER_FLOWING) {
-                FlowingLiquidState* neighState = &neighbor.block->state;
-                if (neighState->level > max_neighbor_level) {
-                    max_neighbor_level = neighState->level;
+        }
+
+        NeighborDirection dirs[] = { NEIGHBOR_LEFT, NEIGHBOR_RIGHT };
+        int max_neighbor_level = 0;
+        for (int i = 0; i < 2; i++) {
+            BlockExtraResult neighbor = neighbors[dirs[i]];
+            if (neighbor.block) {
+                if (neighbor.block->id == BLOCK_WATER_SOURCE) {
+                    max_neighbor_level = 7;
+                    break;
+                }
+                else if (neighbor.block->id == BLOCK_WATER_FLOWING) {
+                    FlowingLiquidState* neighState = &neighbor.block->state;
+                    if (neighState->level > max_neighbor_level) {
+                        max_neighbor_level = neighState->level;
+                    }
                 }
             }
         }
-    }
 
-    int target_level = max_neighbor_level > 0 ? max_neighbor_level - 1 : 0;
+        int target_level = max_neighbor_level > 0 ? max_neighbor_level - 1 : 0;
 
-    bool changed = false;
+        bool changed = false;
 
-    if (target_level == 0) {
-        chunk_set_block(result.chunk, result.position, (BlockInstance) { 0, 0 }, false, false);
-        changed = true;
-    }
-    else if (curState->level != target_level) {
-        size_t new_state = get_flowing_liquid_state(target_level, curState->falling);
-        chunk_set_block(result.chunk, result.position, (BlockInstance) { BLOCK_WATER_FLOWING, new_state }, false, false);
-        changed = true;
-    }
+        if (target_level == 0) {
+            chunk_set_block(result.chunk, result.position, (BlockInstance) { 0, 0 }, false, false);
+            changed = true;
+        }
+        else if (curState->level != target_level) {
+            size_t new_state = get_flowing_liquid_state(target_level, curState->falling);
+            chunk_set_block(result.chunk, result.position, (BlockInstance) { BLOCK_WATER_FLOWING, new_state }, false, false);
+            changed = true;
+        }
 
-    if (target_level > 0) {
-        for (int i = 0; i < 2; i++) {
-            BlockExtraResult neighbor = neighbors[dirs[i]];
-            BlockRegistry* neighrg = neighbor.reg;
+        if (target_level > 0 && !(brg->flags & BLOCK_FLAG_REPLACEABLE)) {
+            for (int i = 0; i < 2; i++) {
+                BlockExtraResult neighbor = neighbors[dirs[i]];
+                BlockRegistry* neighrg = neighbor.reg;
 
-            if (!neighrg) continue;
+                if (!neighrg) continue;
 
-            int flow_level = target_level - 1;
-            if (flow_level <= 0) continue;
+                int flow_level = target_level - 1;
+                if (flow_level <= 0) continue;
 
-            if (neighrg->flags & BLOCK_FLAG_REPLACEABLE && !(neighrg->flags & BLOCK_FLAG_LIQUID)) {
-                chunk_set_block(neighbor.chunk, neighbor.position, (BlockInstance) { BLOCK_WATER_FLOWING, get_flowing_liquid_state(flow_level, false) }, false, false);
-                changed = true;
-            }
-            else if (neighrg->flags & BLOCK_FLAG_LIQUID && neighbor.block->id == BLOCK_WATER_FLOWING) {
-                FlowingLiquidState* neighState = &neighbor.block->state;
-                if (neighState->level < flow_level) {
+                if (neighrg->flags & BLOCK_FLAG_REPLACEABLE && !(neighrg->flags & BLOCK_FLAG_LIQUID)) {
                     chunk_set_block(neighbor.chunk, neighbor.position, (BlockInstance) { BLOCK_WATER_FLOWING, get_flowing_liquid_state(flow_level, false) }, false, false);
                     changed = true;
                 }
+                else if (neighrg->flags & BLOCK_FLAG_LIQUID && neighbor.block->id == BLOCK_WATER_FLOWING) {
+                    FlowingLiquidState* neighState = &neighbor.block->state;
+                    if (neighState->level < flow_level) {
+                        chunk_set_block(neighbor.chunk, neighbor.position, (BlockInstance) { BLOCK_WATER_FLOWING, get_flowing_liquid_state(flow_level, false) }, false, false);
+                        changed = true;
+                    }
+                }
             }
         }
-    }
 
-    return changed;*/
+        return changed;
+    }
 }

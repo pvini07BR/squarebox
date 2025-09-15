@@ -217,14 +217,13 @@ void entity_update(Entity* entity, float deltaTime) {
 				if (contact_normal.y < 0.0f) {
 					entity->grounded = true;
 				}
-				/*
+
 				if (entity->grounded && contact_normal.x != 0.0f) {
 					float diff = (entity->rect.y + entity->rect.height) - rect->y;
 					if (diff < (entity->rect.height * 0.6f)) {
 						entity->rect.y -= rect->height + 1;
 					}
 				}
-				*/
 			}
 		}
 	}

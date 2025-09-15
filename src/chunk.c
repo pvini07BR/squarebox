@@ -199,7 +199,7 @@ void chunk_draw_liquids(Chunk* chunk) {
             int y = i / CHUNK_WIDTH;
 
             FlowingLiquidState* state = (FlowingLiquidState*)&chunk->blocks[i].state;
-            float value = state->level / 7.0f;
+            float value = 0.125f + (state->level / 7.0f) * (1.0f - 0.125f);
 
             DrawRectangle(
                 x * TILE_SIZE,
@@ -256,7 +256,6 @@ void chunk_tick(Chunk* chunk, uint8_t tick_value) {
     }
 
     if (changed) {
-        printf("Changed\n");
         chunk_manager_update_lighting();
     }
 }

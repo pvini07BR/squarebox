@@ -3,6 +3,7 @@
 #include "chunk_manager.h"
 #include "block_registry.h"
 #include "block_colliders.h"
+#include "block_state_bitfields.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -16,6 +17,7 @@
 typedef struct {
 	Rectangle rect;
 	float t;
+	bool is_liquid;
 } RectPair;
 
 int compare_rects(const void* a, const void* b) {
@@ -155,9 +157,23 @@ void entity_update(Entity* entity, float deltaTime) {
 				BlockRegistry* reg = br_get_block_registry(block.id);
 				if (!reg) continue;
 				if (reg->flags & BLOCK_FLAG_LIQUID) {
-					entity->on_liquid = true;
+					FlowingLiquidState* state = &block.state;
+					float value = 0.125f + (state->level / 7.0f) * (1.0f - 0.125f);
+
+					Rectangle rect = {
+						.x = x* TILE_SIZE,
+						.y = ceilf(y* TILE_SIZE + (TILE_SIZE * (1.0f - value))),
+						.width = TILE_SIZE,
+						.height = TILE_SIZE * value,
+					};
+
+					rects[rect_count].rect = rect;
+					rects[rect_count].t = 0.0f;
+					rects[rect_count].is_liquid = true;
+					rect_count++;
 					continue;
 				}
+
 				if (!(reg->flags & BLOCK_FLAG_SOLID)) continue;
 
 				BlockVariant variant = br_get_block_variant(block.id, block.state);
@@ -176,6 +192,7 @@ void entity_update(Entity* entity, float deltaTime) {
 					if (entity_vs_rect(entity, &rect, deltaTime, &cp, &cn, &t)) {
 						rects[rect_count].rect = rect;
 						rects[rect_count].t = t;
+						rects[rect_count].is_liquid = false;
 						rect_count++;
 					}
 				}
@@ -185,9 +202,15 @@ void entity_update(Entity* entity, float deltaTime) {
 		qsort(rects, rect_count, sizeof(RectPair), compare_rects);
 
 		entity->grounded = false;
+		entity->on_liquid = false;
 
 		for (int i = 0; i < rect_count; i++) {
 			Rectangle* rect = &rects[i].rect;
+
+			if (rects[i].is_liquid) {
+				if (!entity->on_liquid) entity->on_liquid = CheckCollisionRecs(entity->rect, *rect);
+				continue;
+			}
 
 			Vector2 contact_normal;
 			if (resolve_entity_vs_rect(entity, rect, deltaTime, &contact_normal)) {

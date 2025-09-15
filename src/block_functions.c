@@ -115,8 +115,8 @@ bool flow_to_bottom(BlockExtraResult bottom) {
     return false;
 }
 
-bool flow_to_sides(BlockExtraResult neighbors[4], uint8_t startLevel) {
-    if (startLevel <= 1) return false;
+bool flow_to_sides(BlockExtraResult neighbors[4], int startLevel) {
+    if (startLevel < 0) return false;
 
     NeighborDirection dirs[] = { NEIGHBOR_LEFT, NEIGHBOR_RIGHT };
     bool placed = false;
@@ -225,11 +225,11 @@ bool water_flowing_tick(BlockExtraResult result, BlockExtraResult neighbors[4], 
             }
         }
 
-        int target_level = max_neighbor_level > 0 ? max_neighbor_level - 1 : 0;
+        int target_level = max_neighbor_level >= 0 ? max_neighbor_level - 1 : 0;
 
         bool changed = false;
 
-        if (target_level == 0) {
+        if (target_level < 0) {
             chunk_set_block(result.chunk, result.position, (BlockInstance) { 0, 0 }, false, false);
             changed = true;
         }
@@ -247,7 +247,7 @@ bool water_flowing_tick(BlockExtraResult result, BlockExtraResult neighbors[4], 
                 if (!neighrg) continue;
 
                 int flow_level = target_level - 1;
-                if (flow_level <= 0) continue;
+                if (flow_level < 0) continue;
 
                 if (neighrg->flags & BLOCK_FLAG_REPLACEABLE && !(neighrg->flags & BLOCK_FLAG_LIQUID)) {
                     chunk_set_block(neighbor.chunk, neighbor.position, (BlockInstance) { BLOCK_WATER_FLOWING, get_flowing_liquid_state(flow_level, false) }, false, false);

@@ -50,6 +50,7 @@ typedef struct {
 	bool initializedMeshes;
 	Mesh blockMesh;
 	Mesh wallMesh;
+	Mesh liquidMesh;
 } Chunk;
 
 typedef struct {

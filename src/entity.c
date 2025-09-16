@@ -159,6 +159,7 @@ void entity_update(Entity* entity, float deltaTime) {
 				if (reg->flags & BLOCK_FLAG_LIQUID) {
 					FlowingLiquidState* state = &block.state;
 					float value = 0.125f + (state->level / 7.0f) * (1.0f - 0.125f);
+					if (block.id == BLOCK_WATER_SOURCE) value = 1.0f;
 
 					Rectangle rect = {
 						.x = x* TILE_SIZE,

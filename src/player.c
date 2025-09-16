@@ -102,9 +102,12 @@ void player_update(Player* player, float deltaTime, bool disableInput) {
 	if (!player->flying) {
 		float gravity_accel = GRAVITY_ACCEL;
 		float terminal_gravity = TERMINAL_GRAVITY;
+		float rotation_amount = ROTATION_AMOUNT;
+
 		if (player->entity.on_liquid) {
 			gravity_accel /= 2.0f;
 			terminal_gravity /= 8.0f;
+			rotation_amount /= 2.0f;
 		}
 
 		if (player->entity.velocity.y < terminal_gravity) {
@@ -115,7 +118,7 @@ void player_update(Player* player, float deltaTime, bool disableInput) {
 		}
 
 		if (!player->entity.grounded) {
-			player->rotation += ROTATION_AMOUNT * deltaTime * player->direction;
+			player->rotation += rotation_amount * deltaTime * player->direction;
 		}
 		else {
 			float nineties = roundf((player->rotation / 90.0f)) * 90.0f;

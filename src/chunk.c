@@ -25,6 +25,9 @@ static unsigned int posmod(int v, int m);
 static void reset_meshes(Chunk* chunk, int blockVertexCount, int wallVertexCount);
 static void build_quad(Chunk* chunk, size_t* offsets, BlockInstance* blocks, Mesh* mesh, bool isWall, uint8_t x, uint8_t y, uint8_t brightness);
 
+static Material matDefault;
+static bool loadedMatDefault = false;
+
 int seed = 0;
 bool wallAmbientOcclusion = true;
 bool smoothLighting = true;
@@ -36,6 +39,7 @@ static bool chance_at(fnl_noise_type noiseType, float frequency, int gx, int gy,
     noise.seed = seed + seed_offset;
     noise.frequency = frequency;
     noise.noise_type = noiseType;
+
     return fnlGetNoise2D(&noise, gx, gy) > threshold;
 }
 
@@ -47,6 +51,11 @@ void chunk_init(Chunk* chunk)
     block_tick_list_clear(&chunk->blockTickList);
 
     chunk->initializedMeshes = false;
+
+    if (!loadedMatDefault) {
+        matDefault = LoadMaterialDefault();
+        loadedMatDefault = true;
+    }
 }
 
 void chunk_regenerate(Chunk* chunk) {
@@ -112,6 +121,96 @@ void chunk_regenerate(Chunk* chunk) {
     }
 }
 
+void chunk_gen_liquid_mesh(Chunk* chunk) {
+    if (!chunk) return;
+
+    for (int i = 0; i < CHUNK_AREA; i++) {
+        BlockRegistry* rg = br_get_block_registry(chunk->blocks[i].id);
+        if (!rg) continue;
+        if (!(rg->flags & BLOCK_FLAG_LIQUID)) continue;
+
+        int x = i % CHUNK_WIDTH;
+        int y = i / CHUNK_WIDTH;
+
+        FlowingLiquidState* state = (FlowingLiquidState*)&chunk->blocks[i].state;
+        float value = 0.125f + (state->level / 7.0f) * (1.0f - 0.125f);
+        if (chunk->blocks[i].id == BLOCK_WATER_SOURCE) value = 1.0f;
+
+        BlockExtraResult neighbors[4];
+        chunk_get_block_neighbors_extra(chunk, (Vector2u) { x, y }, false, neighbors);
+
+        float left_value = value;
+        float right_value = value;
+
+        NeighborDirection dirs[] = { NEIGHBOR_LEFT, NEIGHBOR_RIGHT };
+        for (int n = 0; n < 2; n++) {
+            float* value = n == 0 ? &left_value : &right_value;
+
+            BlockExtraResult neigh = neighbors[dirs[n]];
+            BlockRegistry* nrg = neigh.reg;
+            if (!nrg) continue;
+            if (!(nrg->flags & BLOCK_FLAG_LIQUID)) continue;
+
+            FlowingLiquidState* neighState = &neigh.block->state;
+            float val = 0.125f + (neighState->level / 7.0f) * (1.0f - 0.125f);
+
+            if (neigh.block->id == BLOCK_WATER_SOURCE || (neigh.block->id == BLOCK_WATER_FLOWING && neighState->falling)) {
+                *value = 1.0f;
+            }
+            else {
+                if (*value < val) *value = val;
+            }
+        }
+
+        float x0 = x * TILE_SIZE;
+        float x1 = x0 + TILE_SIZE;
+
+        float bottom = y * TILE_SIZE + TILE_SIZE;
+        float y_top_left = bottom - TILE_SIZE * left_value;
+        float y_top_right = bottom - TILE_SIZE * right_value;
+        float y_bottom = bottom;
+
+        int base = i * 6 * 3;
+        int colorBase = i * 6 * 4;
+
+        chunk->liquidMesh.vertices[base + 0] = x0;
+        chunk->liquidMesh.vertices[base + 1] = y_top_left;
+        chunk->liquidMesh.vertices[base + 2] = 0.0f;
+
+        chunk->liquidMesh.vertices[base + 3] = x1;
+        chunk->liquidMesh.vertices[base + 4] = y_top_right;
+        chunk->liquidMesh.vertices[base + 5] = 0.0f;
+
+        chunk->liquidMesh.vertices[base + 6] = x1;
+        chunk->liquidMesh.vertices[base + 7] = y_bottom;
+        chunk->liquidMesh.vertices[base + 8] = 0.0f;
+
+        chunk->liquidMesh.vertices[base + 9] = x0;
+        chunk->liquidMesh.vertices[base + 10] = y_top_left;
+        chunk->liquidMesh.vertices[base + 11] = 0.0f;
+
+        chunk->liquidMesh.vertices[base + 12] = x1;
+        chunk->liquidMesh.vertices[base + 13] = y_bottom;
+        chunk->liquidMesh.vertices[base + 14] = 0.0f;
+
+        chunk->liquidMesh.vertices[base + 15] = x0;
+        chunk->liquidMesh.vertices[base + 16] = y_bottom;
+        chunk->liquidMesh.vertices[base + 17] = 0.0f;
+
+        float lightFactor = chunk->light[i] / 15.0f;
+
+        for (int v = 0; v < 6; v++) {
+            int c = colorBase + v * 4;
+            chunk->liquidMesh.colors[c + 0] = 0;
+            chunk->liquidMesh.colors[c + 1] = 0;
+            chunk->liquidMesh.colors[c + 2] = 255 * lightFactor;
+            chunk->liquidMesh.colors[c + 3] = 100;
+        }
+    }
+
+    UploadMesh(&chunk->liquidMesh, false);
+}
+
 void chunk_genmesh(Chunk* chunk) {
     if (chunk == NULL) return;
 
@@ -141,6 +240,8 @@ void chunk_genmesh(Chunk* chunk) {
         build_quad(chunk, chunk->wallOffsets, chunk->walls, &chunk->wallMesh, true, x, y, brg->lightLevel <= 0 ? wallBrightness : 255);
         build_quad(chunk, chunk->blockOffsets, chunk->blocks, &chunk->blockMesh, false, x, y, 255);
     }
+
+    chunk_gen_liquid_mesh(chunk);
 
     UploadMesh(&chunk->blockMesh, false);
     UploadMesh(&chunk->wallMesh, false);
@@ -176,41 +277,9 @@ void chunk_draw_liquids(Chunk* chunk) {
         0.0f
     );
 
-    for (int i = 0; i < CHUNK_AREA; i++) {
-        BlockRegistry* brg = br_get_block_registry(chunk->blocks[i].id);
-        if (!brg) continue;
-        float lightFactor = chunk->light[i] / 15.0f;
-
-        if (chunk->blocks[i].id == BLOCK_WATER_SOURCE) {
-            int x = i % CHUNK_WIDTH;
-            int y = i / CHUNK_WIDTH;
-            DrawRectangle(
-                x * TILE_SIZE,
-                y * TILE_SIZE,
-                TILE_SIZE,
-                TILE_SIZE,
-                (Color) {
-                0, 0, 255 * lightFactor, 100
-            }
-            );
-        }
-        else if (chunk->blocks[i].id == BLOCK_WATER_FLOWING) {
-            int x = i % CHUNK_WIDTH;
-            int y = i / CHUNK_WIDTH;
-
-            FlowingLiquidState* state = (FlowingLiquidState*)&chunk->blocks[i].state;
-            float value = 0.125f + (state->level / 7.0f) * (1.0f - 0.125f);
-
-            DrawRectangle(
-                x * TILE_SIZE,
-                ceilf(y * TILE_SIZE + (TILE_SIZE * (1.0f - value))),
-                TILE_SIZE,
-                TILE_SIZE * value,
-                (Color) {
-                state->falling ? 0 : 255 * lightFactor, state->falling ? 255 * lightFactor : 0, 0, 100
-            }
-            );
-        }
+    if (chunk->initializedMeshes) {
+        rlDrawRenderBatchActive();
+        DrawMesh(chunk->liquidMesh, matDefault, MatrixIdentity());
     }
 
     rlPopMatrix();
@@ -630,26 +699,33 @@ void reset_meshes(Chunk* chunk, int blockVertexCount, int wallVertexCount) {
     if (chunk->initializedMeshes == true) {
         UnloadMesh(chunk->blockMesh);
         UnloadMesh(chunk->wallMesh);
+        UnloadMesh(chunk->liquidMesh);
         chunk->initializedMeshes = false;
     }
 
     chunk->wallMesh = (Mesh){ 0 };
     chunk->blockMesh = (Mesh){ 0 };
+    chunk->liquidMesh = (Mesh){ 0 };
 
     chunk->blockMesh.vertexCount = blockVertexCount;
     chunk->wallMesh.vertexCount = wallVertexCount;
+    chunk->liquidMesh.vertexCount = CHUNK_AREA * 6;
 
     chunk->blockMesh.triangleCount = blockVertexCount * 3;
     chunk->wallMesh.triangleCount = wallVertexCount * 3;
+    chunk->liquidMesh.triangleCount = chunk->liquidMesh.vertexCount * 3;
 
     chunk->blockMesh.vertices = (float*)MemAlloc(blockVertexCount * 3 * sizeof(float));
     chunk->wallMesh.vertices = (float*)MemAlloc(wallVertexCount * 3 * sizeof(float));
+    chunk->liquidMesh.vertices = (float*)MemAlloc(chunk->liquidMesh.vertexCount * 3 * sizeof(float));
 
     chunk->blockMesh.texcoords = (float*)MemAlloc(blockVertexCount * 2 * sizeof(float));
     chunk->wallMesh.texcoords = (float*)MemAlloc(wallVertexCount * 2 * sizeof(float));
+    chunk->liquidMesh.texcoords = (float*)MemAlloc(chunk->liquidMesh.vertexCount * 2 * sizeof(float));
 
     chunk->blockMesh.colors = (unsigned char*)MemAlloc(blockVertexCount * 4 * sizeof(unsigned char));
     chunk->wallMesh.colors = (unsigned char*)MemAlloc(wallVertexCount * 4 * sizeof(unsigned char));
+    chunk->liquidMesh.colors = (unsigned char*)MemAlloc(chunk->liquidMesh.vertexCount * 4 * sizeof(unsigned char));
 
     chunk->initializedMeshes = true;
 }

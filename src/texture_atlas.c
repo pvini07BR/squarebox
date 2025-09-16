@@ -13,6 +13,7 @@ void texture_atlas_load(const char* path, size_t r, size_t c) {
 	SetTextureWrap(textureAtlas, TEXTURE_WRAP_CLAMP);
 
     material = LoadMaterialDefault();
+    LoadMaterialDefault();
     SetMaterialTexture(&material, MATERIAL_MAP_ALBEDO, textureAtlas);
 }
 

@@ -103,8 +103,8 @@ int main() {
     float accumulator = 0.0f;
 
     Player player;
-    player_init(&player, (Vector2){ TILE_SIZE, 0 });
-    camera.target = (Vector2){ TILE_SIZE, 0 };
+    player_init(&player, (Vector2){ 0, -TILE_SIZE });
+    camera.target = Vector2Add(player_get_position(&player), Vector2Scale(player_get_size(&player), 0.5f));
 
     while (!WindowShouldClose()) {
         // Tick chunks

@@ -224,6 +224,7 @@ void chunk_genmesh(Chunk* chunk) {
         blockVertexCount += block_models_get_vertex_count(bvar.model_idx);
 
         rg = br_get_block_registry(chunk->walls[i].id);
+        bvar = br_get_block_variant(chunk->walls[i].id, chunk->walls[i].state);
         chunk->wallOffsets[i] = wallVertexCount;
         wallVertexCount += block_models_get_vertex_count(bvar.model_idx);
     }

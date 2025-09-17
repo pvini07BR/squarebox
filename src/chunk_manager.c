@@ -109,7 +109,6 @@ void chunk_manager_set_view(size_t new_view_width, size_t new_view_height) {
         Chunk* tempChunksPtr = (Chunk*)realloc(chunks, sizeof(Chunk) * chunk_count);
         if (!tempChunksPtr) {
             fprintf(stderr, "[ERROR] Failed to reallocate the Chunks.\n");
-            free(chunks);
             return;
         }
         chunks = tempChunksPtr;
@@ -144,8 +143,6 @@ void chunk_manager_relocate(Vector2i newCenter) {
         printf("[ERROR] Could not allocate memory for tempChunks.\n");
         return;
     };
-
-    memset(tempChunks, 0, CHUNK_AREA);
 
     bool* oldUsed = calloc(chunk_count, sizeof(bool));
     for (int i = 0; i < chunk_count; ++i) oldUsed[i] = false;

@@ -201,8 +201,7 @@ void item_registry_init() {
 		.name = "Cobblestone Nub",
 		.atlas_idx = 4,
 		.model_idx = BLOCK_MODEL_NUB,
-		.blockId = BLOCK_COBBLESTONE_NUB,
-		.placingFlags = ITEM_PLACE_FLAG_NOT_WALL
+		.blockId = BLOCK_COBBLESTONE_NUB
 	};
 
 	itemRegistry[ITEM_WOODEN_PLANKS_NUB] = (ItemRegistry){

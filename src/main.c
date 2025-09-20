@@ -266,7 +266,53 @@ int main() {
         }
 
         BeginDrawing();
-        ClearBackground((Color){ 122, 122, 170 });
+
+        ClearBackground(BLACK);
+
+        // Draw sky gradient
+        typedef struct {
+            Color color;
+            float height;
+        } SkyBand;
+        int band_count = 5;
+        SkyBand bands[] = {
+            { BLACK, 6400 },
+            { (Color) { 122, 122, 170, 255 }, 2560 },
+            { (Color) { 122, 122, 170, 255 }, 50 },
+            { BROWN, 1280 },
+            { BLACK, 1280 }
+        };
+
+        rlPushMatrix();
+
+        rlTranslatef(
+            0.0f,
+            camera.offset.y,
+            0.0f
+        );
+
+        rlScalef(
+            1.0f,
+            camera.zoom,
+            0.0f
+        );
+
+        rlTranslatef(
+            0.0f,
+            -camera.target.y,
+            0.0f
+        );
+
+        float origin = -(bands[0].height);
+        for (int i = 0; i < band_count; i++) {
+            int next = i + 1;
+            if (next >= band_count) next = band_count - 1;
+            DrawRectangleGradientV(0, origin, GetScreenWidth(), bands[i].height, bands[i].color, bands[next].color);
+            origin += bands[i].height;
+        }
+
+        rlPopMatrix();
+
         BeginMode2D(camera);
         
         chunk_manager_draw();

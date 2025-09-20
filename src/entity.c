@@ -130,9 +130,10 @@ static bool resolve_entity_vs_rect(Entity* entity, Rectangle* staticRect, const 
 void entity_update(Entity* entity, float deltaTime) {
 	if (!entity) return;
 
-	if (entity->collides) {
-		entity->on_liquid = false;
+	entity->on_liquid = false;
+	entity->grounded = false;
 
+	if (entity->collides) {
 		Vector2 nextPosition = (Vector2){
 			.x = entity->rect.x + entity->velocity.x * deltaTime,
 			.y = entity->rect.y + entity->velocity.y * deltaTime
@@ -201,9 +202,6 @@ void entity_update(Entity* entity, float deltaTime) {
 		}
 
 		qsort(rects, rect_count, sizeof(RectPair), compare_rects);
-
-		entity->grounded = false;
-		entity->on_liquid = false;
 
 		for (int i = 0; i < rect_count; i++) {
 			Rectangle* rect = &rects[i].rect;

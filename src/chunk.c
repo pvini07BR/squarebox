@@ -534,21 +534,37 @@ void chunk_set_block(Chunk* chunk, Vector2u position, BlockInstance blockValue, 
     if (ptr->id == blockValue.id && ptr->state == blockValue.state) return;
 
     bool can_place = true;
+
     BlockRegistry* new_br = br_get_block_registry(blockValue.id);
     if (!new_br) return;
+
+    BlockExtraResult self = {
+        .block = &blockValue,
+        .reg = new_br,
+        .chunk = chunk,
+        .position = position,
+        .idx = position.x + (position.y * CHUNK_WIDTH)
+    };
+
+    BlockInstance* other_inst = chunk_get_block_ptr(chunk, position, !isWall);
+    if (!other_inst) return;
+    BlockRegistry* other_br = br_get_block_registry(other_inst->id);
+    if (!other_br) return;
+
+    BlockExtraResult other = {
+        .block = other_inst,
+        .reg = other_br,
+        .chunk = chunk,
+        .position = position,
+        .idx = position.x + (position.y * CHUNK_WIDTH)
+    };
 
     // Resolve state for new block before placing
     if (new_br->state_resolver != NULL) {
         BlockExtraResult neighbors[4];
         chunk_get_block_neighbors_extra(chunk, position, isWall, neighbors);
-        BlockExtraResult self = {
-            .block = &blockValue,
-            .reg = new_br,
-            .chunk = chunk,
-            .position = position,
-            .idx = position.x + (position.y * CHUNK_WIDTH)
-        };
-        can_place = new_br->state_resolver(self, neighbors, isWall);
+
+        can_place = new_br->state_resolver(self, other, neighbors, isWall);
     }
     if (!can_place) return;
 
@@ -579,6 +595,9 @@ void chunk_set_block(Chunk* chunk, Vector2u position, BlockInstance blockValue, 
     // Resolve state for neighboring blocks
     BlockExtraResult neighbors[4];
     chunk_get_block_neighbors_extra(chunk, position, isWall, neighbors);
+    BlockExtraResult otherNeighbors[4];
+    chunk_get_block_neighbors_extra(chunk, position, !isWall, otherNeighbors);
+
     for (int i = 0; i < 4; i++) {
         if (neighbors[i].block == NULL) continue;
         BlockRegistry* nbr_br = neighbors[i].reg;
@@ -587,8 +606,16 @@ void chunk_set_block(Chunk* chunk, Vector2u position, BlockInstance blockValue, 
         BlockExtraResult neighbors2[4];
         chunk_get_block_neighbors_extra(neighbors[i].chunk, neighbors[i].position, isWall, neighbors2);
 
-        bool r = nbr_br->state_resolver(neighbors[i], neighbors2, isWall);
-        if (!r) *neighbors[i].block = (BlockInstance){ 0, 0 };
+        if (nbr_br->state_resolver) {
+            bool r = nbr_br->state_resolver(neighbors[i], otherNeighbors[i], neighbors2, isWall);
+            if (!r) *neighbors[i].block = (BlockInstance){ 0, 0 };
+        }
+    }
+
+    // Resolve state for the other block (wall or block)
+    if (other_br->state_resolver) {
+        bool r = other_br->state_resolver(other, self, otherNeighbors, !isWall);
+        if (!r) *other.block = (BlockInstance){ 0, 0 };
     }
 
     if (update_lighting) chunk_manager_update_lighting();

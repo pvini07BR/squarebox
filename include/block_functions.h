@@ -11,7 +11,8 @@
 typedef bool (*BlockInteractionCallback)(BlockExtraResult result);
 // Function pointer to a function that will resolve the state of the block.
 // returns a bool value to indicate if the block can be placed or not.
-typedef bool (*BlockStateResolver)(BlockExtraResult result, BlockExtraResult neighbors[4], bool isWall);
+// the "other" member variable is either a block or wall, depending on the value of isWall.
+typedef bool (*BlockStateResolver)(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], bool isWall);
 // Function pointer to a function that will be called when the block is destroyed.
 typedef void (*BlockDestroyCallback)(BlockExtraResult result);
 // Function pointer to a function that will define the behavior for a block when it ticks.
@@ -19,11 +20,11 @@ typedef void (*BlockDestroyCallback)(BlockExtraResult result);
 // unnecessary light and mesh updates.
 typedef bool (*BlockTickCallback)(BlockExtraResult result, BlockExtraResult neighbors[4], bool isWall);
 
-bool grounded_block_resolver(BlockExtraResult result, BlockExtraResult neighbors[4], bool isWall);
-bool plant_block_resolver(BlockExtraResult result, BlockExtraResult neighbors[4], bool isWall);
-bool torch_state_resolver(BlockExtraResult result, BlockExtraResult neighbors[4], bool isWall);
-bool fence_resolver(BlockExtraResult result, BlockExtraResult neighbors[4], bool isWall);
-bool chest_solver(BlockExtraResult result, BlockExtraResult neighbors[4], bool isWall);
+bool grounded_block_resolver(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], bool isWall);
+bool plant_block_resolver(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], bool isWall);
+bool torch_state_resolver(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], bool isWall);
+bool fence_resolver(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], bool isWall);
+bool chest_solver(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], bool isWall);
 
 bool on_chest_interact(BlockExtraResult result);
 

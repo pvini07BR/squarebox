@@ -6,7 +6,7 @@
 
 #include <stdio.h>
 
-bool grounded_block_resolver(BlockExtraResult result, BlockExtraResult neighbors[4], bool isWall) {
+bool grounded_block_resolver(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], bool isWall) {
     BlockRegistry* reg = neighbors[NEIGHBOR_BOTTOM].reg;
     if (reg) {
         return reg->flags & BLOCK_FLAG_SOLID && reg->flags & BLOCK_FLAG_FULL_BLOCK;
@@ -15,7 +15,7 @@ bool grounded_block_resolver(BlockExtraResult result, BlockExtraResult neighbors
 	}
 }
 
-bool plant_block_resolver(BlockExtraResult result, BlockExtraResult neighbors[4], bool isWall) {
+bool plant_block_resolver(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], bool isWall) {
     BlockRegistry* reg = neighbors[NEIGHBOR_BOTTOM].reg;
     if (reg) {
         return reg->flags & BLOCK_FLAG_PLANTABLE;
@@ -25,7 +25,7 @@ bool plant_block_resolver(BlockExtraResult result, BlockExtraResult neighbors[4]
     }
 }
 
-bool torch_state_resolver(BlockExtraResult result, BlockExtraResult neighbors[4], bool isWall) {
+bool torch_state_resolver(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], bool isWall) {
     BlockRegistry* bottom_brg = neighbors[NEIGHBOR_BOTTOM].reg;
     if (bottom_brg->flags & BLOCK_FLAG_SOLID && bottom_brg->flags & BLOCK_FLAG_FULL_BLOCK) {
         result.block->state = 0;
@@ -44,10 +44,26 @@ bool torch_state_resolver(BlockExtraResult result, BlockExtraResult neighbors[4]
         return true;
     }
 
+    if (!isWall) {
+        BlockRegistry* wall_rg = other.reg;
+        if (wall_rg) {
+            if (wall_rg->flags & BLOCK_FLAG_SOLID && wall_rg->flags & BLOCK_FLAG_FULL_BLOCK) {
+                result.block->state = 0;
+                return true;
+            }
+        }
+        else {
+            return false;
+        }
+    }
+    else {
+        return false;
+    }
+
     return false;
 }
 
-bool fence_resolver(BlockExtraResult result, BlockExtraResult neighbors[4], bool isWall) {
+bool fence_resolver(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], bool isWall) {
     bool right = neighbors[NEIGHBOR_RIGHT].block->id == result.block->id;
 	bool left = neighbors[NEIGHBOR_LEFT].block->id == result.block->id;
 
@@ -59,7 +75,7 @@ bool fence_resolver(BlockExtraResult result, BlockExtraResult neighbors[4], bool
     return true;
 }
 
-bool chest_solver(BlockExtraResult result, BlockExtraResult neighbors[4], bool isWall) {
+bool chest_solver(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], bool isWall) {
     if (result.block->state <= 0) {
         result.block->state = container_vector_add(&result.chunk->containerVec, "Chest", 3, 10, false);
         if (result.block->state > 0) return true;

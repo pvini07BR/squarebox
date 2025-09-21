@@ -162,10 +162,16 @@ int main() {
                 mouse_dir = Vector2Scale(mouse_dir, 2.0f);
 
                 Vector2 item_pos = Vector2SubtractValue(entity_get_center(&player->entity), TILE_SIZE * 0.25f);
-                ItemEntity* ie = item_entity_create(item_pos, mouse_dir, item);
+                ItemEntity* ie = item_entity_create(item_pos, mouse_dir, (ItemSlot) { item.item_id, 0 });
                 if (ie) {
-                    entity_list_add(&ie->entity);
-                    //inventory_set_item(0, hotbarIdx, (ItemSlot) { ITEM_NONE, 0 });
+                    if (entity_list_add(&ie->entity)) {
+                        if (item.amount > 1) {
+                            inventory_set_item(0, hotbarIdx, (ItemSlot) { item.item_id, item.amount - 1 });
+                        }
+                        else {
+                            inventory_set_item(0, hotbarIdx, (ItemSlot) { ITEM_NONE, 0 });
+                        }
+                    }
                 }
             }
 

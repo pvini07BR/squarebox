@@ -189,7 +189,7 @@ static void resolve_solid_blocks(Entity* entity, float deltaTime) {
 		Vector2 contact_normal;
 		if (resolve_entity_vs_rect(entity, rect, deltaTime, &contact_normal)) {
 			if (contact_normal.y < 0.0f) {
-				entity->grounded = true;
+				if (!entity->grounded) entity->grounded = true;
 			}
 
 			if (entity->grounded && contact_normal.x != 0.0f) {

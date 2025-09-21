@@ -14,9 +14,10 @@ bool entity_list_add(Entity* entity) {
 
 bool entity_list_remove_at(size_t idx) {
 	if (idx >= entity_count) return false;
-	Entity* e = &entities[idx];
+	Entity* e = entities[idx];
 	if (e->destroy) e->destroy(e);
 	entities[idx] = entities[--entity_count];
+	return true;
 }
 
 void entity_list_update(float deltaTime) {

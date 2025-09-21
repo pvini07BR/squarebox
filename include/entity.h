@@ -3,9 +3,9 @@
 
 #include <raylib.h>
 
-struct Entity;
+typedef struct Entity Entity;
 
-typedef struct {
+typedef struct Entity {
 	Rectangle rect;
 	Vector2 velocity;
 

@@ -161,10 +161,11 @@ int main() {
                 Vector2 mouse_dir = Vector2Subtract(mouseWorldPos, entity_get_center(&player->entity));
                 mouse_dir = Vector2Scale(mouse_dir, 2.0f);
 
-                ItemEntity* ie = item_entity_create(entity_get_center(&player->entity), mouse_dir, item);
+                Vector2 item_pos = Vector2SubtractValue(entity_get_center(&player->entity), TILE_SIZE * 0.25f);
+                ItemEntity* ie = item_entity_create(item_pos, mouse_dir, item);
                 if (ie) {
                     entity_list_add(&ie->entity);
-                    inventory_set_item(0, hotbarIdx, (ItemSlot) { ITEM_NONE, 0 });
+                    //inventory_set_item(0, hotbarIdx, (ItemSlot) { ITEM_NONE, 0 });
                 }
             }
 

@@ -1,7 +1,7 @@
 #ifndef ENTITY_LIST_H
 #define ENTITY_LIST_H
 
-#include <stdint.h>
+#include <stddef.h>
 
 #include "entity.h"
 

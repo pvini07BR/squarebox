@@ -151,7 +151,7 @@ void chunk_gen_liquid_mesh(Chunk* chunk) {
             if (!nrg) continue;
             if (!(nrg->flags & BLOCK_FLAG_LIQUID)) continue;
 
-            FlowingLiquidState* neighState = &neigh.block->state;
+            FlowingLiquidState* neighState = (FlowingLiquidState*)&neigh.block->state;
             float val = 0.125f + (neighState->level / 7.0f) * (1.0f - 0.125f);
 
             if (neigh.block->id == BLOCK_WATER_SOURCE || (neigh.block->id == BLOCK_WATER_FLOWING && neighState->falling)) {

@@ -173,7 +173,7 @@ bool flow_to_bottom(BlockExtraResult bottom) {
         return true;
     }
     else if (brg->flags & BLOCK_FLAG_LIQUID && bottom.block->id == BLOCK_WATER_FLOWING) {
-        FlowingLiquidState* bottomState = &bottom.block->state;
+        FlowingLiquidState* bottomState = (FlowingLiquidState*)&bottom.block->state;
         if (bottomState->level < 7) {
             chunk_set_block(bottom.chunk, bottom.position, (BlockInstance) { BLOCK_WATER_FLOWING, get_flowing_liquid_state(7, true) }, false, false);
             return true;
@@ -200,7 +200,7 @@ bool flow_to_sides(BlockExtraResult neighbors[4], int startLevel) {
             placed = true;
         }
         else if (neighrg->flags & BLOCK_FLAG_LIQUID && neighbor.block->id == BLOCK_WATER_FLOWING) {
-            FlowingLiquidState* neighState = &neighbor.block->state;
+            FlowingLiquidState* neighState = (FlowingLiquidState*)&neighbor.block->state;
             if (!neighState->falling && neighState->level < (startLevel - 1)) {
                 chunk_set_block(neighbor.chunk, neighbor.position, (BlockInstance) { BLOCK_WATER_FLOWING, get_flowing_liquid_state(startLevel - 1, false) }, false, false);
                 placed = true;
@@ -227,7 +227,7 @@ bool water_source_tick(BlockExtraResult result, BlockExtraResult neighbors[4], b
 bool water_flowing_tick(BlockExtraResult result, BlockExtraResult neighbors[4], bool isWall) {
     if (isWall) return false;
 
-    FlowingLiquidState* curState = &result.block->state;
+    FlowingLiquidState* curState = (FlowingLiquidState*)&result.block->state;
     if (curState->falling == true) {
         BlockExtraResult top = neighbors[NEIGHBOR_TOP];
         BlockRegistry* trg = top.reg;
@@ -246,7 +246,7 @@ bool water_flowing_tick(BlockExtraResult result, BlockExtraResult neighbors[4], 
         if (ret) return true;
 
         if (!(brg->flags & BLOCK_FLAG_REPLACEABLE)) {
-            FlowingLiquidState* curState = &result.block->state;
+            FlowingLiquidState* curState = (FlowingLiquidState*)&result.block->state;
             return flow_to_sides(neighbors, curState->level);
         }
         else {
@@ -285,7 +285,7 @@ bool water_flowing_tick(BlockExtraResult result, BlockExtraResult neighbors[4], 
                     break;
                 }
                 else if (neighbor.block->id == BLOCK_WATER_FLOWING) {
-                    FlowingLiquidState* neighState = &neighbor.block->state;
+                    FlowingLiquidState* neighState = (FlowingLiquidState*)&neighbor.block->state;
                     if (neighState->level > max_neighbor_level) {
                         max_neighbor_level = neighState->level;
                     }
@@ -322,7 +322,7 @@ bool water_flowing_tick(BlockExtraResult result, BlockExtraResult neighbors[4], 
                     changed = true;
                 }
                 else if (neighrg->flags & BLOCK_FLAG_LIQUID && neighbor.block->id == BLOCK_WATER_FLOWING) {
-                    FlowingLiquidState* neighState = &neighbor.block->state;
+                    FlowingLiquidState* neighState = (FlowingLiquidState*)&neighbor.block->state;
                     if (neighState->level < flow_level) {
                         chunk_set_block(neighbor.chunk, neighbor.position, (BlockInstance) { BLOCK_WATER_FLOWING, get_flowing_liquid_state(flow_level, false) }, false, false);
                         changed = true;

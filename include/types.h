@@ -25,7 +25,7 @@ typedef struct {
 	// Member variable used for block states.
 	// Its usage depends on what flag is set
 	// for a specific block.
-	size_t state;
+	uint8_t state;
 } BlockInstance;
 
 #endif

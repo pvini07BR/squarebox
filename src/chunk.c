@@ -878,7 +878,11 @@ void build_quad(Chunk* chunk, size_t* offsets, BlockInstance* blocks, Mesh* mesh
     }
 
     // Block state rendering
-    BlockVariant bvar = br_get_block_variant(blocks[i].id, blocks[i].state);
+    uint8_t variantIdx = blocks[i].state;
+    if (brg->variant_selector) {
+        variantIdx = brg->variant_selector(blocks[i].state);
+    }
+    BlockVariant bvar = br_get_block_variant(blocks[i].id, variantIdx);
 
     bm_set_block_model(offsets, mesh, (Vector2u) { x, y }, colors, bvar.model_idx, bvar.atlas_idx, flipUVH, flipUVV, bvar.flipH, bvar.flipV, bvar.rotation);
 }

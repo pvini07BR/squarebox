@@ -5,6 +5,9 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#define TRAPDOOR_ROTATION_MASK 0x07
+#define TRAPDOOR_OPEN_MASK 0x08
+
 typedef struct {
 	uint8_t level : 3;
 	bool falling : 1;

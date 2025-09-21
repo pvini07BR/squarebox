@@ -26,6 +26,11 @@ void block_colliders_init() {
 		.collider_count = 1,
 		.colliders = { {.x = TILE_SIZE / 2.0f, .y = TILE_SIZE / 2.0f, .width = TILE_SIZE / 2.0f, .height = TILE_SIZE / 2.0f } }
 	};
+
+    colliders[BLOCK_COLLIDER_TRAPDOOR] = (BlockCollider){
+        .collider_count = 1,
+        .colliders = { {.x = 0.0f, .y = TILE_SIZE * 0.875f, .width = TILE_SIZE, .height = TILE_SIZE * 0.125f } }
+    };
 }
 
 BlockCollider* block_colliders_get(BlockColliderEnum idx) {

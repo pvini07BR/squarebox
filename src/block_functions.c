@@ -6,6 +6,47 @@
 
 #include <stdio.h>
 
+uint8_t trapdoor_variant_selector(uint8_t state) {
+    int rotation = state & TRAPDOOR_ROTATION_MASK;
+    bool open = (state & TRAPDOOR_OPEN_MASK) ? true : false;
+
+    if (rotation == 0) {
+        if (!open) {
+            return 0;
+        }
+        else {
+            return 1;
+        }
+    }
+    else if (rotation == 1) {
+        if (!open) {
+            return 1;
+        }
+        else {
+            return 2;
+        }
+    }
+    else if (rotation == 2) {
+        if (!open) {
+            return 2;
+        }
+        else {
+            return 3;
+        }
+    }
+    else if (rotation == 3) {
+        if (!open) {
+            return 3;
+        }
+        else {
+            return 2;
+        }
+    }
+    else {
+        return rotation;
+    }
+}
+
 bool grounded_block_resolver(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], bool isWall) {
     BlockRegistry* reg = neighbors[NEIGHBOR_BOTTOM].reg;
     if (reg) {
@@ -75,6 +116,11 @@ bool fence_resolver(BlockExtraResult result, BlockExtraResult other, BlockExtraR
     return true;
 }
 
+bool trapdoor_block_resolver(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], bool isWall) {
+    result.block->state = (result.block->state & ~TRAPDOOR_ROTATION_MASK) | (0 & 0x07);
+    return true;
+}
+
 bool chest_solver(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], bool isWall) {
     if (result.block->state <= 0) {
         result.block->state = container_vector_add(&result.chunk->containerVec, "Chest", 3, 10, false);
@@ -94,6 +140,12 @@ bool on_chest_interact(BlockExtraResult result) {
     return false;
 }
 
+bool trapdoor_interact(BlockExtraResult result) {
+    uint8_t state = result.block->state;
+    state ^= TRAPDOOR_OPEN_MASK;
+    result.block->state = state;
+    return true;
+}
 
 void on_chest_destroy(BlockExtraResult result) {
     if (result.block->state > 0) {

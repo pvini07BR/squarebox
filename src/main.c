@@ -16,7 +16,9 @@
 #include "item_container.h"
 #include "block_models.h"
 #include "block_colliders.h"
+#include "entity_list.h"
 #include "player.h"
+#include "item_entity.h"
 
 #define TICK_DELTA (1.0f / 20.0f)
 
@@ -102,9 +104,9 @@ int main() {
     char buffer[1024];
     float accumulator = 0.0f;
 
-    Player player;
-    player_init(&player, (Vector2){ 0, -TILE_SIZE });
-    camera.target = Vector2Add(player_get_position(&player), Vector2Scale(player_get_size(&player), 0.5f));
+    Player* player = player_create((Vector2) { 0, -TILE_SIZE });
+    entity_list_add(&player->entity);
+    camera.target = Vector2Add(player_get_position(player), Vector2Scale(player_get_size(player), 0.5f));
 
     while (!WindowShouldClose()) {
         // Tick chunks
@@ -138,8 +140,7 @@ int main() {
                         ItemRegistry* itr = ir_get_item_registry(inventory_get_item(0, hotbarIdx).item_id);
                         if (itr->blockId > 0 && !(itr->placingFlags & (wall_mode ? ITEM_PLACE_FLAG_NOT_WALL : ITEM_PLACE_FLAG_NOT_BLOCK))) {
                             BlockRegistry* br = br_get_block_registry(itr->blockId);
-
-                            if (wall_mode || (!wall_mode && ((br->flags & BLOCK_FLAG_SOLID && !CheckCollisionRecs(blockPlacerRect, player.entity.rect) || !(br->flags & BLOCK_FLAG_SOLID))))) {
+                            if (wall_mode || (!wall_mode && ((br->flags & BLOCK_FLAG_SOLID && !CheckCollisionRecs(blockPlacerRect, player->entity.rect) || !(br->flags & BLOCK_FLAG_SOLID))))) {
                                 BlockInstance inst = {
                                     .id = itr->blockId,
                                     .state = blockState
@@ -152,7 +153,19 @@ int main() {
             }
 
             if (IsKeyPressed(KEY_F)) {
-                player.flying = !player.flying;
+                player->entity.gravity_affected = !player->entity.gravity_affected;
+            }
+
+            ItemSlot item = inventory_get_item(0, hotbarIdx);
+            if (IsKeyPressed(KEY_Q) && item.item_id > 0) {
+                Vector2 mouse_dir = Vector2Subtract(mouseWorldPos, entity_get_center(&player->entity));
+                mouse_dir = Vector2Scale(mouse_dir, 2.0f);
+
+                ItemEntity* ie = item_entity_create(entity_get_center(&player->entity), mouse_dir, item);
+                if (ie) {
+                    entity_list_add(&ie->entity);
+                    inventory_set_item(0, hotbarIdx, (ItemSlot) { ITEM_NONE, 0 });
+                }
             }
 
             if (IsKeyPressed(KEY_C)) {
@@ -208,9 +221,10 @@ int main() {
             }
         }
 
-        player_update(&player, GetFrameTime(), item_container_is_open());
+        player->disable_input = item_container_is_open();
+        entity_list_update(GetFrameTime());
             
-        Vector2 newTarget = Vector2Add(player_get_position(&player), Vector2Scale(player_get_size(&player), 0.5f));
+        Vector2 newTarget = Vector2Add(player_get_position(player), Vector2Scale(player_get_size(player), 0.5f));
         camera.target = Vector2Lerp(camera.target, newTarget, 25.0f * GetFrameTime());
 
         if (IsKeyPressed(KEY_E) && !item_container_is_open())
@@ -320,7 +334,7 @@ int main() {
         
         chunk_manager_draw();
 
-        player_draw(&player);
+        entity_list_draw();
 
         chunk_manager_draw_liquids();
 
@@ -456,6 +470,7 @@ int main() {
         EndDrawing();
     }
     
+    entity_list_free();
     free_inventory();
     item_container_free(&creativeMenu);
     item_registry_free();

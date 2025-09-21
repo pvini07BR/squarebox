@@ -9,12 +9,10 @@ typedef struct {
 	Entity entity;
 	int direction;
 	float rotation;
-	bool flying;
+	bool disable_input;
 } Player;
 
-void player_init(Player* player, Vector2 initialPosition);
-void player_update(Player* player, float deltaTime, bool disableInput);
-void player_draw(Player* player);
+Player* player_create(Vector2 initialPosition);
 
 Vector2 player_get_position(Player* player);
 Vector2 player_get_size(Player* player);

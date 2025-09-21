@@ -6,6 +6,8 @@
 
 #include "chunk.h"
 
+// Function that will get the index of a specific variant for a block.
+typedef uint8_t (*BlockVariantSelector)(uint8_t state);
 // Function pointer to a function that will be called when the block is interacted with.
 // returns a bool value to indicate if the interaction was successful or not.
 typedef bool (*BlockInteractionCallback)(BlockExtraResult result);
@@ -20,13 +22,17 @@ typedef void (*BlockDestroyCallback)(BlockExtraResult result);
 // unnecessary light and mesh updates.
 typedef bool (*BlockTickCallback)(BlockExtraResult result, BlockExtraResult neighbors[4], bool isWall);
 
+uint8_t trapdoor_variant_selector(uint8_t state);
+
 bool grounded_block_resolver(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], bool isWall);
 bool plant_block_resolver(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], bool isWall);
 bool torch_state_resolver(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], bool isWall);
 bool fence_resolver(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], bool isWall);
+bool trapdoor_block_resolver(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], bool isWall);
 bool chest_solver(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], bool isWall);
 
 bool on_chest_interact(BlockExtraResult result);
+bool trapdoor_interact(BlockExtraResult result);
 
 void on_chest_destroy(BlockExtraResult result);
 

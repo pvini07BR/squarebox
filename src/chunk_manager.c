@@ -279,7 +279,7 @@ bool chunk_manager_interact(Vector2i position, bool isWall) {
 
 	// If the block has an interact callback, call it
     if (brg->interact_callback) {
-        return brg->interact_callback(
+        bool val = brg->interact_callback(
             (BlockExtraResult) {
                 .block = inst,
                 .reg = brg,
@@ -288,6 +288,11 @@ bool chunk_manager_interact(Vector2i position, bool isWall) {
                 .idx = relPos.x + (relPos.y * CHUNK_WIDTH)
             }
         );
+        if (val) {
+            chunk_manager_update_lighting();
+            return true;
+        }
+        else { return false; }
     }
     return false;
 }

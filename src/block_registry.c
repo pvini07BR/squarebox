@@ -161,6 +161,21 @@ void block_registry_init() {
         .lightLevel = BLOCK_LIGHT_TRANSPARENT,
     };
 
+    blockRegistry[BLOCK_TRAPDOOR] = (BlockRegistry){
+        .variant_count = 4,
+        .variants = {
+            {.atlas_idx = 21, .model_idx = BLOCK_MODEL_QUAD, .collider_idx = BLOCK_COLLIDER_TRAPDOOR, .flipH = false, .flipV = false, .rotation = 0 },
+            {.atlas_idx = 21, .model_idx = BLOCK_MODEL_QUAD, .collider_idx = BLOCK_COLLIDER_TRAPDOOR, .flipH = false, .flipV = false, .rotation = 1 },
+            {.atlas_idx = 21, .model_idx = BLOCK_MODEL_QUAD, .collider_idx = BLOCK_COLLIDER_TRAPDOOR, .flipH = false, .flipV = false, .rotation = 2 },
+            {.atlas_idx = 21, .model_idx = BLOCK_MODEL_QUAD, .collider_idx = BLOCK_COLLIDER_TRAPDOOR, .flipH = false, .flipV = false, .rotation = 3 },
+        },
+        .flags = BLOCK_FLAG_SOLID,
+        .lightLevel = BLOCK_LIGHT_NO_LIGHT,
+        .state_resolver = trapdoor_block_resolver,
+        .variant_selector = trapdoor_variant_selector,
+        .interact_callback = trapdoor_interact
+    };
+
     blockRegistry[BLOCK_TORCH] = (BlockRegistry){
         .variant_count = 3,
         .variants = {

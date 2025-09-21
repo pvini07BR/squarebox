@@ -2,45 +2,58 @@
 #include "types.h"
 #include "chunk_manager.h"
 
+#include <stdlib.h>
 #include <stdint.h>
 
 #include <raymath.h>
 #include <rlgl.h>
 
 #define SPEED 10.0f * TILE_SIZE
-#define GRAVITY_ACCEL 98.07f * TILE_SIZE
-#define TERMINAL_GRAVITY 32.0f * TILE_SIZE
 #define JUMP_FORCE 16.0f * TILE_SIZE
 #define ROTATION_AMOUNT 549.57f
 #define MOVEMENT_ACCEL_RATE 20.0f
 
 #define TO_BLOCK_COORDS(value) ((int)floorf((float)value / (float)TILE_SIZE))
 
-void player_init(Player* player, Vector2 initialPosition) {
-	if (!player) return;
+void player_update(Entity* entity, float deltaTime);
+void player_draw(Entity* entity);
+void player_destroy(Entity* entity);
+
+Player* player_create(Vector2 initialPosition) {
+	Player* player = malloc(sizeof(Player));
+	if (!player) return NULL;
 
 	player->direction = 0;
 	player->rotation = 0.0f;
-	player->flying = false;
+	player->disable_input = false;
 
 	player->entity.rect.x = initialPosition.x;
 	player->entity.rect.y = initialPosition.y;
-	player->entity.rect.width = 28.0f;
-	player->entity.rect.height = 28.0f;
+	player->entity.rect.width = 27.0f;
+	player->entity.rect.height = 27.0f;
 
 	player->entity.velocity = Vector2Zero();
 	player->entity.collides = true;
+	player->entity.gravity_affected = true;
+
+	player->entity.parent = player;
+	player->entity.update = player_update;
+	player->entity.draw = player_draw;
+	player->entity.destroy = player_destroy;
+
+	return player;
 }
 
-void player_update(Player* player, float deltaTime, bool disableInput) {
-	if (!player) return;
+void player_update(Entity* entity, float deltaTime) {
+	if (!entity) return;
+	Player* player = (Player*)entity->parent;
 
 	float movement_accel_rate = MOVEMENT_ACCEL_RATE;
 	if (player->entity.on_liquid) {
 		movement_accel_rate /= 4.0f;
 	}
 
-	if (!disableInput) {
+	if (!player->disable_input) {
 		float speed = SPEED;
 		if (player->entity.on_liquid) {
 			speed /= 2.0f;
@@ -53,7 +66,7 @@ void player_update(Player* player, float deltaTime, bool disableInput) {
 			speed *= 2.0;
 		}
 
-		if (!player->flying) {
+		if (entity->gravity_affected) {
 			if ((IsKeyDown(KEY_SPACE) || IsKeyDown(KEY_W) || IsKeyDown(KEY_UP))) {
 				
 				if (player->entity.on_liquid || player->entity.on_climbable) {
@@ -82,48 +95,33 @@ void player_update(Player* player, float deltaTime, bool disableInput) {
 
 		if (IsKeyDown(KEY_A) || IsKeyDown(KEY_LEFT)) {
 			player->entity.velocity.x = Lerp(player->entity.velocity.x, -speed, movement_accel_rate * deltaTime);
-			if (!player->flying) player->direction = -1;
+			if (entity->gravity_affected) player->direction = -1;
 		}
 		else if (IsKeyDown(KEY_D) || IsKeyDown(KEY_RIGHT)) {
 			player->entity.velocity.x = Lerp(player->entity.velocity.x, speed, movement_accel_rate * deltaTime);
-			if (!player->flying) player->direction = 1;
+			if (entity->gravity_affected) player->direction = 1;
 		}
 		else {
 			player->entity.velocity.x = Lerp(player->entity.velocity.x, 0.0f, movement_accel_rate * deltaTime);
-			if (player->entity.grounded && !player->flying) player->direction = 0;
+			if (player->entity.grounded && entity->gravity_affected) player->direction = 0;
 		}
 	}
 	else {
 		player->entity.velocity.x = Lerp(player->entity.velocity.x, 0.0f, movement_accel_rate * deltaTime);
 		if (player->entity.grounded) player->direction = 0;
-		if (player->flying) {
+		if (!entity->gravity_affected) {
 			player->entity.velocity.y = Lerp(player->entity.velocity.y, 0.0f, movement_accel_rate * deltaTime);
 		}
 	}
 
-	if (!player->flying) {
-		float gravity_accel = GRAVITY_ACCEL;
-		float terminal_gravity = TERMINAL_GRAVITY;
+	if (entity->gravity_affected) {
 		float rotation_amount = ROTATION_AMOUNT;
 
-		if (player->entity.on_liquid) {
-			gravity_accel /= 2.0f;
-			terminal_gravity /= 8.0f;
+		if (entity->on_liquid) {
 			rotation_amount /= 2.0f;
 		}
 
-		if (player->entity.on_climbable) {
-			terminal_gravity /= 4.0f;
-		}
-
-		if (player->entity.velocity.y < terminal_gravity) {
-			player->entity.velocity.y += gravity_accel * deltaTime;
-		}
-		else if (player->entity.velocity.y > terminal_gravity) {
-			player->entity.velocity.y = terminal_gravity;
-		}
-
-		if (!player->entity.grounded) {
+		if (!entity->grounded) {
 			player->rotation += rotation_amount * deltaTime * player->direction;
 		}
 		else {
@@ -135,12 +133,11 @@ void player_update(Player* player, float deltaTime, bool disableInput) {
 		float nineties = roundf((player->rotation / 90.0f)) * 90.0f;
 		player->rotation = Lerp(player->rotation, nineties, 50.0f * deltaTime);
 	}
-
-	entity_update(&player->entity, deltaTime);
 }
 
-void player_draw(Player* player) {
-	if (!player) return;
+void player_draw(Entity* entity) {
+	if (!entity) return;
+	Player* player = entity->parent;
 
 	Vector2 playerCenter = entity_get_center(&player->entity);
 	uint8_t light = chunk_manager_get_light((Vector2i) { TO_BLOCK_COORDS(playerCenter.x), TO_BLOCK_COORDS(playerCenter.y) });
@@ -162,6 +159,12 @@ void player_draw(Player* player) {
 	);
 	
 	rlPopMatrix();
+}
+
+void player_destroy(Entity* entity) {
+	if (!entity) return;
+	Player* player = entity->parent;
+	free(player);
 }
 
 Vector2 player_get_position(Player* player) {

@@ -30,6 +30,7 @@ typedef enum {
 	BLOCK_PEBBLES,
 	BLOCK_WOODEN_FENCE,
 	BLOCK_LADDERS,
+	BLOCK_TRAPDOOR,
 	BLOCK_TORCH,
 	BLOCK_WATER_SOURCE,
 	BLOCK_WATER_FLOWING,
@@ -136,6 +137,7 @@ typedef struct {
 	// This value tells if the block is transparent, opaque or emit light.
 	BlockLight lightLevel;
 
+	BlockVariantSelector variant_selector;
 	BlockInteractionCallback interact_callback;
 	BlockStateResolver state_resolver;
 	BlockDestroyCallback destroy_callback;

@@ -14,6 +14,9 @@
 
 #define TO_BLOCK_COORDS(value) ((int)floorf((float)value / (float)TILE_SIZE))
 
+#define GRAVITY_ACCEL 98.07f * TILE_SIZE
+#define TERMINAL_GRAVITY 32.0f * TILE_SIZE
+
 typedef struct {
 	Rectangle rect;
 	float t;
@@ -156,7 +159,11 @@ static void resolve_solid_blocks(Entity* entity, float deltaTime) {
 			Rectangle collider_rects[MAX_RECTS_PER_COLLIDER];
 			size_t collider_count = 0;
 
-			BlockVariant variant = br_get_block_variant(block.id, block.state);
+			uint8_t variantIdx = block.state;
+			if (reg->variant_selector) {
+				variantIdx = reg->variant_selector(block.state);
+			}
+			BlockVariant variant = br_get_block_variant(block.id, variantIdx);
 			block_colliders_get_rects(variant.collider_idx, variant.rotation, &collider_count, collider_rects);
 
 			for (int i = 0; i < collider_count; i++) {
@@ -231,7 +238,11 @@ void resolve_area_blocks(Entity* entity) {
 				collider_count++;
 			}
 			else {
-				BlockVariant variant = br_get_block_variant(block.id, block.state);
+				uint8_t variantIdx = block.state;
+				if (reg->variant_selector) {
+					variantIdx = reg->variant_selector(block.state);
+				}
+				BlockVariant variant = br_get_block_variant(block.id, variantIdx);
 				block_colliders_get_rects(variant.collider_idx, variant.rotation, &collider_count, collider_rects);
 			}
 
@@ -258,6 +269,27 @@ void entity_update(Entity* entity, float deltaTime) {
 	entity->grounded = false;
 	entity->on_climbable = false;
 
+	if (entity->gravity_affected) {
+		float gravity_accel = GRAVITY_ACCEL;
+		float terminal_gravity = TERMINAL_GRAVITY;
+		
+		if (entity->on_liquid) {
+			gravity_accel /= 2.0f;
+			terminal_gravity /= 8.0f;
+		}
+
+		if (entity->on_climbable) {
+			terminal_gravity /= 4.0f;
+		}
+
+		if (entity->velocity.y < terminal_gravity) {
+			entity->velocity.y += gravity_accel * deltaTime;
+		}
+		else if (entity->velocity.y > terminal_gravity) {
+			entity->velocity.y = terminal_gravity;
+		}
+	}
+
 	if (entity->collides) {
 		resolve_solid_blocks(entity, deltaTime);
 		resolve_area_blocks(entity);
@@ -267,7 +299,7 @@ void entity_update(Entity* entity, float deltaTime) {
 	entity->rect.y += entity->velocity.y * deltaTime;
 }
 
-void entity_draw(Entity* entity) {
+void entity_debug_draw(Entity* entity) {
 	if (!entity) return;
 
 	rlPushMatrix();
@@ -283,7 +315,7 @@ void entity_draw(Entity* entity) {
 		0.0f,
 		entity->rect.width,
 		entity->rect.height,
-		(Color){ 255, 0, 0, 255 }
+		(Color){ 0, 255, 0, 255 }
 	);
 
 	rlPopMatrix();

@@ -133,6 +133,13 @@ void item_registry_init() {
 		.blockId = BLOCK_LADDERS
 	};
 
+	itemRegistry[ITEM_TRAPDOOR] = (ItemRegistry){
+		.name = "Trapdoor",
+		.atlas_idx = 21,
+		.model_idx = BLOCK_MODEL_QUAD,
+		.blockId = BLOCK_TRAPDOOR
+	};
+
 	itemRegistry[ITEM_TORCH] = (ItemRegistry){
 		.name = "Torch",
 		.atlas_idx = 18,

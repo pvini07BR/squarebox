@@ -133,16 +133,19 @@ int main() {
             if (!mouseIsInUI) {
                 if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
                     chunk_manager_set_block_safe(mouseBlockPos, (BlockInstance) { 0, 0 }, wall_mode);
-                else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT) && !CheckCollisionRecs(blockPlacerRect, player.entity.rect)) {
+                else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {
                     if (!chunk_manager_interact(mouseBlockPos, wall_mode)) {
                         ItemRegistry* itr = ir_get_item_registry(inventory_get_item(0, hotbarIdx).item_id);
                         if (itr->blockId > 0 && !(itr->placingFlags & (wall_mode ? ITEM_PLACE_FLAG_NOT_WALL : ITEM_PLACE_FLAG_NOT_BLOCK))) {
                             BlockRegistry* br = br_get_block_registry(itr->blockId);
-                            BlockInstance inst = {
-                                .id = itr->blockId,
-                                .state = blockState
-                            };
-                            chunk_manager_set_block_safe(mouseBlockPos, inst, wall_mode);
+
+                            if (wall_mode || (!wall_mode && ((br->flags & BLOCK_FLAG_SOLID && !CheckCollisionRecs(blockPlacerRect, player.entity.rect) || !(br->flags & BLOCK_FLAG_SOLID))))) {
+                                BlockInstance inst = {
+                                    .id = itr->blockId,
+                                    .state = blockState
+                                };
+                                chunk_manager_set_block_safe(mouseBlockPos, inst, wall_mode);
+                            }
                         }
                     }
                 }

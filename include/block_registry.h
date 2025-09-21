@@ -29,6 +29,7 @@ typedef enum {
 	BLOCK_FLOWER,
 	BLOCK_PEBBLES,
 	BLOCK_WOODEN_FENCE,
+	BLOCK_LADDERS,
 	BLOCK_TORCH,
 	BLOCK_WATER_SOURCE,
 	BLOCK_WATER_FLOWING,
@@ -64,18 +65,21 @@ typedef enum {
 
 	// Tells if the block is replaceable, like water, grass, flowers, etc.
 	BLOCK_FLAG_REPLACEABLE = (1 << 5),
+
+	// Tells if entities will be able to climb on this block, like ladders or vines.
+	BLOCK_FLAG_CLIMBABLE = (1 << 6),
 	
 	// Tells if you can place plants like grass or flowers on top of the block.
-	BLOCK_FLAG_PLANTABLE = (1 << 6),
+	BLOCK_FLAG_PLANTABLE = (1 << 7),
 
 	// Tells if the block is affected by gravity, like sand or gravel.
-	BLOCK_FLAG_GRAVITY_AFFECTED = (1 << 7),
+	BLOCK_FLAG_GRAVITY_AFFECTED = (1 << 8),
 
 	// Tells if the block is a liquid.
 	// this will make the block render differently from
 	// other blocks, and will render only if it is in the
 	// block layer.
-	BLOCK_FLAG_LIQUID = (1 << 8),
+	BLOCK_FLAG_LIQUID = (1 << 9),
 } BlockFlag;
 
 typedef enum {

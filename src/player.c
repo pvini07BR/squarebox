@@ -55,12 +55,14 @@ void player_update(Player* player, float deltaTime, bool disableInput) {
 
 		if (!player->flying) {
 			if ((IsKeyDown(KEY_SPACE) || IsKeyDown(KEY_W) || IsKeyDown(KEY_UP))) {
-				if (!player->entity.on_liquid && player->entity.grounded) {
-
-					player->entity.velocity.y -= JUMP_FORCE;
+				
+				if (player->entity.on_liquid || player->entity.on_climbable) {
+					float up_force = -JUMP_FORCE;
+					if (!player->entity.on_liquid && player->entity.on_climbable) up_force *= 0.8f;
+					player->entity.velocity.y = Lerp(player->entity.velocity.y, up_force, movement_accel_rate * deltaTime);
 				}
-				else if (player->entity.on_liquid) {
-					player->entity.velocity.y = Lerp(player->entity.velocity.y, -JUMP_FORCE, movement_accel_rate * deltaTime);
+				else if (player->entity.grounded) {
+					player->entity.velocity.y -= JUMP_FORCE;
 				}
 			}
 		}
@@ -108,6 +110,10 @@ void player_update(Player* player, float deltaTime, bool disableInput) {
 			gravity_accel /= 2.0f;
 			terminal_gravity /= 8.0f;
 			rotation_amount /= 2.0f;
+		}
+
+		if (player->entity.on_climbable) {
+			terminal_gravity /= 4.0f;
 		}
 
 		if (player->entity.velocity.y < terminal_gravity) {

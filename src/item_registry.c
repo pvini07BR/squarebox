@@ -126,6 +126,13 @@ void item_registry_init() {
 		.blockId = BLOCK_WOODEN_FENCE
 	};
 
+	itemRegistry[ITEM_LADDERS] = (ItemRegistry){
+		.name = "Ladders",
+		.atlas_idx = 20,
+		.model_idx = BLOCK_MODEL_QUAD,
+		.blockId = BLOCK_LADDERS
+	};
+
 	itemRegistry[ITEM_TORCH] = (ItemRegistry){
 		.name = "Torch",
 		.atlas_idx = 18,

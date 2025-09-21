@@ -17,7 +17,6 @@
 typedef struct {
 	Rectangle rect;
 	float t;
-	bool is_liquid;
 } RectPair;
 
 int compare_rects(const void* a, const void* b) {
@@ -127,104 +126,141 @@ static bool resolve_entity_vs_rect(Entity* entity, Rectangle* staticRect, const 
 	return false;
 }
 
+static void resolve_solid_blocks(Entity* entity, float deltaTime) {
+	Vector2 nextPosition = (Vector2){
+		.x = entity->rect.x + entity->velocity.x * deltaTime,
+		.y = entity->rect.y + entity->velocity.y * deltaTime
+	};
+
+	Vector2 topLeft = (Vector2){
+		.x = fminf(entity->rect.x, nextPosition.x),
+		.y = fminf(entity->rect.y, nextPosition.y)
+	};
+
+	Vector2 bottomRight = (Vector2){
+		.x = fmaxf(entity->rect.x, nextPosition.x) + entity->rect.width,
+		.y = fmaxf(entity->rect.y, nextPosition.y) + entity->rect.height
+	};
+
+	size_t rect_count = 0;
+	RectPair rects[CHUNK_AREA];
+
+	for (int x = TO_BLOCK_COORDS(topLeft.x); x < TO_BLOCK_COORDS(bottomRight.x) + 1; x++) {
+		for (int y = TO_BLOCK_COORDS(topLeft.y); y < TO_BLOCK_COORDS(bottomRight.y) + 1; y++) {
+			BlockInstance block = chunk_manager_get_block((Vector2i) { x, y }, false);
+			BlockRegistry* reg = br_get_block_registry(block.id);
+			if (!reg) continue;
+
+			if (!(reg->flags & BLOCK_FLAG_SOLID)) continue;
+
+			Rectangle collider_rects[MAX_RECTS_PER_COLLIDER];
+			size_t collider_count = 0;
+
+			BlockVariant variant = br_get_block_variant(block.id, block.state);
+			block_colliders_get_rects(variant.collider_idx, variant.rotation, &collider_count, collider_rects);
+
+			for (int i = 0; i < collider_count; i++) {
+				Rectangle rect = collider_rects[i];
+				rect.x += x * TILE_SIZE;
+				rect.y += y * TILE_SIZE;
+
+				Vector2 cp, cn;
+				float t = 0.0f;
+				if (entity_vs_rect(entity, &rect, deltaTime, &cp, &cn, &t)) {
+					rects[rect_count].rect = rect;
+					rects[rect_count].t = t;
+					rect_count++;
+				}
+			}
+		}
+	}
+
+	qsort(rects, rect_count, sizeof(RectPair), compare_rects);
+
+	for (int i = 0; i < rect_count; i++) {
+		Rectangle* rect = &rects[i].rect;
+		Vector2 contact_normal;
+		if (resolve_entity_vs_rect(entity, rect, deltaTime, &contact_normal)) {
+			if (contact_normal.y < 0.0f) {
+				entity->grounded = true;
+			}
+
+			if (entity->grounded && contact_normal.x != 0.0f) {
+				float diff = (entity->rect.y + entity->rect.height) - rect->y;
+				if (diff < (entity->rect.height * 0.6f)) {
+					entity->rect.y -= rect->height + 1;
+				}
+			}
+		}
+	}
+}
+
+void resolve_area_blocks(Entity* entity) {
+	Vector2 topLeft = (Vector2){
+		.x = entity->rect.x,
+		.y = entity->rect.y
+	};
+
+	Vector2 bottomRight = (Vector2){
+		.x = entity->rect.x + entity->rect.width,
+		.y = entity->rect.y + entity->rect.height
+	};
+
+	for (int x = TO_BLOCK_COORDS(topLeft.x); x < TO_BLOCK_COORDS(bottomRight.x) + 1; x++) {
+		for (int y = TO_BLOCK_COORDS(topLeft.y); y < TO_BLOCK_COORDS(bottomRight.y) + 1; y++) {
+			BlockInstance block = chunk_manager_get_block((Vector2i) { x, y }, false);
+			BlockRegistry* reg = br_get_block_registry(block.id);
+			if (!reg) continue;
+
+			if (!(reg->flags & BLOCK_FLAG_LIQUID) && !(reg->flags & BLOCK_FLAG_CLIMBABLE)) continue;
+
+			Rectangle collider_rects[MAX_RECTS_PER_COLLIDER];
+			size_t collider_count = 0;
+
+			if (reg->flags & BLOCK_FLAG_LIQUID) {
+				FlowingLiquidState* state = &block.state;
+				float value = 0.125f + (state->level / 7.0f) * (1.0f - 0.125f);
+				if (block.id == BLOCK_WATER_SOURCE) value = 1.0f;
+
+				collider_rects[collider_count] = (Rectangle) {
+					.x = x * TILE_SIZE,
+					.y = ceilf(y * TILE_SIZE + (TILE_SIZE * (1.0f - value))),
+					.width = TILE_SIZE,
+					.height = TILE_SIZE * value,
+				};
+				collider_count++;
+			}
+			else {
+				BlockVariant variant = br_get_block_variant(block.id, block.state);
+				block_colliders_get_rects(variant.collider_idx, variant.rotation, &collider_count, collider_rects);
+			}
+
+			for (int i = 0; i < collider_count; i++) {
+				Rectangle rect = collider_rects[i];
+				if (!(reg->flags & BLOCK_FLAG_LIQUID)) {
+					rect.x += x * TILE_SIZE;
+					rect.y += y * TILE_SIZE;
+				}
+
+				if (CheckCollisionRecs(entity->rect, rect)) {
+					if (reg->flags & BLOCK_FLAG_LIQUID && !entity->on_liquid) entity->on_liquid = true;
+					if (reg->flags & BLOCK_FLAG_CLIMBABLE && !entity->on_climbable) entity->on_climbable = true;
+				}
+			}
+		}
+	}
+}
+
 void entity_update(Entity* entity, float deltaTime) {
 	if (!entity) return;
 
 	entity->on_liquid = false;
 	entity->grounded = false;
+	entity->on_climbable = false;
 
 	if (entity->collides) {
-		Vector2 nextPosition = (Vector2){
-			.x = entity->rect.x + entity->velocity.x * deltaTime,
-			.y = entity->rect.y + entity->velocity.y * deltaTime
-		};
-
-		Vector2 topLeft = (Vector2){
-			.x = fminf(entity->rect.x, nextPosition.x),
-			.y = fminf(entity->rect.y, nextPosition.y)
-		};
-
-		Vector2 bottomRight = (Vector2){
-			.x = fmaxf(entity->rect.x, nextPosition.x) + entity->rect.width,
-			.y = fmaxf(entity->rect.y, nextPosition.y) + entity->rect.height
-		};
-
-		size_t rect_count = 0;
-		RectPair rects[CHUNK_AREA];
-
-		for (int x = TO_BLOCK_COORDS(topLeft.x); x < TO_BLOCK_COORDS(bottomRight.x) + 1; x++) {
-			for (int y = TO_BLOCK_COORDS(topLeft.y); y < TO_BLOCK_COORDS(bottomRight.y) + 1; y++) {
-				BlockInstance block = chunk_manager_get_block((Vector2i) { x, y }, false);
-				BlockRegistry* reg = br_get_block_registry(block.id);
-				if (!reg) continue;
-				if (reg->flags & BLOCK_FLAG_LIQUID) {
-					FlowingLiquidState* state = &block.state;
-					float value = 0.125f + (state->level / 7.0f) * (1.0f - 0.125f);
-					if (block.id == BLOCK_WATER_SOURCE) value = 1.0f;
-
-					Rectangle rect = {
-						.x = x* TILE_SIZE,
-						.y = ceilf(y* TILE_SIZE + (TILE_SIZE * (1.0f - value))),
-						.width = TILE_SIZE,
-						.height = TILE_SIZE * value,
-					};
-
-					rects[rect_count].rect = rect;
-					rects[rect_count].t = 0.0f;
-					rects[rect_count].is_liquid = true;
-					rect_count++;
-					continue;
-				}
-
-				if (!(reg->flags & BLOCK_FLAG_SOLID)) continue;
-
-				BlockVariant variant = br_get_block_variant(block.id, block.state);
-					
-				Rectangle collider_rects[MAX_RECTS_PER_COLLIDER];
-				size_t collider_count = 0;
-				block_colliders_get_rects(variant.collider_idx, variant.rotation, &collider_count, collider_rects);
-
-				for (int i = 0; i < collider_count; i++) {
-					Rectangle rect = collider_rects[i];
-					rect.x += x * TILE_SIZE;
-					rect.y += y * TILE_SIZE;
-
-					Vector2 cp, cn;
-					float t = 0.0f;
-					if (entity_vs_rect(entity, &rect, deltaTime, &cp, &cn, &t)) {
-						rects[rect_count].rect = rect;
-						rects[rect_count].t = t;
-						rects[rect_count].is_liquid = false;
-						rect_count++;
-					}
-				}
-			}
-		}
-
-		qsort(rects, rect_count, sizeof(RectPair), compare_rects);
-
-		for (int i = 0; i < rect_count; i++) {
-			Rectangle* rect = &rects[i].rect;
-
-			if (rects[i].is_liquid) {
-				if (!entity->on_liquid) entity->on_liquid = CheckCollisionRecs(entity->rect, *rect);
-				continue;
-			}
-
-			Vector2 contact_normal;
-			if (resolve_entity_vs_rect(entity, rect, deltaTime, &contact_normal)) {
-				if (contact_normal.y < 0.0f) {
-					entity->grounded = true;
-				}
-
-				if (entity->grounded && contact_normal.x != 0.0f) {
-					float diff = (entity->rect.y + entity->rect.height) - rect->y;
-					if (diff < (entity->rect.height * 0.6f)) {
-						entity->rect.y -= rect->height + 1;
-					}
-				}
-			}
-		}
+		resolve_solid_blocks(entity, deltaTime);
+		resolve_area_blocks(entity);
 	}
 
 	entity->rect.x += entity->velocity.x * deltaTime;

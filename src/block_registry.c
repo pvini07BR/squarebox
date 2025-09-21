@@ -154,6 +154,13 @@ void block_registry_init() {
         .state_resolver = fence_resolver
     };
 
+    blockRegistry[BLOCK_LADDERS] = (BlockRegistry){
+        .variant_count = 1,
+        .variants = { {.atlas_idx = 20, .model_idx = BLOCK_MODEL_QUAD, .collider_idx = BLOCK_COLLIDER_QUAD, .flipH = false, .flipV = false, .rotation = 0 } },
+        .flags = BLOCK_FLAG_CLIMBABLE,
+        .lightLevel = BLOCK_LIGHT_TRANSPARENT,
+    };
+
     blockRegistry[BLOCK_TORCH] = (BlockRegistry){
         .variant_count = 3,
         .variants = {

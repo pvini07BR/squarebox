@@ -52,6 +52,16 @@ void chunk_init(Chunk* chunk)
 
     chunk->initializedMeshes = false;
 
+    // The liquid mesh won't change the amount of vertices so it doesn't need to allocate again
+    chunk->liquidMesh = (Mesh){ 0 };
+    chunk->liquidMesh.vertexCount = CHUNK_AREA * 6;
+    chunk->liquidMesh.triangleCount = chunk->liquidMesh.vertexCount * 3;
+    chunk->liquidMesh.vertices = (float*)MemAlloc(chunk->liquidMesh.vertexCount * 3 * sizeof(float));
+    //chunk->liquidMesh.texcoords = (float*)MemAlloc(chunk->liquidMesh.vertexCount * 2 * sizeof(float));
+    chunk->liquidMesh.colors = (unsigned char*)MemAlloc(chunk->liquidMesh.vertexCount * 4 * sizeof(unsigned char));
+
+    UploadMesh(&chunk->liquidMesh, true);
+
     if (!loadedMatDefault) {
         matDefault = LoadMaterialDefault();
         loadedMatDefault = true;
@@ -123,6 +133,19 @@ void chunk_regenerate(Chunk* chunk) {
 
 void chunk_gen_liquid_mesh(Chunk* chunk) {
     if (!chunk) return;
+
+    for (int v = 0; v < chunk->liquidMesh.vertexCount; v++) {
+        int vi = v * 3;
+        chunk->liquidMesh.vertices[vi + 0] = 0.0f;
+        chunk->liquidMesh.vertices[vi + 1] = 0.0f;
+        chunk->liquidMesh.vertices[vi + 2] = 0.0f;
+
+        int ci = v * 4;
+        chunk->liquidMesh.colors[ci + 0] = 0;
+        chunk->liquidMesh.colors[ci + 1] = 0;
+        chunk->liquidMesh.colors[ci + 2] = 0;
+        chunk->liquidMesh.colors[ci + 3] = 0;
+    }
 
     for (int i = 0; i < CHUNK_AREA; i++) {
         BlockRegistry* rg = br_get_block_registry(chunk->blocks[i].id);
@@ -208,7 +231,8 @@ void chunk_gen_liquid_mesh(Chunk* chunk) {
         }
     }
 
-    UploadMesh(&chunk->liquidMesh, false);
+    UpdateMeshBuffer(chunk->liquidMesh, 0, chunk->liquidMesh.vertices, chunk->liquidMesh.vertexCount * 3 * sizeof(float), 0);
+    UpdateMeshBuffer(chunk->liquidMesh, 3, chunk->liquidMesh.colors, chunk->liquidMesh.vertexCount * 4 * sizeof(unsigned char), 0);
 }
 
 void chunk_genmesh(Chunk* chunk) {
@@ -336,6 +360,7 @@ void chunk_free(Chunk* chunk)
     if (chunk->initializedMeshes) {
         UnloadMesh(chunk->wallMesh);
         UnloadMesh(chunk->blockMesh);
+        UnloadMesh(chunk->liquidMesh);
         chunk->initializedMeshes = false;
     }
 
@@ -727,33 +752,26 @@ void reset_meshes(Chunk* chunk, int blockVertexCount, int wallVertexCount) {
     if (chunk->initializedMeshes == true) {
         UnloadMesh(chunk->blockMesh);
         UnloadMesh(chunk->wallMesh);
-        UnloadMesh(chunk->liquidMesh);
         chunk->initializedMeshes = false;
     }
 
     chunk->wallMesh = (Mesh){ 0 };
     chunk->blockMesh = (Mesh){ 0 };
-    chunk->liquidMesh = (Mesh){ 0 };
 
     chunk->blockMesh.vertexCount = blockVertexCount;
     chunk->wallMesh.vertexCount = wallVertexCount;
-    chunk->liquidMesh.vertexCount = CHUNK_AREA * 6;
 
     chunk->blockMesh.triangleCount = blockVertexCount * 3;
     chunk->wallMesh.triangleCount = wallVertexCount * 3;
-    chunk->liquidMesh.triangleCount = chunk->liquidMesh.vertexCount * 3;
 
     chunk->blockMesh.vertices = (float*)MemAlloc(blockVertexCount * 3 * sizeof(float));
     chunk->wallMesh.vertices = (float*)MemAlloc(wallVertexCount * 3 * sizeof(float));
-    chunk->liquidMesh.vertices = (float*)MemAlloc(chunk->liquidMesh.vertexCount * 3 * sizeof(float));
 
     chunk->blockMesh.texcoords = (float*)MemAlloc(blockVertexCount * 2 * sizeof(float));
     chunk->wallMesh.texcoords = (float*)MemAlloc(wallVertexCount * 2 * sizeof(float));
-    chunk->liquidMesh.texcoords = (float*)MemAlloc(chunk->liquidMesh.vertexCount * 2 * sizeof(float));
 
     chunk->blockMesh.colors = (unsigned char*)MemAlloc(blockVertexCount * 4 * sizeof(unsigned char));
     chunk->wallMesh.colors = (unsigned char*)MemAlloc(wallVertexCount * 4 * sizeof(unsigned char));
-    chunk->liquidMesh.colors = (unsigned char*)MemAlloc(chunk->liquidMesh.vertexCount * 4 * sizeof(unsigned char));
 
     chunk->initializedMeshes = true;
 }

@@ -480,5 +480,6 @@ int main() {
     block_models_free();
     texture_atlas_free();
     CloseWindow();
+
     return 0;
 }

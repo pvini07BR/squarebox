@@ -3,9 +3,9 @@
 #include "chunk.h"
 #include "types.h"
 
+#include <stdlib.h>
 #include <limits.h>
 #include <stdint.h>
-#include <stdlib.h>
 #include <stdio.h>
 #include <memory.h>
 

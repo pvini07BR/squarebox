@@ -2,16 +2,17 @@
 #include "types.h"
 #include "chunk_manager.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 
+#include <raylib.h>
 #include <raymath.h>
 #include <rlgl.h>
 
 #define SPEED 10.0f * TILE_SIZE
 #define JUMP_FORCE 16.0f * TILE_SIZE
 #define ROTATION_AMOUNT 549.57f
-#define MOVEMENT_ACCEL_RATE 20.0f
 
 #define TO_BLOCK_COORDS(value) ((int)floorf((float)value / (float)TILE_SIZE))
 
@@ -48,73 +49,71 @@ void player_update(Entity* entity, float deltaTime) {
 	if (!entity) return;
 	Player* player = (Player*)entity->parent;
 
-	float movement_accel_rate = MOVEMENT_ACCEL_RATE;
-	if (player->entity.on_liquid) {
-		movement_accel_rate /= 4.0f;
+	if (player->disable_input) {
+		if (!entity->gravity_affected)
+			entity->velocity = Vector2Lerp(entity->velocity, Vector2Zero(), 5.0f * deltaTime);
+		else {
+			entity->velocity.x = Lerp(player->entity.velocity.x, 0.0f, 20.0f * deltaTime);
+			if (player->entity.grounded) player->direction = 0;
+		}
+
+		return;
 	}
 
-	if (!player->disable_input) {
-		float speed = SPEED;
-		if (player->entity.on_liquid) {
-			speed /= 2.0f;
-		}
+	float speed = SPEED;
 
-		if (IsKeyDown(KEY_LEFT_SHIFT)) {
-			speed /= 4.0;
-		}
-		else if (IsKeyDown(KEY_LEFT_CONTROL)) {
-			speed *= 2.0;
-		}
+	if (entity->on_liquid) speed /= 2.0f;
 
-		if (entity->gravity_affected) {
-			if ((IsKeyDown(KEY_SPACE) || IsKeyDown(KEY_W) || IsKeyDown(KEY_UP))) {
-				
-				if (player->entity.on_liquid || player->entity.on_climbable) {
-					float up_force = -JUMP_FORCE;
-					if (!player->entity.on_liquid && player->entity.on_climbable) up_force *= 0.8f;
-					player->entity.velocity.y = Lerp(player->entity.velocity.y, up_force, movement_accel_rate * deltaTime);
-				}
-				else if (player->entity.grounded) {
-					player->entity.velocity.y -= JUMP_FORCE;
-				}
-			}
-		}
-		else {
-			player->direction = 0;
+	if (IsKeyDown(KEY_LEFT_SHIFT)) speed /= 4.0f;
+	else if (IsKeyDown(KEY_LEFT_CONTROL)) speed *= 2.5f;
 
-			if (IsKeyDown(KEY_W) || IsKeyDown(KEY_UP)) {
-				player->entity.velocity.y = Lerp(player->entity.velocity.y, -speed, movement_accel_rate * deltaTime);
-			}
-			else if (IsKeyDown(KEY_S) || IsKeyDown(KEY_DOWN)) {
-				player->entity.velocity.y = Lerp(player->entity.velocity.y, speed, movement_accel_rate * deltaTime);
-			}
-			else {
-				player->entity.velocity.y = Lerp(player->entity.velocity.y, 0.0f, movement_accel_rate * deltaTime);
-			}
-		}
+	// If not gravity affected, then start floating
+	if (!entity->gravity_affected) {
+		player->direction = 0;
+		float nineties = roundf((player->rotation / 90.0f)) * 90.0f;
+		player->rotation = Lerp(player->rotation, nineties, 50.0f * deltaTime);
 
+		Vector2 dir = {
+			((IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_D)) - (IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_A))),
+			((IsKeyDown(KEY_DOWN) || IsKeyDown(KEY_S)) - (IsKeyDown(KEY_UP) || IsKeyDown(KEY_W)))
+		};
+		
+		if (dir.x != 0.0f || dir.y != 0.0f)
+			dir = Vector2Normalize(dir);
+
+		entity->velocity = Vector2Lerp(entity->velocity, Vector2Scale(dir, speed), 5.0f * deltaTime);
+	}
+	// Otherwise behave like a platformer player controller
+	else {
+		// Horizontal movement
 		if (IsKeyDown(KEY_A) || IsKeyDown(KEY_LEFT)) {
-			player->entity.velocity.x = Lerp(player->entity.velocity.x, -speed, movement_accel_rate * deltaTime);
-			if (entity->gravity_affected) player->direction = -1;
+			player->entity.velocity.x = Lerp(player->entity.velocity.x, -speed, 20.0f * deltaTime);
+			player->direction = -1;
 		}
 		else if (IsKeyDown(KEY_D) || IsKeyDown(KEY_RIGHT)) {
-			player->entity.velocity.x = Lerp(player->entity.velocity.x, speed, movement_accel_rate * deltaTime);
-			if (entity->gravity_affected) player->direction = 1;
+			player->entity.velocity.x = Lerp(player->entity.velocity.x, speed, 20.0f * deltaTime);
+			player->direction = 1;
 		}
 		else {
-			player->entity.velocity.x = Lerp(player->entity.velocity.x, 0.0f, movement_accel_rate * deltaTime);
-			if (player->entity.grounded && entity->gravity_affected) player->direction = 0;
+			player->entity.velocity.x = Lerp(player->entity.velocity.x, 0.0f, 20.0f * deltaTime);
+			if (player->entity.grounded) player->direction = 0;
 		}
-	}
-	else {
-		player->entity.velocity.x = Lerp(player->entity.velocity.x, 0.0f, movement_accel_rate * deltaTime);
-		if (player->entity.grounded) player->direction = 0;
-		if (!entity->gravity_affected) {
-			player->entity.velocity.y = Lerp(player->entity.velocity.y, 0.0f, movement_accel_rate * deltaTime);
-		}
-	}
 
-	if (entity->gravity_affected) {
+		// Jumping or swimming
+		if (IsKeyDown(KEY_W) || IsKeyDown(KEY_SPACE) || IsKeyDown(KEY_UP)) {
+			if (entity->on_liquid || entity->on_climbable) {
+				float up_speed = -JUMP_FORCE;
+				if (entity->on_liquid) up_speed *= 0.5f;
+				else if (entity->on_climbable) up_speed *= 0.75f;
+
+				player->entity.velocity.y = Lerp(player->entity.velocity.y, up_speed, 20.0f * deltaTime);
+			}
+			else if (entity->grounded) {
+				player->entity.velocity.y -= JUMP_FORCE;
+			}
+		}
+
+		// Rotating the player quad based on speed (purely visual)
 		float rotation_amount = ROTATION_AMOUNT;
 
 		if (entity->on_liquid) {
@@ -128,10 +127,6 @@ void player_update(Entity* entity, float deltaTime) {
 			float nineties = roundf((player->rotation / 90.0f)) * 90.0f;
 			player->rotation = Lerp(player->rotation, nineties, 50.0f * deltaTime);
 		}
-	}
-	else {
-		float nineties = roundf((player->rotation / 90.0f)) * 90.0f;
-		player->rotation = Lerp(player->rotation, nineties, 50.0f * deltaTime);
 	}
 }
 

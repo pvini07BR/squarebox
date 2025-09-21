@@ -269,6 +269,8 @@ void entity_update(Entity* entity, float deltaTime) {
 	entity->grounded = false;
 	entity->on_climbable = false;
 
+	resolve_area_blocks(entity);
+
 	if (entity->gravity_affected) {
 		float gravity_accel = GRAVITY_ACCEL;
 		float terminal_gravity = TERMINAL_GRAVITY;
@@ -276,23 +278,21 @@ void entity_update(Entity* entity, float deltaTime) {
 		if (entity->on_liquid) {
 			gravity_accel /= 2.0f;
 			terminal_gravity /= 8.0f;
-		}
-
-		if (entity->on_climbable) {
+		} else if (entity->on_climbable) {
 			terminal_gravity /= 4.0f;
 		}
 
 		if (entity->velocity.y < terminal_gravity) {
 			entity->velocity.y += gravity_accel * deltaTime;
 		}
-		else if (entity->velocity.y > terminal_gravity) {
+
+		if (entity->velocity.y > terminal_gravity) {
 			entity->velocity.y = terminal_gravity;
 		}
 	}
 
 	if (entity->collides) {
 		resolve_solid_blocks(entity, deltaTime);
-		resolve_area_blocks(entity);
 	}
 
 	entity->rect.x += entity->velocity.x * deltaTime;

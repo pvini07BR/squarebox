@@ -33,7 +33,7 @@ void entity_list_draw() {
 		Entity* e = entities[i];
 
 		if (e->draw) e->draw(e);
-		entity_debug_draw(e);
+		//entity_debug_draw(e);
 	}
 }
 

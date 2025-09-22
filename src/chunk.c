@@ -873,7 +873,7 @@ void build_quad(Chunk* chunk, size_t* offsets, BlockInstance* blocks, Mesh* mesh
 
         for (int dir = 0; dir < 8; dir++) {
             if (registries[dir] == NULL) continue;
-            if ((!(registries[dir]->lightLevel == BLOCK_LIGHT_TRANSPARENT) && (registries[dir]->lightLevel <= 0))) {
+            if ((!(registries[dir]->lightLevel == BLOCK_LIGHT_TRANSPARENT) && (registries[dir]->flags & BLOCK_FLAG_FULL_BLOCK) && (registries[dir]->lightLevel <= 0))) {
                 for (int c = 0; c < 2; c++) {
                     int corner = aoRules[dir].corners[c];
                     if (corner >= 0) {

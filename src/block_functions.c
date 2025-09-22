@@ -1,6 +1,6 @@
 #include "block_functions.h"
 
-#include "block_registry.h"
+#include "registries/block_registry.h"
 #include "block_state_bitfields.h"
 #include "chunk.h"
 

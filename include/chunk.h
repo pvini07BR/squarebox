@@ -7,8 +7,8 @@
 #include <raylib.h>
 
 #include "types.h"
-#include "container_vector.h"
-#include "block_tick_list.h"
+#include "lists/container_vector.h"
+#include "lists/block_tick_list.h"
 
 #define CHUNK_VERTEX_COUNT CHUNK_AREA * 6
 

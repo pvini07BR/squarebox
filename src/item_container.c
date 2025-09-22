@@ -1,4 +1,7 @@
 #include "item_container.h"
+#include "registries/item_registry.h"
+#include "texture_atlas.h"
+#include "types.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -6,10 +9,6 @@
 #include <rlgl.h>
 #include <raylib.h>
 #include <raymath.h>
-
-#include "item_registry.h"
-#include "texture_atlas.h"
-#include "types.h"
 
 static const float TITLE_SIZE = 18.0f;
 static const Color BG_COLOR = { 200, 200, 200, 255 };

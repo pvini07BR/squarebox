@@ -1,4 +1,4 @@
-#include "block_tick_list.h"
+#include "lists/block_tick_list.h"
 #include "types.h"
 
 static inline bool is_equal(const BlockTickListEntry* a, const BlockTickListEntry* b) {

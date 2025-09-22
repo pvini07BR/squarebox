@@ -1,4 +1,4 @@
-#include "block_colliders.h"
+#include "registries/block_colliders.h"
 #include "types.h"
 
 static BlockCollider colliders[BLOCK_COLLIDER_COUNT];
@@ -62,24 +62,24 @@ void block_colliders_get_rects(BlockColliderEnum idx, int rotation, size_t* rect
         float nw, nh;
 
         switch (rot) {
-        case 0: // 0°
+        case 0: // 0ï¿½
             nx = tx; ny = ty;
             nw = r.width; nh = r.height;
             break;
-        case 1: // 90° CCW
+        case 1: // 90ï¿½ CCW
             // (x, y) -> (-y, x)
             nx = -ty;
             ny = tx;
             nw = r.height;
             nh = r.width;
             break;
-        case 2: // 180°
+        case 2: // 180ï¿½
             nx = -tx;
             ny = -ty;
             nw = r.width;
             nh = r.height;
             break;
-        case 3: // 270° CCW
+        case 3: // 270ï¿½ CCW
             // (x, y) -> (y, -x)
             nx = ty;
             ny = -tx;

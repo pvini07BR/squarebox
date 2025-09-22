@@ -1,5 +1,5 @@
 #ifndef ITEM_ENTITY_H
-#define ITEM_ENITTY_H
+#define ITEM_ENTITY_H
 
 #include <raylib.h>
 

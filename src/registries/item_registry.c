@@ -1,6 +1,6 @@
-#include "item_registry.h"
-#include "block_registry.h"
-#include "block_models.h"
+#include "registries/item_registry.h"
+#include "registries/block_registry.h"
+#include "registries/block_models.h"
 
 #include <stdio.h>
 #include <stdlib.h>

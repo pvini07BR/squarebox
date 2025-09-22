@@ -1,5 +1,5 @@
-#include "block_registry.h"
-#include "block_models.h"
+#include "registries/block_registry.h"
+#include "registries/block_models.h"
 #include "block_functions.h"
 
 #include <stdlib.h>

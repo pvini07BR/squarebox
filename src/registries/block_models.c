@@ -1,4 +1,4 @@
-#include "block_models.h"
+#include "registries/block_models.h"
 #include "raylib.h"
 #include "raymath.h"
 #include "texture_atlas.h"

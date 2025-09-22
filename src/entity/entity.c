@@ -1,14 +1,14 @@
-#include "entity.h"
-#include "types.h"
-#include "chunk_manager.h"
-#include "block_registry.h"
-#include "block_colliders.h"
+#include "entity/entity.h"
+#include "registries/block_registry.h"
+#include "registries/block_registry.h"
 #include "block_state_bitfields.h"
+#include "chunk_manager.h"
+#include "types.h"
 
 #include <stdlib.h>
-#include <stdio.h>
-#include <math.h>
+#include <stddef.h>
 
+#include <raylib.h>
 #include <raymath.h>
 #include <rlgl.h>
 

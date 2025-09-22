@@ -1,8 +1,7 @@
-#include "player.h"
-#include "types.h"
+#include "entity/player.h"
 #include "chunk_manager.h"
+#include "types.h"
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 

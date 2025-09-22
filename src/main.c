@@ -8,17 +8,17 @@
 #define RAYGUI_IMPLEMENTATION
 #include "thirdparty/raygui.h"
 
+#include "registries/block_models.h"
+#include "registries/block_colliders.h"
+#include "registries/block_registry.h"
+#include "registries/item_registry.h"
+#include "entity/player.h"
+#include "entity/item_entity.h"
+#include "lists/entity_list.h"
 #include "types.h"
 #include "texture_atlas.h"
 #include "chunk_manager.h"
-#include "block_registry.h"
-#include "item_registry.h"
 #include "item_container.h"
-#include "block_models.h"
-#include "block_colliders.h"
-#include "entity_list.h"
-#include "player.h"
-#include "item_entity.h"
 
 #define TICK_DELTA (1.0f / 20.0f)
 

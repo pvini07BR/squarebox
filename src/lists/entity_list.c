@@ -1,4 +1,4 @@
-#include "entity_list.h"
+#include "lists/entity_list.h"
 #include <stdlib.h>
 
 static Entity* entities[MAX_ENTITY_COUNT];

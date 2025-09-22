@@ -1,22 +1,23 @@
-﻿#include "block_tick_list.h"
-#include "chunk_manager.h"
-#include "container_vector.h"
-#include "types.h"
-#include "block_registry.h"
-#include "chunk.h"
-#include "texture_atlas.h"
-#include "block_models.h"
+﻿#include "chunk.h"
+
+#include "registries/block_registry.h"
+#include "registries/block_models.h"
+#include "lists/block_tick_list.h"
+#include "lists/container_vector.h"
 #include "block_state_bitfields.h"
+#include "chunk_manager.h"
+#include "texture_atlas.h"
+#include "types.h"
 
 #include <math.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <raylib.h>
 #include <raymath.h>
 #include <rlgl.h>
-#include <string.h>
 
 #define FNL_IMPL
 #include <thirdparty/FastNoiseLite.h>

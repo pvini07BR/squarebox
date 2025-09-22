@@ -3,7 +3,7 @@
 
 #include <stddef.h>
 
-#include "entity.h"
+#include "entity/entity.h"
 
 #define MAX_ENTITY_COUNT 1024
 

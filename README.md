@@ -27,7 +27,7 @@ But here is a list of all the features this game currently has, and what I plan 
 - 🟩 World generation (there's only a generic noise world gen and it does not have any trees yet)
 - ⬜ Structure generation
 - ⬜ World saving
-- ⬜ Some redstone-like circuit system
+- ⬜ Some redstone-like circuit system (with logic gates, pistons, buttons, pressure plates, etc.)
 - ⬜ Proper coordinate system using fixed points
 - ⬜ Multiplayer
 - ⬜ Modding

@@ -1,3 +1,4 @@
+#include "item_container.h"
 #include <limits.h>
 
 #include <raylib.h>
@@ -36,7 +37,7 @@ int main() {
 
     float accumulator = 0.0f;
     while (!WindowShouldClose()) {
-        if (IsKeyPressed(KEY_ESCAPE)) {
+        if (!item_container_is_open() && IsKeyPressed(KEY_ESCAPE)) {
             paused = !paused;
         }
 
@@ -55,7 +56,7 @@ int main() {
 
         ClearBackground(BLACK);
 
-        game_draw();
+        game_draw(!paused);
 
         if (paused) {
             DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), (Color){ 0, 0, 0, 128 });

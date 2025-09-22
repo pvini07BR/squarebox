@@ -5,7 +5,6 @@
 #include "types.h"
 
 #include <raymath.h>
-#include <stdio.h>
 #include <stdlib.h>
 
 void item_entity_update(Entity* entity, float deltaTime);

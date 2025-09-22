@@ -7,7 +7,7 @@
 void game_init();
 void game_tick();
 void game_update(float deltaTime);
-void game_draw();
+void game_draw(bool draw_overlay);
 void game_free();
 
 Player* game_get_player();

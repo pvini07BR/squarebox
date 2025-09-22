@@ -88,11 +88,6 @@ void game_tick() {
 }
 
 void game_update(float deltaTime) {
-    camera.offset = (Vector2){
-        .x = GetScreenWidth() / 2.0f, 
-        .y = GetScreenHeight() / 2.0f
-    };
-
     mouseWorldPos = GetScreenToWorld2D(GetMousePosition(), camera);
     mouseBlockPos = (Vector2i){
         (int)floorf((float)mouseWorldPos.x / (float)TILE_SIZE),
@@ -258,7 +253,12 @@ void game_update(float deltaTime) {
     }
 }
 
-void game_draw() {
+void game_draw(bool draw_overlay) {
+    camera.offset = (Vector2){
+        .x = GetScreenWidth() / 2.0f, 
+        .y = GetScreenHeight() / 2.0f
+    };
+
     //Draw sky gradient
     typedef struct {
         Color color;
@@ -312,7 +312,7 @@ void game_draw() {
 
     chunk_manager_draw_liquids();
 
-    if (!item_container_is_open()) {
+    if (!item_container_is_open() && draw_overlay) {
         // Draw block model if it is rotatable
         if (loadedGhostMesh == true) {
             DrawMesh(
@@ -329,7 +329,7 @@ void game_draw() {
 
     EndMode2D();
 
-    if (!item_container_is_open()) {
+    if (!item_container_is_open() && draw_overlay) {
         if (inventory_get_item(0, hotbarIdx).item_id > 0) {
             draw_item(inventory_get_item(0, hotbarIdx), GetMouseX(), GetMouseY(), 0, 0.8f, false);
         }

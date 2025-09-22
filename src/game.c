@@ -1,5 +1,6 @@
 #include "game.h"
 
+#include "entity/entity.h"
 #include "registries/block_colliders.h"
 #include "registries/block_models.h"
 #include "registries/block_registry.h"
@@ -125,9 +126,12 @@ void game_update(float deltaTime) {
             player->entity.gravity_affected = !player->entity.gravity_affected;
         }
 
+        // When pressing Q, the holding item will be dropped and launched at the direction of the mouse.
+        // the force of throwing is determined by how far the mouse is from the player (in screen coordinates)
         ItemSlot item = inventory_get_item(0, hotbarIdx);
         if (IsKeyPressed(KEY_Q) && item.item_id > 0) {
-            Vector2 mouse_dir = Vector2Subtract(mouseWorldPos, entity_get_center(&player->entity));
+            Vector2 playerToScreen = GetWorldToScreen2D(entity_get_center(&player->entity), camera);
+            Vector2 mouse_dir = Vector2Subtract(GetMousePosition(), playerToScreen);
             mouse_dir = Vector2Scale(mouse_dir, 2.0f);
 
             Vector2 item_pos = Vector2SubtractValue(entity_get_center(&player->entity), TILE_SIZE * 0.25f);

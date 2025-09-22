@@ -22,18 +22,16 @@ static Vector2i currentChunkPos = { 0, 0 };
 
 static unsigned int tick_counter = 0;
 
-bool drawChunkLines = true;
-
 void chunk_manager_init(size_t chunk_view_width, size_t chunk_view_height) {
     chunk_manager_set_view(chunk_view_width, chunk_view_height);
 }
 
-void chunk_manager_draw() {
+void chunk_manager_draw(bool draw_lines) {
     for (int i = 0; i < chunk_count; i++) {
         chunk_draw(&chunks[i]);
     }
 
-    if (drawChunkLines) {
+    if (draw_lines) {
         for (int i = 0; i < chunk_count; i++) {
             rlPushMatrix();
             rlTranslatef(

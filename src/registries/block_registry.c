@@ -169,9 +169,10 @@ void block_registry_init() {
             {.atlas_idx = 21, .model_idx = BLOCK_MODEL_QUAD, .collider_idx = BLOCK_COLLIDER_TRAPDOOR, .flipH = false, .flipV = false, .rotation = 2 },
             {.atlas_idx = 21, .model_idx = BLOCK_MODEL_QUAD, .collider_idx = BLOCK_COLLIDER_TRAPDOOR, .flipH = false, .flipV = false, .rotation = 3 },
         },
-        .flags = BLOCK_FLAG_SOLID,
+        .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_STATE_MUTABLE,
         .lightLevel = BLOCK_LIGHT_NO_LIGHT,
-        .state_resolver = trapdoor_block_resolver,
+        .state_count = 4,
+        .state_selector = trapdoor_state_selector,
         .variant_selector = trapdoor_variant_selector,
         .interact_callback = trapdoor_interact
     };

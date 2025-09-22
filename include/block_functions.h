@@ -6,7 +6,10 @@
 
 #include "chunk.h"
 
-// Function that will get the index of a specific variant for a block.
+// Function that returns the state value depending on a defined list of possible states.
+// This is used only when placing blocks that rotates but has more than one state field, like trapdoors.
+typedef uint8_t (*BlockStateSelector)(uint8_t idx);
+// Function that will get the index of a specific variant for a block depending on the bit values on a state.
 typedef uint8_t (*BlockVariantSelector)(uint8_t state);
 // Function pointer to a function that will be called when the block is interacted with.
 // returns a bool value to indicate if the interaction was successful or not.
@@ -22,13 +25,13 @@ typedef void (*BlockDestroyCallback)(BlockExtraResult result);
 // unnecessary light and mesh updates.
 typedef bool (*BlockTickCallback)(BlockExtraResult result, BlockExtraResult neighbors[4], bool isWall);
 
+uint8_t trapdoor_state_selector(uint8_t idx);
 uint8_t trapdoor_variant_selector(uint8_t state);
 
 bool grounded_block_resolver(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], bool isWall);
 bool plant_block_resolver(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], bool isWall);
 bool torch_state_resolver(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], bool isWall);
 bool fence_resolver(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], bool isWall);
-bool trapdoor_block_resolver(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], bool isWall);
 bool chest_solver(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], bool isWall);
 
 bool on_chest_interact(BlockExtraResult result);

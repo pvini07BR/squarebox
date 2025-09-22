@@ -29,7 +29,7 @@ Vector2i currentChunkPos;
 Rectangle blockPlacerRect;
 
 bool wall_mode = false;
-int blockState = 0;
+uint8_t blockStateIdx = 0;
 
 bool loadedGhostMesh = false;
 Mesh ghostBlockMesh = { 0 };
@@ -107,9 +107,13 @@ void game_update(float deltaTime) {
                 if (itr->blockId > 0 && !(itr->placingFlags & (wall_mode ? ITEM_PLACE_FLAG_NOT_WALL : ITEM_PLACE_FLAG_NOT_BLOCK))) {
                     BlockRegistry* br = br_get_block_registry(itr->blockId);
                     if (wall_mode || (!wall_mode && ((br->flags & BLOCK_FLAG_SOLID && !CheckCollisionRecs(blockPlacerRect, player->entity.rect) || !(br->flags & BLOCK_FLAG_SOLID))))) {
+                        uint8_t state = blockStateIdx;
+                        if (br->state_selector) {
+                            state = br->state_selector(blockStateIdx);
+                        }
                         BlockInstance inst = {
                             .id = itr->blockId,
-                            .state = blockState
+                            .state = state
                         };
                         chunk_manager_set_block_safe(mouseBlockPos, inst, wall_mode);
                     }
@@ -168,8 +172,10 @@ void game_update(float deltaTime) {
 
         int scroll = GetMouseWheelMoveV().y;
         if (IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_LEFT_SHIFT)) {
-                if (scroll > 0) camera.zoom *= 1.1f;
-                if (scroll < 0) camera.zoom /= 1.1f;
+            if (scroll > 0) camera.zoom *= 1.1f;
+            if (scroll < 0) camera.zoom /= 1.1f;
+
+            camera.zoom = Clamp(camera.zoom, 0.1f, 10.0f);
         }
         else {
             if (scroll > 0) hotbarIdx--;
@@ -211,11 +217,16 @@ void game_update(float deltaTime) {
         if (lastItemId != heldItem.item_id) reload = true;
 
         if (IsKeyPressed(KEY_Z) || IsKeyPressed(KEY_X)) {
-            if (IsKeyPressed(KEY_Z)) blockState--;
-            if (IsKeyPressed(KEY_X)) blockState++;
+            if (IsKeyPressed(KEY_Z)) blockStateIdx--;
+            if (IsKeyPressed(KEY_X)) blockStateIdx++;
 
-            if (blockState < 0) blockState = heldBlockReg->variant_count - 1;
-            if (blockState >= heldBlockReg->variant_count) blockState = 0;
+            if (heldBlockReg->state_selector) {
+                if (blockStateIdx < 0) blockStateIdx = heldBlockReg->state_count - 1;
+                if (blockStateIdx >= heldBlockReg->state_count) blockStateIdx = 0;
+            } else {
+                if (blockStateIdx < 0) blockStateIdx = heldBlockReg->variant_count - 1;
+                if (blockStateIdx >= heldBlockReg->variant_count) blockStateIdx = 0;
+            }
 
             reload = true;
         }
@@ -229,12 +240,17 @@ void game_update(float deltaTime) {
         }
         
         if (loadedGhostMesh == false) {
-            BlockVariant bvar = br_get_block_variant(heldItemReg->blockId, blockState);
+            uint8_t variant_idx = blockStateIdx;
+            if (heldBlockReg->state_selector && heldBlockReg->variant_selector) {
+                uint8_t state = heldBlockReg->state_selector(blockStateIdx);
+                variant_idx = heldBlockReg->variant_selector(state);
+            }
+            BlockVariant bvar = br_get_block_variant(heldItemReg->blockId, variant_idx);
             block_models_build_mesh(&ghostBlockMesh, bvar.model_idx, bvar.atlas_idx, false, false, bvar.flipH, bvar.flipV, bvar.rotation);
             loadedGhostMesh = true;
         }
     } else {
-        blockState = 0;
+        blockStateIdx = 0;
         if (loadedGhostMesh == true) {
             UnloadMesh(ghostBlockMesh);
             ghostBlockMesh = (Mesh){ 0 };
@@ -306,7 +322,7 @@ void game_draw(bool draw_overlay) {
 
     BeginMode2D(camera);
 
-    chunk_manager_draw();
+    chunk_manager_draw(false);
 
     entity_list_draw();
 

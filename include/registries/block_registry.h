@@ -137,10 +137,17 @@ typedef struct {
 	// This value tells if the block is transparent, opaque or emit light.
 	BlockLight lightLevel;
 
+	// These two fields will be used only when selecting the state before placing a block.
+	size_t state_count;
+	// If the state selector is defined, it will use that to determine what states will be used.
+	// otherwise, it will use the state value to directly index the variants.
+	BlockStateSelector state_selector;
+
 	BlockVariantSelector variant_selector;
 	BlockInteractionCallback interact_callback;
 	BlockStateResolver state_resolver;
 	BlockDestroyCallback destroy_callback;
+	// If the tick callback is defined, the block will be added to the ticking list.
 	BlockTickCallback tick_callback;
 
 	// This member variable will only be used if tick_callback is defined.

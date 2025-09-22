@@ -6,6 +6,15 @@
 
 #include <stdio.h>
 
+uint8_t trapdoor_state_selector(uint8_t idx) {
+    uint8_t state = 0;
+
+    state = (state & ~TRAPDOOR_ROTATION_MASK) | (idx & TRAPDOOR_ROTATION_MASK);
+    state = (state & ~TRAPDOOR_OPEN_MASK) | (false ? TRAPDOOR_OPEN_MASK : 0);
+
+    return state;
+}
+
 uint8_t trapdoor_variant_selector(uint8_t state) {
     int rotation = state & TRAPDOOR_ROTATION_MASK;
     bool open = (state & TRAPDOOR_OPEN_MASK) ? true : false;
@@ -113,11 +122,6 @@ bool fence_resolver(BlockExtraResult result, BlockExtraResult other, BlockExtraR
     else if (left) result.block->state = 2;
     else result.block->state = 0;
 
-    return true;
-}
-
-bool trapdoor_block_resolver(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], bool isWall) {
-    result.block->state = (result.block->state & ~TRAPDOOR_ROTATION_MASK) | (0 & 0x07);
     return true;
 }
 

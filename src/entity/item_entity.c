@@ -1,7 +1,11 @@
 #include "entity/item_entity.h"
+#include "entity/player.h"
+#include "game.h"
+#include "raylib.h"
 #include "types.h"
 
 #include <raymath.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 void item_entity_update(Entity* entity, float deltaTime);
@@ -37,6 +41,13 @@ void item_entity_update(Entity* entity, float deltaTime) {
 	if (!entity) return;
 	if (entity->grounded) {
 		entity->velocity.x = Lerp(entity->velocity.x, 0.0f, 20.0f * deltaTime);
+	}
+
+	Player* player = game_get_player();
+	if (player) {
+		if (CheckCollisionRecs(entity->rect, player->entity.rect)) {
+			
+		}
 	}
 }
 

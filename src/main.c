@@ -25,7 +25,7 @@
 
 int main() {
     SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT);
-    InitWindow(1280, 720, "mijocraft");
+    InitWindow(1280, 720, "squaredbox");
     SetExitKey(KEY_NULL);
     SetTraceLogLevel(LOG_WARNING);
     rlDisableBackfaceCulling();

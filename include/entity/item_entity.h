@@ -9,6 +9,7 @@
 typedef struct {
 	Entity entity;
 	ItemSlot item;
+	float timer;
 } ItemEntity;
 
 ItemEntity* item_entity_create(Vector2 position, Vector2 initial_velocity, ItemSlot item);

@@ -78,7 +78,7 @@ void block_registry_init() {
             { .atlas_idx = 6, .model_idx = BLOCK_MODEL_QUAD, .collider_idx = BLOCK_COLLIDER_QUAD, .flipH = false, .flipV = false, .rotation = 0 },
             { .atlas_idx = 6, .model_idx = BLOCK_MODEL_QUAD, .collider_idx = BLOCK_COLLIDER_QUAD, .flipH = false, .flipV = false, .rotation = 1 },
         },
-        .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_STATE_MUTABLE | BLOCK_FLAG_FULL_BLOCK,
+        .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_STATE_SELECTABLE | BLOCK_FLAG_FULL_BLOCK,
         .lightLevel = BLOCK_LIGHT_NO_LIGHT,
         .state_resolver = NULL
     };
@@ -169,7 +169,7 @@ void block_registry_init() {
             {.atlas_idx = 21, .model_idx = BLOCK_MODEL_QUAD, .collider_idx = BLOCK_COLLIDER_TRAPDOOR, .flipH = false, .flipV = false, .rotation = 2 },
             {.atlas_idx = 21, .model_idx = BLOCK_MODEL_QUAD, .collider_idx = BLOCK_COLLIDER_TRAPDOOR, .flipH = false, .flipV = false, .rotation = 3 },
         },
-        .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_STATE_MUTABLE,
+        .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_STATE_SELECTABLE,
         .lightLevel = BLOCK_LIGHT_NO_LIGHT,
         .state_count = 4,
         .state_selector = trapdoor_state_selector,
@@ -215,7 +215,7 @@ void block_registry_init() {
             { .atlas_idx = 1, .model_idx = BLOCK_MODEL_SLAB, .collider_idx = BLOCK_COLLIDER_SLAB, .flipH = false, .flipV = false, .rotation = 2 },
             { .atlas_idx = 1, .model_idx = BLOCK_MODEL_SLAB, .collider_idx = BLOCK_COLLIDER_SLAB, .flipH = false, .flipV = false, .rotation = 3 },
         },
-        .flags = BLOCK_FLAG_STATE_MUTABLE | BLOCK_FLAG_SOLID | BLOCK_FLAG_FLIP_H | BLOCK_FLAG_FLIP_V,
+        .flags = BLOCK_FLAG_STATE_SELECTABLE | BLOCK_FLAG_SOLID | BLOCK_FLAG_FLIP_H | BLOCK_FLAG_FLIP_V,
         .lightLevel = BLOCK_LIGHT_NO_LIGHT,
         .state_resolver = NULL
     };
@@ -228,7 +228,7 @@ void block_registry_init() {
             { .atlas_idx = 3, .model_idx = BLOCK_MODEL_SLAB, .collider_idx = BLOCK_COLLIDER_SLAB, .flipH = false, .flipV = false, .rotation = 2 },
             { .atlas_idx = 3, .model_idx = BLOCK_MODEL_SLAB, .collider_idx = BLOCK_COLLIDER_SLAB, .flipH = false, .flipV = false, .rotation = 3 },
         },
-        .flags = BLOCK_FLAG_STATE_MUTABLE | BLOCK_FLAG_SOLID | BLOCK_FLAG_FLIP_H,
+        .flags = BLOCK_FLAG_STATE_SELECTABLE | BLOCK_FLAG_SOLID | BLOCK_FLAG_FLIP_H,
         .lightLevel = BLOCK_LIGHT_NO_LIGHT,
         .state_resolver = NULL
     };
@@ -241,7 +241,7 @@ void block_registry_init() {
             { .atlas_idx = 4, .model_idx = BLOCK_MODEL_SLAB, .collider_idx = BLOCK_COLLIDER_SLAB, .flipH = false, .flipV = false, .rotation = 2 },
             { .atlas_idx = 4, .model_idx = BLOCK_MODEL_SLAB, .collider_idx = BLOCK_COLLIDER_SLAB, .flipH = false, .flipV = false, .rotation = 3 },
         },
-        .flags = BLOCK_FLAG_STATE_MUTABLE | BLOCK_FLAG_SOLID,
+        .flags = BLOCK_FLAG_STATE_SELECTABLE | BLOCK_FLAG_SOLID,
         .lightLevel = BLOCK_LIGHT_NO_LIGHT,
         .state_resolver = NULL
     };
@@ -254,7 +254,7 @@ void block_registry_init() {
             { .atlas_idx = 5, .model_idx = BLOCK_MODEL_SLAB, .collider_idx = BLOCK_COLLIDER_SLAB, .flipH = false, .flipV = false, .rotation = 2 },
             { .atlas_idx = 5, .model_idx = BLOCK_MODEL_SLAB, .collider_idx = BLOCK_COLLIDER_SLAB, .flipH = false, .flipV = false, .rotation = 3 },
         },
-        .flags = BLOCK_FLAG_STATE_MUTABLE | BLOCK_FLAG_SOLID,
+        .flags = BLOCK_FLAG_STATE_SELECTABLE | BLOCK_FLAG_SOLID,
         .lightLevel = BLOCK_LIGHT_NO_LIGHT,
         .state_resolver = NULL
     };
@@ -267,7 +267,7 @@ void block_registry_init() {
             { .atlas_idx = 3, .model_idx = BLOCK_MODEL_STAIRS, .collider_idx = BLOCK_COLLIDER_STAIRS, .flipH = false, .flipV = false, .rotation = 2 },
             { .atlas_idx = 3, .model_idx = BLOCK_MODEL_STAIRS, .collider_idx = BLOCK_COLLIDER_STAIRS, .flipH = false, .flipV = false, .rotation = 3 },
         },
-        .flags = BLOCK_FLAG_STATE_MUTABLE | BLOCK_FLAG_SOLID | BLOCK_FLAG_FLIP_H,
+        .flags = BLOCK_FLAG_STATE_SELECTABLE | BLOCK_FLAG_SOLID | BLOCK_FLAG_FLIP_H,
         .lightLevel = BLOCK_LIGHT_NO_LIGHT,
         .state_resolver = NULL
     };
@@ -280,7 +280,7 @@ void block_registry_init() {
             { .atlas_idx = 4, .model_idx = BLOCK_MODEL_STAIRS, .collider_idx = BLOCK_COLLIDER_STAIRS, .flipH = false, .flipV = false, .rotation = 2 },
             { .atlas_idx = 4, .model_idx = BLOCK_MODEL_STAIRS, .collider_idx = BLOCK_COLLIDER_STAIRS, .flipH = false, .flipV = false, .rotation = 3 },
         },
-        .flags = BLOCK_FLAG_STATE_MUTABLE | BLOCK_FLAG_SOLID,
+        .flags = BLOCK_FLAG_STATE_SELECTABLE | BLOCK_FLAG_SOLID,
         .lightLevel = BLOCK_LIGHT_NO_LIGHT,
         .state_resolver = NULL
     };
@@ -293,7 +293,7 @@ void block_registry_init() {
             { .atlas_idx = 5, .model_idx = BLOCK_MODEL_STAIRS, .collider_idx = BLOCK_COLLIDER_STAIRS, .flipH = false, .flipV = false, .rotation = 2 },
             { .atlas_idx = 5, .model_idx = BLOCK_MODEL_STAIRS, .collider_idx = BLOCK_COLLIDER_STAIRS, .flipH = false, .flipV = false, .rotation = 3 },
         },
-        .flags = BLOCK_FLAG_STATE_MUTABLE | BLOCK_FLAG_SOLID,
+        .flags = BLOCK_FLAG_STATE_SELECTABLE | BLOCK_FLAG_SOLID,
         .lightLevel = BLOCK_LIGHT_NO_LIGHT,
         .state_resolver = NULL
     };
@@ -306,7 +306,7 @@ void block_registry_init() {
             { .atlas_idx = 3, .model_idx = BLOCK_MODEL_NUB, .collider_idx = BLOCK_COLLIDER_NUB, .flipH = false, .flipV = false, .rotation = 2 },
             { .atlas_idx = 3, .model_idx = BLOCK_MODEL_NUB, .collider_idx = BLOCK_COLLIDER_NUB, .flipH = false, .flipV = false, .rotation = 3 },
         },
-        .flags = BLOCK_FLAG_STATE_MUTABLE | BLOCK_FLAG_SOLID | BLOCK_FLAG_FLIP_H,
+        .flags = BLOCK_FLAG_STATE_SELECTABLE | BLOCK_FLAG_SOLID | BLOCK_FLAG_FLIP_H,
         .lightLevel = BLOCK_LIGHT_NO_LIGHT,
         .state_resolver = NULL
     };
@@ -319,7 +319,7 @@ void block_registry_init() {
             { .atlas_idx = 4, .model_idx = BLOCK_MODEL_NUB, .collider_idx = BLOCK_COLLIDER_NUB, .flipH = false, .flipV = false, .rotation = 2 },
             { .atlas_idx = 4, .model_idx = BLOCK_MODEL_NUB, .collider_idx = BLOCK_COLLIDER_NUB, .flipH = false, .flipV = false, .rotation = 3 },
         },
-        .flags = BLOCK_FLAG_STATE_MUTABLE | BLOCK_FLAG_SOLID,
+        .flags = BLOCK_FLAG_STATE_SELECTABLE | BLOCK_FLAG_SOLID,
         .lightLevel = BLOCK_LIGHT_NO_LIGHT,
         .state_resolver = NULL
     };
@@ -332,7 +332,7 @@ void block_registry_init() {
             { .atlas_idx = 5, .model_idx = BLOCK_MODEL_NUB, .collider_idx = BLOCK_COLLIDER_NUB, .flipH = false, .flipV = false, .rotation = 2 },
             { .atlas_idx = 5, .model_idx = BLOCK_MODEL_NUB, .collider_idx = BLOCK_COLLIDER_NUB, .flipH = false, .flipV = false, .rotation = 3 },
         },
-        .flags = BLOCK_FLAG_STATE_MUTABLE | BLOCK_FLAG_SOLID,
+        .flags = BLOCK_FLAG_STATE_SELECTABLE | BLOCK_FLAG_SOLID,
         .lightLevel = BLOCK_LIGHT_NO_LIGHT,
         .state_resolver = NULL
     };

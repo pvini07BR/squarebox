@@ -1,6 +1,7 @@
 #ifndef ENTITY_H
 #define ENTITY_H
 
+#include <stddef.h>
 #include <raylib.h>
 
 typedef struct Entity Entity;
@@ -8,6 +9,7 @@ typedef struct Entity Entity;
 typedef struct Entity {
 	Rectangle rect;
 	Vector2 velocity;
+	bool to_remove;
 
 	void* parent;
 	void (*update)(struct Entity* entity, float deltaTime);

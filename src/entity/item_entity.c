@@ -1,10 +1,12 @@
 #include "entity/item_entity.h"
 #include "entity/player.h"
 #include "game.h"
+#include "item_container.h"
 #include "raylib.h"
 #include "types.h"
 
 #include <raymath.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 void item_entity_update(Entity* entity, float deltaTime);
@@ -16,6 +18,7 @@ ItemEntity* item_entity_create(Vector2 position, Vector2 initial_velocity, ItemS
 	if (!ie) return NULL;
 
 	ie->item = item;
+	ie->timer = 0.0f;
 
 	ie->entity.parent = ie;
 
@@ -38,14 +41,20 @@ ItemEntity* item_entity_create(Vector2 position, Vector2 initial_velocity, ItemS
 
 void item_entity_update(Entity* entity, float deltaTime) {
 	if (!entity) return;
+	ItemEntity* ie = entity->parent;
+
+	if (ie->timer < 1.0f) ie->timer += deltaTime;
+	if (ie->timer > 1.0f) ie->timer = 1.0f;
+
 	if (entity->grounded) {
 		entity->velocity.x = Lerp(entity->velocity.x, 0.0f, 20.0f * deltaTime);
 	}
 
 	Player* player = game_get_player();
 	if (player) {
-		if (CheckCollisionRecs(entity->rect, player->entity.rect)) {
-			
+		if (CheckCollisionRecs(entity->rect, player->entity.rect) && ie->timer >= 1.0f && !entity->to_remove) {
+			distribute_item(&ie->item, get_inventory());
+			entity->to_remove = true;
 		}
 	}
 }

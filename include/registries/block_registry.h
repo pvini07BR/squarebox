@@ -60,9 +60,9 @@ typedef enum {
 	// Tells if the block can flip vertically randomly.
 	BLOCK_FLAG_FLIP_V = (1 << 3),
 
-	// Tells if the state of this block can be determined
-	// instead of calculated.
-	BLOCK_FLAG_STATE_MUTABLE = (1 << 4),
+	// Tells if the state of this block can be manually selected.
+	// see BlockStateSelector in block_functions.h.
+	BLOCK_FLAG_STATE_SELECTABLE = (1 << 4),
 
 	// Tells if the block is replaceable, like water, grass, flowers, etc.
 	BLOCK_FLAG_REPLACEABLE = (1 << 5),

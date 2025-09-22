@@ -36,6 +36,8 @@ bool item_container_is_open();
 void item_container_draw();
 void item_container_free(ItemContainer* ic);
 
+void distribute_item(ItemSlot* item, ItemContainer* container);
+
 void draw_item(ItemSlot is, int x, int y, int padding, float scale, bool drawAmount);
 
 void init_inventory();

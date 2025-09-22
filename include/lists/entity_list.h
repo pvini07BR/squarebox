@@ -10,7 +10,7 @@
 bool entity_list_add(Entity* entity);
 bool entity_list_remove_at(size_t idx);
 void entity_list_update(float deltaTime);
-void entity_list_draw();
+void entity_list_draw(bool draw_bounds);
 void entity_list_free();
 
 #endif

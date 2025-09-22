@@ -1,11 +1,12 @@
 #include "lists/entity_list.h"
-#include <stdlib.h>
+#include <stdint.h>
 
 static Entity* entities[MAX_ENTITY_COUNT];
 static size_t entity_count = 0;
 
 bool entity_list_add(Entity* entity) {
 	if (entity_count < MAX_ENTITY_COUNT) {
+		entity->to_remove = false;
 		entities[entity_count++] = entity;
 		return true;
 	}
@@ -27,14 +28,32 @@ void entity_list_update(float deltaTime) {
 		if (e->update) e->update(e, deltaTime);
 		entity_update(e, deltaTime);
 	}
+
+	// Remove entities that has been marked to be removed
+	size_t i = 0;
+    while (i < entity_count) {
+        Entity* e = entities[i];
+        if (e->to_remove) {
+            Entity* last = entities[--entity_count];
+            if (i != entity_count) {
+                entities[i] = last;
+            } else {
+                entities[i] = NULL;
+            }
+
+            if (e->destroy) e->destroy(e);
+        } else {
+            i++;
+        }
+    }
 }
 
-void entity_list_draw() {
+void entity_list_draw(bool draw_bounds) {
 	for (int i = 0; i < entity_count; i++) {
 		Entity* e = entities[i];
 
 		if (e->draw) e->draw(e);
-		//entity_debug_draw(e);
+		if (draw_bounds) entity_debug_draw(e);
 	}
 }
 

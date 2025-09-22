@@ -131,7 +131,7 @@ void game_update(float deltaTime) {
             mouse_dir = Vector2Scale(mouse_dir, 2.0f);
 
             Vector2 item_pos = Vector2SubtractValue(entity_get_center(&player->entity), TILE_SIZE * 0.25f);
-            ItemEntity* ie = item_entity_create(item_pos, mouse_dir, (ItemSlot) { item.item_id, 0 });
+            ItemEntity* ie = item_entity_create(item_pos, mouse_dir, (ItemSlot) { item.item_id, 1 });
             if (ie) {
                 if (entity_list_add(&ie->entity)) {
                     if (item.amount > 1) {
@@ -211,7 +211,7 @@ void game_update(float deltaTime) {
     ItemSlot heldItem = inventory_get_item(0, hotbarIdx);
     ItemRegistry* heldItemReg = ir_get_item_registry(heldItem.item_id);
     BlockRegistry* heldBlockReg = br_get_block_registry(heldItemReg->blockId);
-    if (heldItemReg->blockId > 0 && heldBlockReg->flags & BLOCK_FLAG_STATE_MUTABLE) {
+    if (heldItemReg->blockId > 0 && heldBlockReg->flags & BLOCK_FLAG_STATE_SELECTABLE) {
         bool reload = false;
 
         if (lastItemId != heldItem.item_id) reload = true;
@@ -324,7 +324,7 @@ void game_draw(bool draw_overlay) {
 
     chunk_manager_draw(false);
 
-    entity_list_draw();
+    entity_list_draw(false);
 
     chunk_manager_draw_liquids();
 

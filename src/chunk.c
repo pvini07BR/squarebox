@@ -48,8 +48,8 @@ void chunk_init(Chunk* chunk)
 
     block_tick_list_clear(&chunk->blockTickList);
 
-    chunk_layer_init(&chunk->layers[CHUNK_LAYER_FOREGROUND], 1.0f);
-    chunk_layer_init(&chunk->layers[CHUNK_LAYER_BACKGROUND], 0.5f);
+    chunk_layer_init(&chunk->layers[CHUNK_LAYER_FOREGROUND], 255);
+    chunk_layer_init(&chunk->layers[CHUNK_LAYER_BACKGROUND], 128);
 
     // The liquid mesh won't change the amount of vertices so it doesn't need to allocate again
     chunk->liquidMesh = (Mesh){ 0 };
@@ -237,7 +237,7 @@ void chunk_genmesh(Chunk* chunk) {
     if (chunk == NULL) return;
 
     for (int i = 0; i < CHUNK_LAYER_COUNT; i++) {
-        chunk_layer_genmesh(&chunk->layers[i]);
+        chunk_layer_genmesh(&chunk->layers[i], chunk->light);
     }
 
     chunk_gen_liquid_mesh(chunk);

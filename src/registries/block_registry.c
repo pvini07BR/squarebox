@@ -114,8 +114,7 @@ void block_registry_init() {
         .lightLevel = BLOCK_LIGHT_NO_LIGHT,
         .interact_callback = on_chest_interact,
         .state_resolver = chest_solver,
-        .destroy_callback = on_chest_destroy,
-        .overlay_draw = chest_overlay_draw
+        .destroy_callback = on_chest_destroy
     };
 
     blockRegistry[BLOCK_WOOL] = (BlockRegistry){
@@ -288,6 +287,19 @@ void block_registry_init() {
         .state_selector = trapdoor_state_selector,
         .variant_selector = trapdoor_variant_selector,
         .interact_callback = trapdoor_interact
+    };
+
+    blockRegistry[BLOCK_SIGN] = (BlockRegistry){
+        .variant_count = 2,
+        .variants = {
+            {.atlas_idx = 38, .model_idx = BLOCK_MODEL_QUAD, .flipH = false, .flipV = false, .rotation = 0 },
+            {.atlas_idx = 39, .model_idx = BLOCK_MODEL_QUAD, .flipH = false, .flipV = false, .rotation = 0 },
+        },
+        .flags = 0,
+        .lightLevel = BLOCK_LIGHT_NO_LIGHT,
+        .state_resolver = sign_solver,
+        .destroy_callback = on_sign_destroy,
+        .overlay_draw = sign_text_draw
     };
 
     blockRegistry[BLOCK_TORCH] = (BlockRegistry){

@@ -252,6 +252,13 @@ void item_registry_init() {
 		.blockId = BLOCK_TRAPDOOR
 	};
 
+	itemRegistry[ITEM_SIGN] = (ItemRegistry){
+		.name = "Sign",
+		.atlas_idx = 38,
+		.model_idx = BLOCK_MODEL_QUAD,
+		.blockId = BLOCK_SIGN
+	};
+
 	itemRegistry[ITEM_TORCH] = (ItemRegistry){
 		.name = "Torch",
 		.atlas_idx = 18,

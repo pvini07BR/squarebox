@@ -13,11 +13,11 @@ typedef struct {
     size_t vertexOffsets[CHUNK_AREA];
     Mesh mesh;
     bool initializedMesh;
-    float brightness;
+    uint8_t brightness;
 } ChunkLayer;
 
-void chunk_layer_init(ChunkLayer* layer, float brightness);
-void chunk_layer_genmesh(ChunkLayer* layer);
+void chunk_layer_init(ChunkLayer* layer, uint8_t brightness);
+void chunk_layer_genmesh(ChunkLayer* layer, uint8_t lightmap[CHUNK_AREA]);
 void chunk_layer_draw(ChunkLayer* layer);
 void chunk_layer_free(ChunkLayer* layer);
 

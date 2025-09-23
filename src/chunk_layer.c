@@ -8,7 +8,7 @@
 #include <raylib.h>
 #include <rlgl.h>
 
-void chunk_layer_init(ChunkLayer* layer, float brightness) {
+void chunk_layer_init(ChunkLayer* layer, uint8_t brightness) {
     if (!layer) return;
 
     for (int i = 0; i < CHUNK_AREA; i++) {
@@ -49,7 +49,7 @@ void chunk_layer_genmesh(ChunkLayer* layer) {
 
     // Now generate the quads for the mesh
 
-    Color c = (Color) { layer->brightness * 255, layer->brightness * 255, layer->brightness * 255, 255 };
+    Color c = (Color) { layer->brightness, layer->brightness, layer->brightness, 255 };
     Color colors[] = { c, c, c, c };
 
     for (int i = 0; i < CHUNK_AREA; i++) {
@@ -88,6 +88,8 @@ void chunk_layer_genmesh(ChunkLayer* layer) {
 void chunk_layer_draw(ChunkLayer* layer) {
     if (!layer) return;
 
+    rlDrawRenderBatchActive();
+
     if (layer->initializedMesh) {
         DrawMesh(layer->mesh, texture_atlas_get_material(), MatrixIdentity());
     }
@@ -100,7 +102,7 @@ void chunk_layer_draw(ChunkLayer* layer) {
             int x = i % CHUNK_WIDTH;
             int y = i / CHUNK_WIDTH;
 
-            rg->overlay_draw(block->data, (Vector2) { x * TILE_SIZE, y * TILE_SIZE });
+            rg->overlay_draw(block->data, (Vector2) { x * TILE_SIZE, y * TILE_SIZE }, block->state);
         }
     }
 }

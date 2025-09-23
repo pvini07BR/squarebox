@@ -106,12 +106,6 @@ bool torch_state_resolver(BlockExtraResult result, BlockExtraResult other, Block
                 return true;
             }
         }
-        else {
-            return false;
-        }
-    }
-    else {
-        return false;
     }
 
     return false;
@@ -149,6 +143,46 @@ bool on_chest_interact(BlockExtraResult result) {
 void on_chest_destroy(BlockExtraResult result) {
     if (result.block->data != NULL) {
         item_container_free(result.block->data);
+        free(result.block->data);
+        result.block->data = NULL;
+    }
+}
+
+bool sign_solver(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], ChunkLayerEnum layer) {
+    bool valid = false;
+
+    BlockRegistry* bottom_brg = neighbors[NEIGHBOR_BOTTOM].reg;
+    if (bottom_brg->flags & BLOCK_FLAG_SOLID && bottom_brg->flags & BLOCK_FLAG_FULL_BLOCK) {
+        result.block->state = 0;
+        valid = true;
+    } else if (layer == CHUNK_LAYER_FOREGROUND) {
+        BlockRegistry* wall_rg = other.reg;
+        if (wall_rg) {
+            if (wall_rg->flags & BLOCK_FLAG_SOLID && wall_rg->flags & BLOCK_FLAG_FULL_BLOCK) {
+                result.block->state = 1;
+                valid = true;
+            }
+        }
+    }
+
+    if (valid && result.block->data == NULL) {
+        result.block->data = calloc(3, sizeof(const char*));
+        if (result.block->data) {
+            const char** strings = result.block->data;
+            strings[0] = "The quick";
+            strings[1] = "brown fox";
+            strings[2] = "jumps over";
+        }
+        else {
+            valid = false;
+        }
+    }
+
+    return valid;
+}
+
+void on_sign_destroy(BlockExtraResult result) {
+    if (result.block->data != NULL) {
         free(result.block->data);
         result.block->data = NULL;
     }
@@ -344,8 +378,32 @@ bool water_flowing_tick(BlockExtraResult result, BlockExtraResult neighbors[4], 
     }
 }
 
-void chest_overlay_draw(void* data, Vector2 position) {
-    if (!data) return;
-    ItemContainer* ic = (ItemContainer*)data;
-    DrawText(ic->name, position.x, position.y, 32.0f, WHITE);
+void sign_text_draw(void* data, Vector2 position, uint8_t state) {
+    if (data != NULL) {
+        const char** strings = data;
+        float textSize = 4.0f;
+        float disloc = state == 1 ? 5.0f : 0.0f;
+        Vector2 textPos = (Vector2){
+            position.x + (TILE_SIZE / 2.0f),
+            position.y + TILE_SIZE / 8.0f + disloc
+        };
+
+        for (int i = 0; i < 3; i++) {
+            const char* str = strings[i];
+            Vector2 textMeasure = MeasureTextEx(GetFontDefault(), str, textSize, textSize / 8.0f);
+
+            DrawTextPro(
+                GetFontDefault(),
+                str,
+                textPos,
+                (Vector2) { textMeasure.x / 2.0f, 0.0f },
+                0.0f,
+                textSize,
+                textSize / 8.0f,
+                BLACK
+            );
+
+            textPos.y += textMeasure.y + 1.0f;
+        }
+    }
 }

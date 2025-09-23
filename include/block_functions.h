@@ -25,7 +25,7 @@ typedef void (*BlockDestroyCallback)(BlockExtraResult result);
 // unnecessary light and mesh updates.
 typedef bool (*BlockTickCallback)(BlockExtraResult result, BlockExtraResult neighbors[4], ChunkLayerEnum layer);
 // Function that draws anything on the top of a block based on the block's external data.
-typedef void (*BlockOverlayRender)(void* data, Vector2 position);
+typedef void (*BlockOverlayRender)(void* data, Vector2 position, uint8_t state);
 
 uint8_t trapdoor_state_selector(uint8_t idx);
 uint8_t trapdoor_variant_selector(uint8_t state);
@@ -35,16 +35,18 @@ bool plant_block_resolver(BlockExtraResult result, BlockExtraResult other, Block
 bool torch_state_resolver(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], ChunkLayerEnum layer);
 bool fence_resolver(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], ChunkLayerEnum layer);
 bool chest_solver(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], ChunkLayerEnum layer);
+bool sign_solver(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], ChunkLayerEnum layer);
 
 bool on_chest_interact(BlockExtraResult result);
 bool trapdoor_interact(BlockExtraResult result);
 
 void on_chest_destroy(BlockExtraResult result);
+void on_sign_destroy(BlockExtraResult result);
 
 bool falling_block_tick(BlockExtraResult result, BlockExtraResult neighbors[4], ChunkLayerEnum layer);
 bool water_source_tick(BlockExtraResult result, BlockExtraResult neighbors[4], ChunkLayerEnum layer);
 bool water_flowing_tick(BlockExtraResult result, BlockExtraResult neighbors[4], ChunkLayerEnum layer);
 
-void chest_overlay_draw(void* data, Vector2 position);
+void sign_text_draw(void* data, Vector2 position, uint8_t state);
 
 #endif

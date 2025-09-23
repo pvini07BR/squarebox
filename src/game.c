@@ -42,6 +42,9 @@ size_t last_blockState = SIZE_MAX;
 uint8_t lastItemId = UCHAR_MAX;
 int8_t hotbarIdx = 0;
 
+bool debug_info = false;
+char debug_text[1024];
+
 void game_init() {
     place_mode_icon = LoadTexture(ASSETS_PATH "place_modes.png");
 
@@ -123,9 +126,8 @@ void game_update(float deltaTime) {
             }
         }
 
-        if (IsKeyPressed(KEY_F)) {
-            player->entity.gravity_affected = !player->entity.gravity_affected;
-        }
+        if (IsKeyPressed(KEY_F)) player->entity.gravity_affected = !player->entity.gravity_affected;
+        if (IsKeyPressed(KEY_F3)) debug_info = !debug_info;
 
         // When pressing Q, the holding item will be dropped and launched at the direction of the mouse.
         // the force of throwing is determined by how far the mouse is from the player (in screen coordinates)
@@ -149,7 +151,7 @@ void game_update(float deltaTime) {
             }
         }
 
-        if (IsKeyPressed(KEY_C)) {
+        if (debug_info && IsKeyPressed(KEY_C)) {
             Vector2i chunkPos = {
                 (int)floorf((float)mouseBlockPos.x / (float)CHUNK_WIDTH),
                 (int)floorf((float)mouseBlockPos.y / (float)CHUNK_WIDTH)
@@ -327,9 +329,9 @@ void game_draw(bool draw_overlay) {
 
     BeginMode2D(camera);
 
-    chunk_manager_draw(false);
+    chunk_manager_draw(debug_info);
 
-    entity_list_draw(false);
+    entity_list_draw(debug_info);
 
     chunk_manager_draw_liquids();
 
@@ -406,6 +408,25 @@ void game_draw(bool draw_overlay) {
 
             draw_item(get_inventory()->items[i], slotRect.x, slotRect.y, ((ITEM_SLOT_SIZE - TILE_SIZE) / 2.0f), 1.0f, true);
         }
+    }
+
+    if (debug_info) {
+        sprintf(debug_text,
+            "FPS: %d\n"
+            "Loaded chunk area: %ux%u\n"
+            "Camera Zoom: %f\n"
+            "Player position: (%f, %f)\n"
+            "Holding item: %s\n",
+
+            GetFPS(),
+            chunk_manager_get_view_width(),
+            chunk_manager_get_view_height(),
+            camera.zoom,
+            player->entity.rect.x, player->entity.rect.y,
+            ir_get_item_registry(inventory_get_item(0, hotbarIdx).item_id)->name
+        );
+
+        DrawText(debug_text, 0, 0, 24, WHITE);
     }
 
     item_container_draw();

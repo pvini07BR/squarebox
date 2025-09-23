@@ -10,7 +10,7 @@
 #include "block_functions.h"
 #include "block_colliders.h"
 
-#define MAX_BLOCK_VARIANTS 4
+#define MAX_BLOCK_VARIANTS 8
 
 typedef enum {
 	BLOCK_AIR,

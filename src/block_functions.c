@@ -114,11 +114,9 @@ bool torch_state_resolver(BlockExtraResult result, BlockExtraResult other, Block
 bool fence_resolver(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], ChunkLayerEnum layer) {
     bool right = neighbors[NEIGHBOR_RIGHT].block->id == result.block->id;
 	bool left = neighbors[NEIGHBOR_LEFT].block->id == result.block->id;
+    bool up = neighbors[NEIGHBOR_TOP].block->id == result.block->id;
 
-    if (right && left) result.block->state = 3;
-    else if (right) result.block->state = 1;
-    else if (left) result.block->state = 2;
-    else result.block->state = 0;
+    result.block->state = (uint8_t)((up << 2) | (left << 1) | right);
 
     return true;
 }

@@ -115,29 +115,6 @@ int main() {
         EndDrawing();
     }
 
-    //     sprintf(buffer,
-    //         "FPS: %d\n"
-    //         "Loaded chunk area: %dx%d\nCamera Zoom: %f\n"
-    //         "Mouse position: (%f, %f)\n"
-    //         "Mouse block position: (%d, %d)\n"
-    //         "Chunk position: (%d, %d)\n"
-    //         "Holding item: %s\n"
-    //         "Wall mode: %s",
-
-    //         GetFPS(),
-    //         chunk_manager_get_view_width(),
-    //         chunk_manager_get_view_height(),
-    //         camera.zoom,
-    //         mouseWorldPos.x,
-    //         mouseWorldPos.y,
-    //         mouseBlockPos.x,
-    //         mouseBlockPos.y,
-    //         cameraChunkPos.x,
-    //         cameraChunkPos.y,
-    //         ir_get_item_registry(inventory_get_item(0, hotbarIdx).item_id)->name,
-    //         wall_mode ? "true" : "false"
-    //     );
-
     //     Vector2 textSize = MeasureTextEx(GetFontDefault(), buffer, 24, 0);
     //     DrawText(buffer, 0, 0, 24, WHITE);
 

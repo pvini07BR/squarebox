@@ -100,175 +100,175 @@ void item_registry_init() {
 
 	itemRegistry[ITEM_WOOL] = (ItemRegistry){
 		.name = "Wool",
-		.atlas_idx = 22,
+		.atlas_idx = 11,
 		.model_idx = BLOCK_MODEL_QUAD,
 		.blockId = BLOCK_WOOL
 	};
 
 	itemRegistry[ITEM_ORANGE_WOOL] = (ItemRegistry){
 		.name = "Orange Wool",
-		.atlas_idx = 23,
+		.atlas_idx = 12,
 		.model_idx = BLOCK_MODEL_QUAD,
 		.blockId = BLOCK_ORANGE_WOOL
 	};
 
 	itemRegistry[ITEM_MAGENTA_WOOL] = (ItemRegistry){
 		.name = "Magenta Wool",
-		.atlas_idx = 24,
+		.atlas_idx = 13,
 		.model_idx = BLOCK_MODEL_QUAD,
 		.blockId = BLOCK_MAGENTA_WOOL
 	};
 
 	itemRegistry[ITEM_LIGHT_BLUE_WOOL] = (ItemRegistry){
 		.name = "Light Blue Wool",
-		.atlas_idx = 25,
+		.atlas_idx = 14,
 		.model_idx = BLOCK_MODEL_QUAD,
 		.blockId = BLOCK_LIGHT_BLUE_WOOL
 	};
 
 	itemRegistry[ITEM_YELLOW_WOOL] = (ItemRegistry){
 		.name = "Yellow Wool",
-		.atlas_idx = 26,
+		.atlas_idx = 15,
 		.model_idx = BLOCK_MODEL_QUAD,
 		.blockId = BLOCK_YELLOW_WOOL
 	};
 
 	itemRegistry[ITEM_LIME_WOOL] = (ItemRegistry){
 		.name = "Lime Wool",
-		.atlas_idx = 27,
+		.atlas_idx = 16,
 		.model_idx = BLOCK_MODEL_QUAD,
 		.blockId = BLOCK_LIME_WOOL
 	};
 
 	itemRegistry[ITEM_PINK_WOOL] = (ItemRegistry){
 		.name = "Pink Wool",
-		.atlas_idx = 28,
+		.atlas_idx = 17,
 		.model_idx = BLOCK_MODEL_QUAD,
 		.blockId = BLOCK_PINK_WOOL
 	};
 
 	itemRegistry[ITEM_GRAY_WOOL] = (ItemRegistry){
 		.name = "Gray Wool",
-		.atlas_idx = 29,
+		.atlas_idx = 18,
 		.model_idx = BLOCK_MODEL_QUAD,
 		.blockId = BLOCK_GRAY_WOOL
 	};
 
 	itemRegistry[ITEM_LIGHT_GRAY_WOOL] = (ItemRegistry){
 		.name = "Light Gray Wool",
-		.atlas_idx = 30,
+		.atlas_idx = 19,
 		.model_idx = BLOCK_MODEL_QUAD,
 		.blockId = BLOCK_LIGHT_GRAY_WOOL
 	};
 
 	itemRegistry[ITEM_CYAN_WOOL] = (ItemRegistry){
 		.name = "Cyan Wool",
-		.atlas_idx = 31,
+		.atlas_idx = 20,
 		.model_idx = BLOCK_MODEL_QUAD,
 		.blockId = BLOCK_CYAN_WOOL
 	};
 
 	itemRegistry[ITEM_PURPLE_WOOL] = (ItemRegistry){
 		.name = "Purple Wool",
-		.atlas_idx = 32,
+		.atlas_idx = 21,
 		.model_idx = BLOCK_MODEL_QUAD,
 		.blockId = BLOCK_PURPLE_WOOL
 	};
 
 	itemRegistry[ITEM_BLUE_WOOL] = (ItemRegistry){
 		.name = "Blue Wool",
-		.atlas_idx = 33,
+		.atlas_idx = 22,
 		.model_idx = BLOCK_MODEL_QUAD,
 		.blockId = BLOCK_BLUE_WOOL
 	};
 
 	itemRegistry[ITEM_BROWN_WOOL] = (ItemRegistry){
 		.name = "Brown Wool",
-		.atlas_idx = 34,
+		.atlas_idx = 23,
 		.model_idx = BLOCK_MODEL_QUAD,
 		.blockId = BLOCK_BROWN_WOOL
 	};
 
 	itemRegistry[ITEM_GREEN_WOOL] = (ItemRegistry){
 		.name = "Green Wool",
-		.atlas_idx = 35,
+		.atlas_idx = 24,
 		.model_idx = BLOCK_MODEL_QUAD,
 		.blockId = BLOCK_GREEN_WOOL
 	};
 
 	itemRegistry[ITEM_RED_WOOL] = (ItemRegistry){
 		.name = "Red Wool",
-		.atlas_idx = 36,
+		.atlas_idx = 25,
 		.model_idx = BLOCK_MODEL_QUAD,
 		.blockId = BLOCK_RED_WOOL
 	};
 
 	itemRegistry[ITEM_BLACK_WOOL] = (ItemRegistry){
 		.name = "Black Wool",
-		.atlas_idx = 37,
+		.atlas_idx = 26,
 		.model_idx = BLOCK_MODEL_QUAD,
 		.blockId = BLOCK_BLACK_WOOL
 	};
 
 	itemRegistry[ITEM_GRASS] = (ItemRegistry){
 		.name = "Grass",
-		.atlas_idx = 11,
+		.atlas_idx = 27,
 		.model_idx = BLOCK_MODEL_QUAD,
 		.blockId = BLOCK_GRASS
 	};
 
 	itemRegistry[ITEM_FLOWER] = (ItemRegistry){
 		.name = "Flower",
-		.atlas_idx = 12,
+		.atlas_idx = 28,
 		.model_idx = BLOCK_MODEL_QUAD,
 		.blockId = BLOCK_FLOWER
 	};
 
 	itemRegistry[ITEM_PEBBLES] = (ItemRegistry){
 		.name = "Pebbles",
-		.atlas_idx = 13,
+		.atlas_idx = 29,
 		.model_idx = BLOCK_MODEL_QUAD,
 		.blockId = BLOCK_PEBBLES
 	};
 
 	itemRegistry[ITEM_WOODEN_FENCE] = (ItemRegistry){
 		.name = "Wooden Fence",
-		.atlas_idx = 14,
+		.atlas_idx = 30,
 		.model_idx = BLOCK_MODEL_QUAD,
 		.blockId = BLOCK_WOODEN_FENCE
 	};
 
 	itemRegistry[ITEM_LADDERS] = (ItemRegistry){
 		.name = "Ladders",
-		.atlas_idx = 20,
+		.atlas_idx = 38,
 		.model_idx = BLOCK_MODEL_QUAD,
 		.blockId = BLOCK_LADDERS
 	};
 
 	itemRegistry[ITEM_TRAPDOOR] = (ItemRegistry){
 		.name = "Trapdoor",
-		.atlas_idx = 21,
+		.atlas_idx = 39,
 		.model_idx = BLOCK_MODEL_QUAD,
 		.blockId = BLOCK_TRAPDOOR
 	};
 
 	itemRegistry[ITEM_SIGN] = (ItemRegistry){
 		.name = "Sign",
-		.atlas_idx = 38,
+		.atlas_idx = 40,
 		.model_idx = BLOCK_MODEL_QUAD,
 		.blockId = BLOCK_SIGN
 	};
 
 	itemRegistry[ITEM_TORCH] = (ItemRegistry){
 		.name = "Torch",
-		.atlas_idx = 18,
+		.atlas_idx = 42,
 		.model_idx = BLOCK_MODEL_TORCH,
 		.blockId = BLOCK_TORCH
 	};
 
 	itemRegistry[ITEM_WATER_BUCKET] = (ItemRegistry){
 		.name = "Water Bucket",
-		.atlas_idx = 19,
+		.atlas_idx = 43,
 		.model_idx = BLOCK_MODEL_QUAD,
 		.blockId = BLOCK_WATER_SOURCE,
 		.placingFlags = ITEM_PLACE_FLAG_NOT_WALL

@@ -21,7 +21,7 @@ void chunk_layer_init(ChunkLayer* layer, uint8_t brightness) {
     layer->brightness = brightness;
 }
 
-void chunk_layer_genmesh(ChunkLayer* layer) {
+void chunk_layer_genmesh(ChunkLayer* layer, uint8_t lightmap[CHUNK_AREA]) {
     if (!layer) return;
 
     // Get total amount of vertices needed
@@ -48,15 +48,22 @@ void chunk_layer_genmesh(ChunkLayer* layer) {
     layer->initializedMesh = true;
 
     // Now generate the quads for the mesh
-
-    Color c = (Color) { layer->brightness, layer->brightness, layer->brightness, 255 };
-    Color colors[] = { c, c, c, c };
-
     for (int i = 0; i < CHUNK_AREA; i++) {
         BlockInstance block = layer->blocks[i];
         BlockRegistry* brg = br_get_block_registry(block.id);
 
         if (block.id <= 0 || brg->flags & BLOCK_FLAG_LIQUID) continue;
+
+        uint8_t brightness = layer->brightness;
+
+        uint8_t lightValue = (uint8_t)(((float)lightmap[i] / 15.0f) * 255.0f);
+        uint8_t reduction = 255 - lightValue;
+
+        if (brightness > reduction) brightness -= reduction;
+        else brightness = 0;
+
+        Color c = (Color) { brightness, brightness, brightness, 255 };
+        Color colors[] = { c, c, c, c };
 
         int x = i % CHUNK_WIDTH;
         int y = i / CHUNK_WIDTH;

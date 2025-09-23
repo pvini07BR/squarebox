@@ -125,6 +125,17 @@ void chunk_layer_draw(ChunkLayer* layer) {
 void chunk_layer_free(ChunkLayer* layer) {
     if (!layer) return;
 
+    for (int i = 0; i < CHUNK_AREA; i++) {
+        BlockInstance* block = &layer->blocks[i];
+        if (!block->data) continue;
+        BlockRegistry* rg = br_get_block_registry(block->id);
+        if (rg->destroy_callback) {
+            BlockExtraResult result;
+            result.block = block;
+            rg->destroy_callback(result);
+        }
+    }
+
     if (layer->initializedMesh) {
         UnloadMesh(layer->mesh);
         layer->initializedMesh = false;

@@ -340,7 +340,7 @@ void game_draw(bool draw_overlay) {
 
     chunk_manager_draw_liquids();
 
-    if (!item_container_is_open() && draw_overlay) {
+    if (!item_container_is_open() && !sign_editor_is_open() && draw_overlay) {
         // Draw block model if it is rotatable
         if (loadedGhostMesh == true) {
             DrawMesh(

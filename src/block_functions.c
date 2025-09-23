@@ -1,6 +1,7 @@
 #include "block_functions.h"
 
 #include "item_container.h"
+#include "sign_editor.h"
 #include "raylib.h"
 #include "registries/block_registry.h"
 #include "block_state_bitfields.h"
@@ -9,6 +10,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 uint8_t trapdoor_state_selector(uint8_t idx) {
     uint8_t state = 0;
@@ -164,12 +166,13 @@ bool sign_solver(BlockExtraResult result, BlockExtraResult other, BlockExtraResu
     }
 
     if (valid && result.block->data == NULL) {
-        result.block->data = calloc(3, sizeof(const char*));
+        result.block->data = calloc(SIGN_LINE_COUNT, sizeof(char*));
         if (result.block->data) {
-            const char** strings = result.block->data;
-            strings[0] = "The quick";
-            strings[1] = "brown fox";
-            strings[2] = "jumps over";
+            char** strings = result.block->data;
+            for (int i = 0; i < SIGN_LINE_COUNT; i++) {
+                strings[i] = calloc(SIGN_LINE_LENGTH, sizeof(char));
+            }
+            sign_editor_open(strings);
         }
         else {
             valid = false;
@@ -181,6 +184,10 @@ bool sign_solver(BlockExtraResult result, BlockExtraResult other, BlockExtraResu
 
 void on_sign_destroy(BlockExtraResult result) {
     if (result.block->data != NULL) {
+        char** strings = result.block->data;
+        for (int i = 0; i < SIGN_LINE_COUNT; i++) {
+            free(strings[i]);
+        }
         free(result.block->data);
         result.block->data = NULL;
     }
@@ -193,6 +200,14 @@ bool trapdoor_interact(BlockExtraResult result) {
     return true;
 }
 
+bool sign_interact(BlockExtraResult result) {
+    if (result.block->data != NULL) {
+        char** strings = result.block->data;
+        sign_editor_open(strings);
+        return true;
+    }
+    return false;
+}
 
 bool falling_block_tick(BlockExtraResult result, BlockExtraResult neighbors[4], ChunkLayerEnum layer) {
     BlockRegistry* brg = neighbors[NEIGHBOR_BOTTOM].reg;
@@ -378,8 +393,8 @@ bool water_flowing_tick(BlockExtraResult result, BlockExtraResult neighbors[4], 
 
 void sign_text_draw(void* data, Vector2 position, uint8_t state) {
     if (data != NULL) {
-        const char** strings = data;
-        float textSize = 4.0f;
+        char** strings = data;
+        float fontSize = 4.0f;
         float disloc = state == 1 ? 5.0f : 0.0f;
         Vector2 textPos = (Vector2){
             position.x + (TILE_SIZE / 2.0f),
@@ -387,8 +402,8 @@ void sign_text_draw(void* data, Vector2 position, uint8_t state) {
         };
 
         for (int i = 0; i < 3; i++) {
-            const char* str = strings[i];
-            Vector2 textMeasure = MeasureTextEx(GetFontDefault(), str, textSize, textSize / 8.0f);
+            char* str = strings[i];
+            Vector2 textMeasure = MeasureTextEx(GetFontDefault(), str, fontSize, fontSize / 8.0f);
 
             DrawTextPro(
                 GetFontDefault(),
@@ -396,12 +411,12 @@ void sign_text_draw(void* data, Vector2 position, uint8_t state) {
                 textPos,
                 (Vector2) { textMeasure.x / 2.0f, 0.0f },
                 0.0f,
-                textSize,
-                textSize / 8.0f,
+                fontSize,
+                fontSize / 8.0f,
                 BLACK
             );
 
-            textPos.y += textMeasure.y + 1.0f;
+            textPos.y += fontSize + 1.0f;
         }
     }
 }

@@ -39,6 +39,7 @@ bool sign_solver(BlockExtraResult result, BlockExtraResult other, BlockExtraResu
 
 bool on_chest_interact(BlockExtraResult result);
 bool trapdoor_interact(BlockExtraResult result);
+bool sign_interact(BlockExtraResult result);
 
 void on_chest_destroy(BlockExtraResult result);
 void on_sign_destroy(BlockExtraResult result);

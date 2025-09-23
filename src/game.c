@@ -10,6 +10,7 @@
 #include "lists/entity_list.h"
 #include "chunk_manager.h"
 #include "item_container.h"
+#include "sign_editor.h"
 #include "texture_atlas.h"
 #include "types.h"
 
@@ -101,7 +102,7 @@ void game_update(float deltaTime) {
     blockPlacerRect.x = mouseBlockPos.x * TILE_SIZE;
     blockPlacerRect.y = mouseBlockPos.y * TILE_SIZE;
 
-    if (!item_container_is_open()) {
+    if (!item_container_is_open() && !sign_editor_is_open()) {
         if (IsKeyPressed(KEY_TAB)) sel_layer = sel_layer == CHUNK_LAYER_FOREGROUND ? CHUNK_LAYER_BACKGROUND : CHUNK_LAYER_FOREGROUND;
 
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
@@ -204,16 +205,20 @@ void game_update(float deltaTime) {
         if (IsKeyPressed(KEY_ZERO)) hotbarIdx = 9;
     }
 
-    player->disable_input = item_container_is_open();
+    player->disable_input = item_container_is_open() || sign_editor_is_open();
     entity_list_update(GetFrameTime());
         
     Vector2 newTarget = Vector2Add(player_get_position(player), Vector2Scale(player_get_size(player), 0.5f));
     camera.target = Vector2Lerp(camera.target, newTarget, 25.0f * GetFrameTime());
 
-    if (IsKeyPressed(KEY_E) && !item_container_is_open())
+    if (IsKeyPressed(KEY_E) && !item_container_is_open() && !sign_editor_is_open())
         item_container_open(&creativeMenu);
     else if ((IsKeyPressed(KEY_E) || IsKeyPressed(KEY_ESCAPE) && item_container_is_open()))
         item_container_close();
+    
+    if (IsKeyPressed(KEY_ESCAPE) && sign_editor_is_open()) {
+        sign_editor_close();
+    }
 
     ItemSlot heldItem = inventory_get_item(0, hotbarIdx);
     ItemRegistry* heldItemReg = ir_get_item_registry(heldItem.item_id);
@@ -352,7 +357,7 @@ void game_draw(bool draw_overlay) {
 
     EndMode2D();
 
-    if (!item_container_is_open() && draw_overlay) {
+    if (!item_container_is_open() && !sign_editor_is_open() && draw_overlay) {
         if (inventory_get_item(0, hotbarIdx).item_id > 0) {
             draw_item(inventory_get_item(0, hotbarIdx), GetMouseX(), GetMouseY(), 0, 0.8f, false);
         }
@@ -429,6 +434,7 @@ void game_draw(bool draw_overlay) {
         DrawText(debug_text, 0, 0, 24, WHITE);
     }
 
+    sign_editor_draw();
     item_container_draw();
 }
 

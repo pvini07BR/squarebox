@@ -1,4 +1,5 @@
 #include "item_container.h"
+#include "sign_editor.h"
 #include <limits.h>
 
 #include <raylib.h>
@@ -37,7 +38,7 @@ int main() {
 
     float accumulator = 0.0f;
     while (!WindowShouldClose()) {
-        if (!item_container_is_open() && IsKeyPressed(KEY_ESCAPE)) {
+        if (!item_container_is_open() && !sign_editor_is_open() && IsKeyPressed(KEY_ESCAPE)) {
             paused = !paused;
         }
 

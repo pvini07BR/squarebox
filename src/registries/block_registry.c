@@ -303,7 +303,8 @@ void block_registry_init() {
         .lightLevel = BLOCK_LIGHT_NO_LIGHT,
         .state_resolver = sign_solver,
         .destroy_callback = on_sign_destroy,
-        .overlay_draw = sign_text_draw
+        .overlay_draw = sign_text_draw,
+        .interact_callback = sign_interact
     };
 
     blockRegistry[BLOCK_TORCH] = (BlockRegistry){

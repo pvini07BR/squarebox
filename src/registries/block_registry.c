@@ -265,7 +265,7 @@ void block_registry_init() {
             {.atlas_idx = 36, .model_idx = BLOCK_MODEL_QUAD, .collider_idx = BLOCK_COLLIDER_QUAD, .flipH = false, .flipV = false, .rotation = 0 },
             {.atlas_idx = 37, .model_idx = BLOCK_MODEL_QUAD, .collider_idx = BLOCK_COLLIDER_QUAD, .flipH = false, .flipV = false, .rotation = 0 },
         },
-        .flags = BLOCK_FLAG_REPLACEABLE,
+        .flags = 0,
         .lightLevel = BLOCK_LIGHT_TRANSPARENT,
         .state_resolver = fence_resolver
     };

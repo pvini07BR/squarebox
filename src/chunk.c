@@ -158,7 +158,7 @@ void chunk_gen_liquid_mesh(Chunk* chunk) {
         if (chunk->layers[CHUNK_LAYER_FOREGROUND].blocks[i].id == BLOCK_WATER_SOURCE) value = 1.0f;
 
         BlockExtraResult neighbors[4];
-        chunk_get_block_neighbors_extra(chunk, (Vector2u) { x, y }, false, neighbors);
+        chunk_get_block_neighbors_extra(chunk, (Vector2u) { x, y }, CHUNK_LAYER_FOREGROUND, neighbors);
 
         float left_value = value;
         float right_value = value;

@@ -11,6 +11,7 @@
 #include "chunk_manager.h"
 #include "item_container.h"
 #include "texture_atlas.h"
+#include "types.h"
 
 #include <stdio.h>
 #include <stddef.h>
@@ -29,7 +30,7 @@ Vector2i mouseBlockPos;
 Vector2i currentChunkPos;
 Rectangle blockPlacerRect;
 
-bool wall_mode = false;
+ChunkLayerEnum sel_layer = CHUNK_LAYER_FOREGROUND;
 uint8_t blockStateIdx = 0;
 
 bool loadedGhostMesh = false;
@@ -98,16 +99,16 @@ void game_update(float deltaTime) {
     blockPlacerRect.y = mouseBlockPos.y * TILE_SIZE;
 
     if (!item_container_is_open()) {
-        if (IsKeyPressed(KEY_TAB)) wall_mode = !wall_mode;
+        if (IsKeyPressed(KEY_TAB)) sel_layer = sel_layer == CHUNK_LAYER_FOREGROUND ? CHUNK_LAYER_BACKGROUND : CHUNK_LAYER_FOREGROUND;
 
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-            chunk_manager_set_block_safe(mouseBlockPos, (BlockInstance) { 0, 0 }, wall_mode);
+            chunk_manager_set_block_safe(mouseBlockPos, (BlockInstance) { 0, 0 }, sel_layer);
         else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {
-            if (!chunk_manager_interact(mouseBlockPos, wall_mode)) {
+            if (!chunk_manager_interact(mouseBlockPos, sel_layer)) {
                 ItemRegistry* itr = ir_get_item_registry(inventory_get_item(0, hotbarIdx).item_id);
-                if (itr->blockId > 0 && !(itr->placingFlags & (wall_mode ? ITEM_PLACE_FLAG_NOT_WALL : ITEM_PLACE_FLAG_NOT_BLOCK))) {
+                if (itr->blockId > 0 && !(itr->placingFlags & (sel_layer == CHUNK_LAYER_BACKGROUND ? ITEM_PLACE_FLAG_NOT_WALL : ITEM_PLACE_FLAG_NOT_BLOCK))) {
                     BlockRegistry* br = br_get_block_registry(itr->blockId);
-                    if (wall_mode || (!wall_mode && ((br->flags & BLOCK_FLAG_SOLID && !CheckCollisionRecs(blockPlacerRect, player->entity.rect) || !(br->flags & BLOCK_FLAG_SOLID))))) {
+                    if (sel_layer == CHUNK_LAYER_BACKGROUND || (sel_layer == CHUNK_LAYER_FOREGROUND && ((br->flags & BLOCK_FLAG_SOLID && !CheckCollisionRecs(blockPlacerRect, player->entity.rect) || !(br->flags & BLOCK_FLAG_SOLID))))) {
                         uint8_t state = blockStateIdx;
                         if (br->state_selector) {
                             state = br->state_selector(blockStateIdx);
@@ -116,7 +117,7 @@ void game_update(float deltaTime) {
                             .id = itr->blockId,
                             .state = state
                         };
-                        chunk_manager_set_block_safe(mouseBlockPos, inst, wall_mode);
+                        chunk_manager_set_block_safe(mouseBlockPos, inst, sel_layer);
                     }
                 }
             }
@@ -357,7 +358,7 @@ void game_draw(bool draw_overlay) {
         DrawTexturePro(
             place_mode_icon,
             (Rectangle) {
-                .x = wall_mode ? 0 : 8,
+                .x = sel_layer == CHUNK_LAYER_BACKGROUND ? 0 : 8,
                 .y = 0,
                 .width = 8,
                 .height = 8

@@ -150,7 +150,7 @@ static void resolve_solid_blocks(Entity* entity, float deltaTime) {
 
 	for (int x = TO_BLOCK_COORDS(topLeft.x); x < TO_BLOCK_COORDS(bottomRight.x) + 1; x++) {
 		for (int y = TO_BLOCK_COORDS(topLeft.y); y < TO_BLOCK_COORDS(bottomRight.y) + 1; y++) {
-			BlockInstance block = chunk_manager_get_block((Vector2i) { x, y }, false);
+			BlockInstance block = chunk_manager_get_block((Vector2i) { x, y }, CHUNK_LAYER_FOREGROUND);
 			BlockRegistry* reg = br_get_block_registry(block.id);
 			if (!reg) continue;
 
@@ -215,7 +215,7 @@ void resolve_area_blocks(Entity* entity) {
 
 	for (int x = TO_BLOCK_COORDS(topLeft.x); x < TO_BLOCK_COORDS(bottomRight.x) + 1; x++) {
 		for (int y = TO_BLOCK_COORDS(topLeft.y); y < TO_BLOCK_COORDS(bottomRight.y) + 1; y++) {
-			BlockInstance block = chunk_manager_get_block((Vector2i) { x, y }, false);
+			BlockInstance block = chunk_manager_get_block((Vector2i) { x, y }, CHUNK_LAYER_FOREGROUND);
 			BlockRegistry* reg = br_get_block_registry(block.id);
 			if (!reg) continue;
 

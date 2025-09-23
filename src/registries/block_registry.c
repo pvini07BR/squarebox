@@ -114,7 +114,8 @@ void block_registry_init() {
         .lightLevel = BLOCK_LIGHT_NO_LIGHT,
         .interact_callback = on_chest_interact,
         .state_resolver = chest_solver,
-        .destroy_callback = on_chest_destroy
+        .destroy_callback = on_chest_destroy,
+        .overlay_draw = chest_overlay_draw
     };
 
     blockRegistry[BLOCK_WOOL] = (BlockRegistry){

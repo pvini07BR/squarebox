@@ -9,6 +9,12 @@
 #include <stdint.h>
 #include <stddef.h>
 
+typedef enum {
+	CHUNK_LAYER_BACKGROUND,
+	CHUNK_LAYER_FOREGROUND,
+	CHUNK_LAYER_COUNT
+} ChunkLayerEnum;
+
 typedef struct {
 	unsigned int x;
 	unsigned int y;
@@ -26,6 +32,9 @@ typedef struct {
 	// Its usage depends on what flag is set
 	// for a specific block.
 	uint8_t state;
+	// Pointer to a external data. Set NULL if the block
+	// does not have an associated external data.
+	void* data;
 } BlockInstance;
 
 #endif

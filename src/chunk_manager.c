@@ -226,8 +226,8 @@ void chunk_manager_update_lighting() {
 
     for (int c = 0; c < chunk_count; c++) {
         for (int i = 0; i < CHUNK_AREA; i++) {
-            BlockInstance b = chunks[c].blocks[i];
-            BlockInstance w = chunks[c].walls[i];
+            BlockInstance b = chunks[c].layers[CHUNK_LAYER_FOREGROUND].blocks[i];
+            BlockInstance w = chunks[c].layers[CHUNK_LAYER_BACKGROUND].blocks[i];
 
             BlockRegistry* bbr = br_get_block_registry(b.id);
             BlockRegistry* wbr = br_get_block_registry(w.id);
@@ -258,7 +258,7 @@ size_t chunk_manager_get_view_height()
     return chunk_view_height;
 }
 
-bool chunk_manager_interact(Vector2i position, bool isWall) {
+bool chunk_manager_interact(Vector2i position, ChunkLayerEnum layer) {
     Vector2i chunkPos = {
         (int)floorf((float)position.x / (float)CHUNK_WIDTH),
         (int)floorf((float)position.y / (float)CHUNK_WIDTH)
@@ -270,7 +270,7 @@ bool chunk_manager_interact(Vector2i position, bool isWall) {
         .y = ((position.y % CHUNK_WIDTH) + CHUNK_WIDTH) % CHUNK_WIDTH
     };
 
-    BlockInstance* inst = chunk_get_block_ptr(chunk, relPos, isWall);
+    BlockInstance* inst = chunk_get_block_ptr(chunk, relPos, layer);
     if (!inst) return false;
     BlockRegistry* brg = br_get_block_registry(inst->id);
     if (!brg) return false;
@@ -295,7 +295,7 @@ bool chunk_manager_interact(Vector2i position, bool isWall) {
     return false;
 }
 
-void chunk_manager_set_block_safe(Vector2i position, BlockInstance blockValue, bool isWall) {
+void chunk_manager_set_block_safe(Vector2i position, BlockInstance blockValue, ChunkLayerEnum layer) {
     Vector2i chunkPos = {
         (int)floorf((float)position.x / (float)CHUNK_WIDTH),
         (int)floorf((float)position.y / (float)CHUNK_WIDTH)
@@ -308,13 +308,13 @@ void chunk_manager_set_block_safe(Vector2i position, BlockInstance blockValue, b
     };
 
     if (blockValue.id > 0) {
-		BlockRegistry* current_br = br_get_block_registry(chunk_get_block(chunk, relPos, isWall).id);
+		BlockRegistry* current_br = br_get_block_registry(chunk_get_block(chunk, relPos, layer).id);
         if (current_br->flags & BLOCK_FLAG_REPLACEABLE) {
             bool canPlace = false;
 
             BlockInstance neighbors[4];
 
-            chunk_get_block_neighbors(chunk, relPos, isWall, neighbors);
+            chunk_get_block_neighbors(chunk, relPos, layer, neighbors);
 
             for (int i = 0; i < 4; i++) {
                 if (neighbors[i].id > 0) {
@@ -323,8 +323,8 @@ void chunk_manager_set_block_safe(Vector2i position, BlockInstance blockValue, b
                 }
             }
 
-            if (isWall) {
-                chunk_get_block_neighbors(chunk, relPos, false, neighbors);
+            if (layer == CHUNK_LAYER_BACKGROUND) {
+                chunk_get_block_neighbors(chunk, relPos, CHUNK_LAYER_FOREGROUND, neighbors);
 
                 for (int i = 0; i < 4; i++) {
                     if (neighbors[i].id > 0) {
@@ -334,23 +334,23 @@ void chunk_manager_set_block_safe(Vector2i position, BlockInstance blockValue, b
                 }
             }
 
-            if (!isWall) {
-                BlockRegistry* br = br_get_block_registry(chunk_get_block(chunk, relPos, true).id);
+            if (layer == CHUNK_LAYER_FOREGROUND) {
+                BlockRegistry* br = br_get_block_registry(chunk_get_block(chunk, relPos, CHUNK_LAYER_BACKGROUND).id);
                 if (br->flags & BLOCK_FLAG_SOLID) canPlace = true;
             } else {
-                BlockRegistry* br = br_get_block_registry(chunk_get_block(chunk, relPos, false).id);
+                BlockRegistry* br = br_get_block_registry(chunk_get_block(chunk, relPos, CHUNK_LAYER_FOREGROUND).id);
                 if (br->flags & BLOCK_FLAG_SOLID) canPlace = true;
             }
 
             if (canPlace) {
-                chunk_set_block(chunk, relPos, blockValue, isWall, true);
+                chunk_set_block(chunk, relPos, blockValue, layer, true);
             }
         }
     }
     else {
-        BlockInstance current = chunk_get_block(chunk, relPos, isWall);
+        BlockInstance current = chunk_get_block(chunk, relPos, layer);
         if (current.id > 0) {
-            chunk_set_block(chunk, relPos, blockValue, isWall, true);
+            chunk_set_block(chunk, relPos, blockValue, layer, true);
         }
     }
 }
@@ -370,7 +370,7 @@ Chunk* chunk_manager_get_chunk(Vector2i position) {
     }
 }
 
-void chunk_manager_set_block(Vector2i position, BlockInstance blockValue, bool isWall) {
+void chunk_manager_set_block(Vector2i position, BlockInstance blockValue, ChunkLayerEnum layer) {
     Vector2i chunkPos = {
         (int)floorf((float)position.x / (float)CHUNK_WIDTH),
         (int)floorf((float)position.y / (float)CHUNK_WIDTH)
@@ -391,13 +391,13 @@ void chunk_manager_set_block(Vector2i position, BlockInstance blockValue, bool i
                 .y = ((position.y % CHUNK_WIDTH) + CHUNK_WIDTH) % CHUNK_WIDTH
             },
             blockValue,
-            isWall,
+            layer,
             true
         );
     }
 }
 
-BlockInstance chunk_manager_get_block(Vector2i position, bool isWall) {
+BlockInstance chunk_manager_get_block(Vector2i position, ChunkLayerEnum layer) {
     Vector2i chunkPos = {
         (int)floorf((float)position.x / (float)CHUNK_WIDTH),
         (int)floorf((float)position.y / (float)CHUNK_WIDTH)
@@ -417,7 +417,7 @@ BlockInstance chunk_manager_get_block(Vector2i position, bool isWall) {
                 .x = ((position.x % CHUNK_WIDTH) + CHUNK_WIDTH) % CHUNK_WIDTH,
                 .y = ((position.y % CHUNK_WIDTH) + CHUNK_WIDTH) % CHUNK_WIDTH
             },
-            isWall
+            layer
         );
     }
     return (BlockInstance) { 0, 0 };

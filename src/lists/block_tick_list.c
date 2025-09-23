@@ -4,7 +4,7 @@
 static inline bool is_equal(const BlockTickListEntry* a, const BlockTickListEntry* b) {
     return a->position.x == b->position.x
         && a->position.y == b->position.y
-        && a->isWall == b->isWall;
+        && a->layer == b->layer;
 }
 
 void block_tick_list_clear(BlockTickList* list) {

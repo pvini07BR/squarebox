@@ -9,7 +9,7 @@
 
 typedef struct {
     Vector2u position;
-    bool isWall;
+    ChunkLayerEnum layer;
 } BlockTickListEntry;
 
 typedef struct {

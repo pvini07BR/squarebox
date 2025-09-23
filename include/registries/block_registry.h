@@ -165,6 +165,9 @@ typedef struct {
 	BlockDestroyCallback destroy_callback;
 	// If the tick callback is defined, the block will be added to the ticking list.
 	BlockTickCallback tick_callback;
+	// If the overlay draw function is defined, it will draw whatever the function tells to draw on the top
+	// of the block.
+	BlockOverlayRender overlay_draw;
 
 	// This member variable will only be used if tick_callback is defined.
 	// 

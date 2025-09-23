@@ -1,10 +1,14 @@
 #include "block_functions.h"
 
+#include "item_container.h"
+#include "raylib.h"
 #include "registries/block_registry.h"
 #include "block_state_bitfields.h"
 #include "chunk.h"
+#include "types.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 
 uint8_t trapdoor_state_selector(uint8_t idx) {
     uint8_t state = 0;
@@ -56,7 +60,7 @@ uint8_t trapdoor_variant_selector(uint8_t state) {
     }
 }
 
-bool grounded_block_resolver(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], bool isWall) {
+bool grounded_block_resolver(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], ChunkLayerEnum layer) {
     BlockRegistry* reg = neighbors[NEIGHBOR_BOTTOM].reg;
     if (reg) {
         return reg->flags & BLOCK_FLAG_SOLID && reg->flags & BLOCK_FLAG_FULL_BLOCK;
@@ -65,7 +69,7 @@ bool grounded_block_resolver(BlockExtraResult result, BlockExtraResult other, Bl
 	}
 }
 
-bool plant_block_resolver(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], bool isWall) {
+bool plant_block_resolver(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], ChunkLayerEnum layer) {
     BlockRegistry* reg = neighbors[NEIGHBOR_BOTTOM].reg;
     if (reg) {
         return reg->flags & BLOCK_FLAG_PLANTABLE;
@@ -75,7 +79,7 @@ bool plant_block_resolver(BlockExtraResult result, BlockExtraResult other, Block
     }
 }
 
-bool torch_state_resolver(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], bool isWall) {
+bool torch_state_resolver(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], ChunkLayerEnum layer) {
     BlockRegistry* bottom_brg = neighbors[NEIGHBOR_BOTTOM].reg;
     if (bottom_brg->flags & BLOCK_FLAG_SOLID && bottom_brg->flags & BLOCK_FLAG_FULL_BLOCK) {
         result.block->state = 0;
@@ -94,7 +98,7 @@ bool torch_state_resolver(BlockExtraResult result, BlockExtraResult other, Block
         return true;
     }
 
-    if (!isWall) {
+    if (layer == CHUNK_LAYER_FOREGROUND) {
         BlockRegistry* wall_rg = other.reg;
         if (wall_rg) {
             if (wall_rg->flags & BLOCK_FLAG_SOLID && wall_rg->flags & BLOCK_FLAG_FULL_BLOCK) {
@@ -113,7 +117,7 @@ bool torch_state_resolver(BlockExtraResult result, BlockExtraResult other, Block
     return false;
 }
 
-bool fence_resolver(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], bool isWall) {
+bool fence_resolver(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], ChunkLayerEnum layer) {
     bool right = neighbors[NEIGHBOR_RIGHT].block->id == result.block->id;
 	bool left = neighbors[NEIGHBOR_LEFT].block->id == result.block->id;
 
@@ -125,23 +129,29 @@ bool fence_resolver(BlockExtraResult result, BlockExtraResult other, BlockExtraR
     return true;
 }
 
-bool chest_solver(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], bool isWall) {
-    if (result.block->state <= 0) {
-        result.block->state = container_vector_add(&result.chunk->containerVec, "Chest", 3, 10, false);
-        if (result.block->state > 0) return true;
-        else { return false; }
+bool chest_solver(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], ChunkLayerEnum layer) {
+    if (result.block->data == NULL) {
+        result.block->data = malloc(sizeof(ItemContainer));
+        if (!result.block->data) return false;
+        item_container_create(result.block->data, "Chest", 3, 10, false);
     }
-    else {
-        return true;
-    }
+    return true;
 }
 
 bool on_chest_interact(BlockExtraResult result) {
-    if (result.block->state > 0) {
-        item_container_open(container_vector_get(&result.chunk->containerVec, result.block->state - 1));
+    if (result.block->data != NULL) {
+        item_container_open(result.block->data);
         return true;
     }
     return false;
+}
+
+void on_chest_destroy(BlockExtraResult result) {
+    if (result.block->data != NULL) {
+        item_container_free(result.block->data);
+        free(result.block->data);
+        result.block->data = NULL;
+    }
 }
 
 bool trapdoor_interact(BlockExtraResult result) {
@@ -151,19 +161,14 @@ bool trapdoor_interact(BlockExtraResult result) {
     return true;
 }
 
-void on_chest_destroy(BlockExtraResult result) {
-    if (result.block->state > 0) {
-        container_vector_remove(&result.chunk->containerVec, result.block->state - 1);
-    }
-}
 
-bool falling_block_tick(BlockExtraResult result, BlockExtraResult neighbors[4], bool isWall) {
+bool falling_block_tick(BlockExtraResult result, BlockExtraResult neighbors[4], ChunkLayerEnum layer) {
     BlockRegistry* brg = neighbors[NEIGHBOR_BOTTOM].reg;
     if (!brg) return false;
     if (brg->flags & BLOCK_FLAG_REPLACEABLE) {
         BlockInstance temp = *result.block;
-        chunk_set_block(neighbors[NEIGHBOR_BOTTOM].chunk, neighbors[NEIGHBOR_BOTTOM].position, temp, isWall, false);
-        chunk_set_block(result.chunk, result.position, (BlockInstance) { 0, 0 }, isWall, false);
+        chunk_set_block(neighbors[NEIGHBOR_BOTTOM].chunk, neighbors[NEIGHBOR_BOTTOM].position, temp, layer, false);
+        chunk_set_block(result.chunk, result.position, (BlockInstance) { 0, 0 }, layer, false);
         return true;
     }
     return false;
@@ -173,13 +178,13 @@ bool flow_to_bottom(BlockExtraResult bottom) {
     BlockRegistry* brg = bottom.reg;
     if (!brg) return false;
     if (brg->flags & BLOCK_FLAG_REPLACEABLE && !(brg->flags & BLOCK_FLAG_LIQUID)) {
-        chunk_set_block(bottom.chunk, bottom.position, (BlockInstance) { BLOCK_WATER_FLOWING, get_flowing_liquid_state(7, true) }, false, false);
+        chunk_set_block(bottom.chunk, bottom.position, (BlockInstance) { BLOCK_WATER_FLOWING, get_flowing_liquid_state(7, true) }, CHUNK_LAYER_FOREGROUND, false);
         return true;
     }
     else if (brg->flags & BLOCK_FLAG_LIQUID && bottom.block->id == BLOCK_WATER_FLOWING) {
         FlowingLiquidState* bottomState = (FlowingLiquidState*)&bottom.block->state;
         if (bottomState->level < 7) {
-            chunk_set_block(bottom.chunk, bottom.position, (BlockInstance) { BLOCK_WATER_FLOWING, get_flowing_liquid_state(7, true) }, false, false);
+            chunk_set_block(bottom.chunk, bottom.position, (BlockInstance) { BLOCK_WATER_FLOWING, get_flowing_liquid_state(7, true) }, CHUNK_LAYER_FOREGROUND, false);
             return true;
         }
     }
@@ -200,13 +205,13 @@ bool flow_to_sides(BlockExtraResult neighbors[4], int startLevel) {
         if (!neighrg) continue;
 
         if (neighrg->flags & BLOCK_FLAG_REPLACEABLE && !(neighrg->flags & BLOCK_FLAG_LIQUID)) {
-            chunk_set_block(neighbor.chunk, neighbor.position, (BlockInstance) { BLOCK_WATER_FLOWING, get_flowing_liquid_state(startLevel - 1, false) }, false, false);
+            chunk_set_block(neighbor.chunk, neighbor.position, (BlockInstance) { BLOCK_WATER_FLOWING, get_flowing_liquid_state(startLevel - 1, false) }, CHUNK_LAYER_FOREGROUND, false);
             placed = true;
         }
         else if (neighrg->flags & BLOCK_FLAG_LIQUID && neighbor.block->id == BLOCK_WATER_FLOWING) {
             FlowingLiquidState* neighState = (FlowingLiquidState*)&neighbor.block->state;
             if (!neighState->falling && neighState->level < (startLevel - 1)) {
-                chunk_set_block(neighbor.chunk, neighbor.position, (BlockInstance) { BLOCK_WATER_FLOWING, get_flowing_liquid_state(startLevel - 1, false) }, false, false);
+                chunk_set_block(neighbor.chunk, neighbor.position, (BlockInstance) { BLOCK_WATER_FLOWING, get_flowing_liquid_state(startLevel - 1, false) }, CHUNK_LAYER_FOREGROUND, false);
                 placed = true;
             }
         }
@@ -215,8 +220,8 @@ bool flow_to_sides(BlockExtraResult neighbors[4], int startLevel) {
     return placed;
 }
 
-bool water_source_tick(BlockExtraResult result, BlockExtraResult neighbors[4], bool isWall) {
-    if (isWall) return false;
+bool water_source_tick(BlockExtraResult result, BlockExtraResult neighbors[4], ChunkLayerEnum layer) {
+    if (layer != CHUNK_LAYER_FOREGROUND) return false;
 
     // Flowing to the bottom
     BlockExtraResult bottom = neighbors[NEIGHBOR_BOTTOM];
@@ -228,8 +233,8 @@ bool water_source_tick(BlockExtraResult result, BlockExtraResult neighbors[4], b
     return flow_to_sides(neighbors, 7);
 }
 
-bool water_flowing_tick(BlockExtraResult result, BlockExtraResult neighbors[4], bool isWall) {
-    if (isWall) return false;
+bool water_flowing_tick(BlockExtraResult result, BlockExtraResult neighbors[4], ChunkLayerEnum layer) {
+    if (layer != CHUNK_LAYER_FOREGROUND) return false;
 
     FlowingLiquidState* curState = (FlowingLiquidState*)&result.block->state;
     if (curState->falling == true) {
@@ -238,7 +243,7 @@ bool water_flowing_tick(BlockExtraResult result, BlockExtraResult neighbors[4], 
         if (!trg) return false;
 
         if (!(trg->flags & BLOCK_FLAG_LIQUID)) {
-            chunk_set_block(result.chunk, result.position, (BlockInstance) { BLOCK_AIR, 0 }, false, false);
+            chunk_set_block(result.chunk, result.position, (BlockInstance) { BLOCK_AIR, 0 }, CHUNK_LAYER_FOREGROUND, false);
             return true;
         }
         
@@ -260,7 +265,7 @@ bool water_flowing_tick(BlockExtraResult result, BlockExtraResult neighbors[4], 
     else {
         if (neighbors[NEIGHBOR_LEFT].block && neighbors[NEIGHBOR_RIGHT].block) {
             if (neighbors[NEIGHBOR_LEFT].block->id == BLOCK_WATER_SOURCE && neighbors[NEIGHBOR_RIGHT].block->id == BLOCK_WATER_SOURCE) {
-                chunk_set_block(result.chunk, result.position, (BlockInstance) { BLOCK_WATER_SOURCE, 0 }, false, false);
+                chunk_set_block(result.chunk, result.position, (BlockInstance) { BLOCK_WATER_SOURCE, 0 }, CHUNK_LAYER_FOREGROUND, false);
                 return true;
             }
         }
@@ -274,7 +279,7 @@ bool water_flowing_tick(BlockExtraResult result, BlockExtraResult neighbors[4], 
         // Flowing to the sides
         if (neighbors[NEIGHBOR_LEFT].block && neighbors[NEIGHBOR_RIGHT].block) {
             if (neighbors[NEIGHBOR_LEFT].block->id == BLOCK_WATER_SOURCE && neighbors[NEIGHBOR_RIGHT].block->id == BLOCK_WATER_SOURCE) {
-                chunk_set_block(result.chunk, result.position, (BlockInstance) { BLOCK_WATER_SOURCE, 0 }, false, false);
+                chunk_set_block(result.chunk, result.position, (BlockInstance) { BLOCK_WATER_SOURCE, 0 }, CHUNK_LAYER_FOREGROUND, false);
                 return true;
             }
         }
@@ -302,12 +307,12 @@ bool water_flowing_tick(BlockExtraResult result, BlockExtraResult neighbors[4], 
         bool changed = false;
 
         if (target_level < 0) {
-            chunk_set_block(result.chunk, result.position, (BlockInstance) { 0, 0 }, false, false);
+            chunk_set_block(result.chunk, result.position, (BlockInstance) { 0, 0 }, CHUNK_LAYER_FOREGROUND, false);
             changed = true;
         }
         else if (curState->level != target_level) {
             size_t new_state = get_flowing_liquid_state(target_level, curState->falling);
-            chunk_set_block(result.chunk, result.position, (BlockInstance) { BLOCK_WATER_FLOWING, new_state }, false, false);
+            chunk_set_block(result.chunk, result.position, (BlockInstance) { BLOCK_WATER_FLOWING, new_state }, CHUNK_LAYER_FOREGROUND, false);
             changed = true;
         }
 
@@ -322,13 +327,13 @@ bool water_flowing_tick(BlockExtraResult result, BlockExtraResult neighbors[4], 
                 if (flow_level < 0) continue;
 
                 if (neighrg->flags & BLOCK_FLAG_REPLACEABLE && !(neighrg->flags & BLOCK_FLAG_LIQUID)) {
-                    chunk_set_block(neighbor.chunk, neighbor.position, (BlockInstance) { BLOCK_WATER_FLOWING, get_flowing_liquid_state(flow_level, false) }, false, false);
+                    chunk_set_block(neighbor.chunk, neighbor.position, (BlockInstance) { BLOCK_WATER_FLOWING, get_flowing_liquid_state(flow_level, false) }, CHUNK_LAYER_FOREGROUND, false);
                     changed = true;
                 }
                 else if (neighrg->flags & BLOCK_FLAG_LIQUID && neighbor.block->id == BLOCK_WATER_FLOWING) {
                     FlowingLiquidState* neighState = (FlowingLiquidState*)&neighbor.block->state;
                     if (neighState->level < flow_level) {
-                        chunk_set_block(neighbor.chunk, neighbor.position, (BlockInstance) { BLOCK_WATER_FLOWING, get_flowing_liquid_state(flow_level, false) }, false, false);
+                        chunk_set_block(neighbor.chunk, neighbor.position, (BlockInstance) { BLOCK_WATER_FLOWING, get_flowing_liquid_state(flow_level, false) }, CHUNK_LAYER_FOREGROUND, false);
                         changed = true;
                     }
                 }
@@ -337,4 +342,10 @@ bool water_flowing_tick(BlockExtraResult result, BlockExtraResult neighbors[4], 
 
         return changed;
     }
+}
+
+void chest_overlay_draw(void* data, Vector2 position) {
+    if (!data) return;
+    ItemContainer* ic = (ItemContainer*)data;
+    DrawText(ic->name, position.x, position.y, 32.0f, WHITE);
 }

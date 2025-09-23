@@ -117,6 +117,118 @@ void block_registry_init() {
         .destroy_callback = on_chest_destroy
     };
 
+    blockRegistry[BLOCK_WOOL] = (BlockRegistry){
+        .variant_count = 1,
+        .variants = { {.atlas_idx = 22, .model_idx = BLOCK_MODEL_QUAD, .collider_idx = BLOCK_COLLIDER_QUAD, .flipH = false, .flipV = false, .rotation = 0 } },
+        .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FULL_BLOCK,
+        .lightLevel = BLOCK_LIGHT_NO_LIGHT
+    };
+
+    blockRegistry[BLOCK_ORANGE_WOOL] = (BlockRegistry){
+        .variant_count = 1,
+        .variants = { {.atlas_idx = 23, .model_idx = BLOCK_MODEL_QUAD, .collider_idx = BLOCK_COLLIDER_QUAD, .flipH = false, .flipV = false, .rotation = 0 } },
+        .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FULL_BLOCK,
+        .lightLevel = BLOCK_LIGHT_NO_LIGHT
+    };
+
+    blockRegistry[BLOCK_MAGENTA_WOOL] = (BlockRegistry){
+        .variant_count = 1,
+        .variants = { {.atlas_idx = 24, .model_idx = BLOCK_MODEL_QUAD, .collider_idx = BLOCK_COLLIDER_QUAD, .flipH = false, .flipV = false, .rotation = 0 } },
+        .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FULL_BLOCK,
+        .lightLevel = BLOCK_LIGHT_NO_LIGHT
+    };
+
+    blockRegistry[BLOCK_LIGHT_BLUE_WOOL] = (BlockRegistry){
+        .variant_count = 1,
+        .variants = { {.atlas_idx = 25, .model_idx = BLOCK_MODEL_QUAD, .collider_idx = BLOCK_COLLIDER_QUAD, .flipH = false, .flipV = false, .rotation = 0 } },
+        .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FULL_BLOCK,
+        .lightLevel = BLOCK_LIGHT_NO_LIGHT
+    };
+
+    blockRegistry[BLOCK_YELLOW_WOOL] = (BlockRegistry){
+        .variant_count = 1,
+        .variants = { {.atlas_idx = 26, .model_idx = BLOCK_MODEL_QUAD, .collider_idx = BLOCK_COLLIDER_QUAD, .flipH = false, .flipV = false, .rotation = 0 } },
+        .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FULL_BLOCK,
+        .lightLevel = BLOCK_LIGHT_NO_LIGHT
+    };
+
+    blockRegistry[BLOCK_LIME_WOOL] = (BlockRegistry){
+        .variant_count = 1,
+        .variants = { {.atlas_idx = 27, .model_idx = BLOCK_MODEL_QUAD, .collider_idx = BLOCK_COLLIDER_QUAD, .flipH = false, .flipV = false, .rotation = 0 } },
+        .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FULL_BLOCK,
+        .lightLevel = BLOCK_LIGHT_NO_LIGHT
+    };
+
+    blockRegistry[BLOCK_PINK_WOOL] = (BlockRegistry){
+        .variant_count = 1,
+        .variants = { {.atlas_idx = 28, .model_idx = BLOCK_MODEL_QUAD, .collider_idx = BLOCK_COLLIDER_QUAD, .flipH = false, .flipV = false, .rotation = 0 } },
+        .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FULL_BLOCK,
+        .lightLevel = BLOCK_LIGHT_NO_LIGHT
+    };
+
+    blockRegistry[BLOCK_GRAY_WOOL] = (BlockRegistry){
+        .variant_count = 1,
+        .variants = { {.atlas_idx = 29, .model_idx = BLOCK_MODEL_QUAD, .collider_idx = BLOCK_COLLIDER_QUAD, .flipH = false, .flipV = false, .rotation = 0 } },
+        .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FULL_BLOCK,
+        .lightLevel = BLOCK_LIGHT_NO_LIGHT
+    };
+
+    blockRegistry[BLOCK_LIGHT_GRAY_WOOL] = (BlockRegistry){
+        .variant_count = 1,
+        .variants = { {.atlas_idx = 30, .model_idx = BLOCK_MODEL_QUAD, .collider_idx = BLOCK_COLLIDER_QUAD, .flipH = false, .flipV = false, .rotation = 0 } },
+        .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FULL_BLOCK,
+        .lightLevel = BLOCK_LIGHT_NO_LIGHT
+    };
+
+    blockRegistry[BLOCK_CYAN_WOOL] = (BlockRegistry){
+        .variant_count = 1,
+        .variants = { {.atlas_idx = 31, .model_idx = BLOCK_MODEL_QUAD, .collider_idx = BLOCK_COLLIDER_QUAD, .flipH = false, .flipV = false, .rotation = 0 } },
+        .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FULL_BLOCK,
+        .lightLevel = BLOCK_LIGHT_NO_LIGHT
+    };
+
+    blockRegistry[BLOCK_PURPLE_WOOL] = (BlockRegistry){
+        .variant_count = 1,
+        .variants = { {.atlas_idx = 32, .model_idx = BLOCK_MODEL_QUAD, .collider_idx = BLOCK_COLLIDER_QUAD, .flipH = false, .flipV = false, .rotation = 0 } },
+        .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FULL_BLOCK,
+        .lightLevel = BLOCK_LIGHT_NO_LIGHT
+    };
+
+    blockRegistry[BLOCK_BLUE_WOOL] = (BlockRegistry){
+        .variant_count = 1,
+        .variants = { {.atlas_idx = 33, .model_idx = BLOCK_MODEL_QUAD, .collider_idx = BLOCK_COLLIDER_QUAD, .flipH = false, .flipV = false, .rotation = 0 } },
+        .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FULL_BLOCK,
+        .lightLevel = BLOCK_LIGHT_NO_LIGHT
+    };
+
+    blockRegistry[BLOCK_BROWN_WOOL] = (BlockRegistry){
+        .variant_count = 1,
+        .variants = { {.atlas_idx = 34, .model_idx = BLOCK_MODEL_QUAD, .collider_idx = BLOCK_COLLIDER_QUAD, .flipH = false, .flipV = false, .rotation = 0 } },
+        .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FULL_BLOCK,
+        .lightLevel = BLOCK_LIGHT_NO_LIGHT
+    };
+
+    blockRegistry[BLOCK_GREEN_WOOL] = (BlockRegistry){
+        .variant_count = 1,
+        .variants = { {.atlas_idx = 35, .model_idx = BLOCK_MODEL_QUAD, .collider_idx = BLOCK_COLLIDER_QUAD, .flipH = false, .flipV = false, .rotation = 0 } },
+        .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FULL_BLOCK,
+        .lightLevel = BLOCK_LIGHT_NO_LIGHT
+    };
+
+    blockRegistry[BLOCK_RED_WOOL] = (BlockRegistry){
+        .variant_count = 1,
+        .variants = { {.atlas_idx = 36, .model_idx = BLOCK_MODEL_QUAD, .collider_idx = BLOCK_COLLIDER_QUAD, .flipH = false, .flipV = false, .rotation = 0 } },
+        .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FULL_BLOCK,
+        .lightLevel = BLOCK_LIGHT_NO_LIGHT
+    };
+
+    blockRegistry[BLOCK_BLACK_WOOL] = (BlockRegistry){
+        .variant_count = 1,
+        .variants = { {.atlas_idx = 37, .model_idx = BLOCK_MODEL_QUAD, .collider_idx = BLOCK_COLLIDER_QUAD, .flipH = false, .flipV = false, .rotation = 0 } },
+        .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FULL_BLOCK,
+        .lightLevel = BLOCK_LIGHT_NO_LIGHT
+    };
+
     blockRegistry[BLOCK_GRASS] = (BlockRegistry){
         .variant_count = 1,
         .variants = { {.atlas_idx = 11, .model_idx = BLOCK_MODEL_QUAD, .flipH = false, .flipV = false, .rotation = 0 } },

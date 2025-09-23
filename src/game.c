@@ -44,7 +44,7 @@ int8_t hotbarIdx = 0;
 void game_init() {
     place_mode_icon = LoadTexture(ASSETS_PATH "place_modes.png");
 
-    texture_atlas_load(ASSETS_PATH "atlas.png", 2, 11);
+    texture_atlas_load(ASSETS_PATH "atlas.png", 4, 11);
 
     block_models_init();
     block_colliders_init();
@@ -54,7 +54,7 @@ void game_init() {
 
     chunk_manager_init(5, 3);
 
-    item_container_create(&creativeMenu, "Creative Menu", 3, 10, true);
+    item_container_create(&creativeMenu, "Creative Menu", 5, 10, true);
     for (int i = 1; i < ITEM_COUNT; i++) {
         item_container_set_item(&creativeMenu, (i - 1) / creativeMenu.columns, (i - 1) % creativeMenu.columns, (ItemSlot){ i, 1 });
     }

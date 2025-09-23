@@ -193,9 +193,9 @@ static void resolve_solid_blocks(Entity* entity, float deltaTime) {
 			}
 
 			if (entity->grounded && contact_normal.x != 0.0f) {
-				float diff = (entity->rect.y + entity->rect.height) - rect->y;
-				if (diff < (entity->rect.height * 0.6f)) {
-					entity->rect.y -= rect->height + 1;
+				float y_diff = (entity->rect.y + entity->rect.height) - rect->y;
+				if (y_diff > 0.0f && y_diff < (entity->rect.height * 0.6f)) {
+					entity->rect.y -= y_diff + 0.01f;
 				}
 			}
 		}

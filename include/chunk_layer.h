@@ -17,7 +17,7 @@ typedef struct {
 } ChunkLayer;
 
 void chunk_layer_init(ChunkLayer* layer, uint8_t brightness);
-void chunk_layer_genmesh(ChunkLayer* layer, uint8_t lightmap[CHUNK_AREA]);
+void chunk_layer_genmesh(ChunkLayer* layer, uint8_t lightmap[CHUNK_AREA], unsigned int chunk_pos_seed);
 void chunk_layer_draw(ChunkLayer* layer);
 void chunk_layer_free(ChunkLayer* layer);
 

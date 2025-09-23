@@ -21,7 +21,7 @@ void chunk_layer_init(ChunkLayer* layer, uint8_t brightness) {
     layer->brightness = brightness;
 }
 
-void chunk_layer_genmesh(ChunkLayer* layer, uint8_t lightmap[CHUNK_AREA]) {
+void chunk_layer_genmesh(ChunkLayer* layer, uint8_t lightmap[CHUNK_AREA], unsigned int chunk_pos_seed) {
     if (!layer) return;
 
     // Get total amount of vertices needed
@@ -68,6 +68,14 @@ void chunk_layer_genmesh(ChunkLayer* layer, uint8_t lightmap[CHUNK_AREA]) {
         int x = i % CHUNK_WIDTH;
         int y = i / CHUNK_WIDTH;
 
+        unsigned int h = chunk_pos_seed;
+        h ^= x * 374761393u;
+        h ^= y * 668265263u;
+        h = (h ^ (h >> 13)) * 1274126177u;
+
+        bool flipUVH = (brg->flags & BLOCK_FLAG_FLIP_H) && (h & 1) ? true : false;
+        bool flipUVV = (brg->flags & BLOCK_FLAG_FLIP_V) && (h & 2) ? true : false;
+
         uint8_t variantIdx = block.state;
         if (brg->variant_selector) {
             variantIdx = brg->variant_selector(block.state);
@@ -81,8 +89,8 @@ void chunk_layer_genmesh(ChunkLayer* layer, uint8_t lightmap[CHUNK_AREA]) {
             colors,
             bvar.model_idx,
             bvar.atlas_idx,
-            false,
-            false,
+            flipUVH,
+            flipUVV,
             bvar.flipH,
             bvar.flipV,
             bvar.rotation

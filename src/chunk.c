@@ -236,8 +236,11 @@ void chunk_gen_liquid_mesh(Chunk* chunk) {
 void chunk_genmesh(Chunk* chunk) {
     if (chunk == NULL) return;
 
+
     for (int i = 0; i < CHUNK_LAYER_COUNT; i++) {
-        chunk_layer_genmesh(&chunk->layers[i], chunk->light);
+        unsigned int seed = (unsigned int)(chunk->position.x * 73856093 ^ chunk->position.y * 19349663);
+        seed ^= (unsigned int)i * 1442695040888963407ull;
+        chunk_layer_genmesh(&chunk->layers[i], chunk->light, seed);
     }
 
     chunk_gen_liquid_mesh(chunk);

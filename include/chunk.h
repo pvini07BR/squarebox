@@ -114,6 +114,7 @@ void chunk_get_light_neighbors(Chunk* chunk, Vector2u position, uint8_t output[4
 
 // Neighbor (8 corners) getter functions
 void chunk_get_block_neighbors_with_corners(Chunk* chunk, Vector2u position, ChunkLayerEnum layer, BlockInstance output[8]);
+void chunk_get_block_neighbors_with_corners_extra(Chunk* chunk, Vector2u position, ChunkLayerEnum layer, BlockExtraResult output[8]);
 void chunk_get_light_neighbors_with_corners(Chunk* chunk, Vector2u position, uint8_t output[8]);
 
 #endif

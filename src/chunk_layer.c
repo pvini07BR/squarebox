@@ -1,4 +1,5 @@
 #include "chunk_layer.h"
+#include "game_settings.h"
 #include "registries/block_models.h"
 #include "registries/block_registry.h"
 #include "texture_atlas.h"
@@ -8,7 +9,10 @@
 #include <raymath.h>
 #include <rlgl.h>
 
-void chunk_layer_init(ChunkLayer* layer, uint8_t brightness) {
+#include <stdio.h>
+#include <stdlib.h>
+
+void chunk_layer_init(ChunkLayer* layer) {
     if (!layer) return;
 
     for (int i = 0; i < CHUNK_AREA; i++) {
@@ -18,11 +22,11 @@ void chunk_layer_init(ChunkLayer* layer, uint8_t brightness) {
     }
 
     layer->initializedMesh = false;
-    layer->brightness = brightness;
 }
 
-void chunk_layer_genmesh(ChunkLayer* layer, uint8_t lightmap[CHUNK_AREA], unsigned int chunk_pos_seed) {
-    if (!layer) return;
+void chunk_layer_genmesh(ChunkLayer* layer, ChunkLayerEnum layer_id, ChunkLayerEnum front_layer_id, void* c, unsigned int chunk_pos_seed, uint8_t brightness) {
+    if (!layer || !c) return;
+    Chunk* chunk = (Chunk*)c;
 
     // Get total amount of vertices needed
     int vertexCount = 0;
@@ -53,28 +57,111 @@ void chunk_layer_genmesh(ChunkLayer* layer, uint8_t lightmap[CHUNK_AREA], unsign
         BlockRegistry* brg = br_get_block_registry(block.id);
 
         if (block.id <= 0 || brg->flags & BLOCK_FLAG_LIQUID) continue;
-
-        uint8_t brightness = layer->brightness;
-
-        uint8_t lightValue = (uint8_t)(((float)lightmap[i] / 15.0f) * 255.0f);
-        uint8_t reduction = 255 - lightValue;
-
-        if (brightness > reduction) brightness -= reduction;
-        else brightness = 0;
-
-        Color c = (Color) { brightness, brightness, brightness, 255 };
-        Color colors[] = { c, c, c, c };
-
+        
         int x = i % CHUNK_WIDTH;
         int y = i / CHUNK_WIDTH;
 
+        uint8_t cornerValues[4] = { brightness, brightness, brightness, brightness };
+
+        if (!get_game_settings()->smooth_lighting) {
+            uint8_t lightValue = (uint8_t)((chunk->light[i] / 15.0f) * 255.0f);
+            uint8_t reduction = 255 - lightValue;
+
+            for (int i = 0; i < 4; i++) {
+                if (cornerValues[i] > reduction) cornerValues[i] -= reduction;
+                else cornerValues[i] = 0;
+            }
+        }
+        else {
+            if (brg->lightLevel > 0) {
+                uint8_t lightValue = (uint8_t)((chunk->light[i] / 15.0f) * 255.0f);
+                uint8_t reduction = 255 - lightValue;
+
+                for (int i = 0; i < 4; i++) {
+                    if (cornerValues[i] > reduction) cornerValues[i] -= reduction;
+                    else cornerValues[i] = 0;
+                }
+            } else {
+                uint8_t neighbors[8];
+                chunk_get_light_neighbors_with_corners(chunk, (Vector2u) { x, y }, neighbors);
+
+                // 0 = Top Left
+                // 1 = Top Right
+                // 2 = Bottom Right
+                // 3 = Bottom Left
+
+                int cornerNeighbors[4][3] = {
+                    {NEIGHBOR_LEFT, NEIGHBOR_TOP_LEFT, NEIGHBOR_TOP},           // Top Left
+                    {NEIGHBOR_RIGHT, NEIGHBOR_TOP_RIGHT, NEIGHBOR_TOP},         // Top Right
+                    {NEIGHBOR_RIGHT, NEIGHBOR_BOTTOM_RIGHT, NEIGHBOR_BOTTOM},   // Bottom Right
+                    {NEIGHBOR_LEFT, NEIGHBOR_BOTTOM_LEFT, NEIGHBOR_BOTTOM}      // Bottom Left
+                };
+
+                for (int corner = 0; corner < 4; corner++) {
+                    float lightSum = (float)chunk->light[i];
+                    for (int n = 0; n < 3; n++) {
+                        lightSum += (float)neighbors[cornerNeighbors[corner][n]];
+                    }
+                    float average = lightSum / 4.0f;
+
+                    uint8_t lightValue = (uint8_t)((average / 15.0f) * 255.0f);
+
+                    uint8_t reduction = 255 - lightValue;
+                    if (cornerValues[corner] > reduction) cornerValues[corner] -= reduction;
+                    else cornerValues[corner] = 0;
+                }
+            }
+        }
+
+        if (get_game_settings()->wall_ao && front_layer_id > layer_id && brg->lightLevel <= 0) {
+            BlockExtraResult neighbors[8];
+            chunk_get_block_neighbors_with_corners_extra(chunk, (Vector2u) { x, y }, front_layer_id, neighbors);
+            
+            int aoRules[8][2] = {
+                {0, 1},     // Top
+                {1, 2},     // Right
+                {2, 3},     // Bottom
+                {0, 3},     // Left
+
+                {0, -1},    // Top Left
+                {1, -1},    // Top Right
+                {2, -1},    // Bottom Right
+                {3, -1},    // Bottom Left
+            };
+
+            for (int dir = 0; dir < 8; dir++) {
+                if (!neighbors[dir].reg) continue;
+                BlockRegistry* reg = neighbors[dir].reg;
+                if ((!(reg->lightLevel == BLOCK_LIGHT_TRANSPARENT) && (reg->flags & BLOCK_FLAG_FULL_BLOCK) && (reg->lightLevel <= 0))) {
+                    for (int c = 0; c < 2; c++) {
+                        int corner = aoRules[dir][c];
+                        if (corner >= 0) {
+                            cornerValues[corner] = fminf(cornerValues[corner], get_game_settings()->wall_ao_brightness);
+                        }
+                    }
+                }
+            }
+        }
+
+        Color colors[4];
+        for (int i = 0; i < 4; i++) {
+            colors[i] = (Color){
+                .r = cornerValues[i],
+                .g = cornerValues[i],
+                .b = cornerValues[i],
+                .a = 255
+            };
+        }
+
         unsigned int h = chunk_pos_seed;
-        h ^= x * 374761393u;
-        h ^= y * 668265263u;
+        h ^= x * TILE_SIZE * 374761393u;
+        h ^= y * TILE_SIZE * 668265263u;
         h = (h ^ (h >> 13)) * 1274126177u;
 
-        bool flipUVH = (brg->flags & BLOCK_FLAG_FLIP_H) && (h & 1) ? true : false;
-        bool flipUVV = (brg->flags & BLOCK_FLAG_FLIP_V) && (h & 2) ? true : false;
+        srand(h);
+
+        bool flipUVH = (brg->flags & BLOCK_FLAG_FLIP_H) && (rand() % 2) ? true : false;
+        bool flipUVV = (brg->flags & BLOCK_FLAG_FLIP_V) && (rand() % 2) ? true : false;
 
         uint8_t variantIdx = block.state;
         if (brg->variant_selector) {

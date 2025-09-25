@@ -10,7 +10,7 @@ static GameSettings settings = {
 	.chunk_view_width = 5,
 	.chunk_view_height = 3,
 	.wall_brightness = 128,
-	.wall_ao_brightness = 128,
+	.wall_ao_brightness = 64,
 	.smooth_lighting = true,
 	.wall_ao = true,
 };

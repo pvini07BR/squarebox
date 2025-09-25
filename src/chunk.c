@@ -43,8 +43,8 @@ void chunk_init(Chunk* chunk)
 
     block_tick_list_clear(&chunk->blockTickList);
 
-    chunk_layer_init(&chunk->layers[CHUNK_LAYER_FOREGROUND], 255);
-    chunk_layer_init(&chunk->layers[CHUNK_LAYER_BACKGROUND], get_game_settings()->wall_brightness);
+    chunk_layer_init(&chunk->layers[CHUNK_LAYER_FOREGROUND]);
+    chunk_layer_init(&chunk->layers[CHUNK_LAYER_BACKGROUND]);
 
     // The liquid mesh won't change the amount of vertices so it doesn't need to allocate again
     chunk->liquidMesh = (Mesh){ 0 };
@@ -230,11 +230,22 @@ void chunk_gen_liquid_mesh(Chunk* chunk) {
 
 void chunk_genmesh(Chunk* chunk) {
     if (chunk == NULL) return;
+    unsigned int seed = (unsigned int)(chunk->position.x * 73856093 ^ chunk->position.y * 19349663);
 
     for (int i = 0; i < CHUNK_LAYER_COUNT; i++) {
-        unsigned int seed = (unsigned int)(chunk->position.x * 73856093 ^ chunk->position.y * 19349663);
         seed ^= (unsigned int)i * 1442695040888963407ull;
-        chunk_layer_genmesh(&chunk->layers[i], chunk->light, seed);
+
+        int front_layer_id = i + 1;
+        if (front_layer_id >= CHUNK_LAYER_COUNT) front_layer_id = CHUNK_LAYER_COUNT - 1;
+
+        chunk_layer_genmesh(
+            &chunk->layers[i],
+            i,
+            front_layer_id,
+            chunk,
+            seed,
+            i == CHUNK_LAYER_BACKGROUND ? get_game_settings()->wall_brightness : 255
+        );
     }
 
     chunk_gen_liquid_mesh(chunk);
@@ -683,6 +694,18 @@ void chunk_get_block_neighbors_with_corners(Chunk* chunk, Vector2u position, Chu
     output[NEIGHBOR_BOTTOM_LEFT] = chunk_get_block_extrapolating(chunk, (Vector2i) { position.x - 1, position.y + 1 }, layer);
 }
 
+void chunk_get_block_neighbors_with_corners_extra(Chunk* chunk, Vector2u position, ChunkLayerEnum layer, BlockExtraResult output[8]) {
+    output[NEIGHBOR_TOP] = chunk_get_block_extrapolating_ptr(chunk, (Vector2i) { position.x, position.y - 1 }, layer);
+    output[NEIGHBOR_RIGHT] = chunk_get_block_extrapolating_ptr(chunk, (Vector2i) { position.x + 1, position.y }, layer);
+    output[NEIGHBOR_BOTTOM] = chunk_get_block_extrapolating_ptr(chunk, (Vector2i) { position.x, position.y + 1 }, layer);
+    output[NEIGHBOR_LEFT] = chunk_get_block_extrapolating_ptr(chunk, (Vector2i) { position.x - 1, position.y }, layer);
+
+    output[NEIGHBOR_TOP_LEFT] = chunk_get_block_extrapolating_ptr(chunk, (Vector2i) { position.x - 1, position.y - 1 }, layer);
+    output[NEIGHBOR_TOP_RIGHT] = chunk_get_block_extrapolating_ptr(chunk, (Vector2i) { position.x + 1, position.y - 1 }, layer);
+    output[NEIGHBOR_BOTTOM_RIGHT] = chunk_get_block_extrapolating_ptr(chunk, (Vector2i) { position.x + 1, position.y + 1 }, layer);
+    output[NEIGHBOR_BOTTOM_LEFT] = chunk_get_block_extrapolating_ptr(chunk, (Vector2i) { position.x - 1, position.y + 1 }, layer);
+}
+
 void chunk_get_light_neighbors(Chunk* chunk, Vector2u position, uint8_t output[4]) {
     output[NEIGHBOR_TOP] = chunk_get_light_extrapolating(chunk, (Vector2i) { position.x, position.y - 1 });
     output[NEIGHBOR_RIGHT] = chunk_get_light_extrapolating(chunk, (Vector2i) { position.x + 1, position.y });
@@ -706,132 +729,3 @@ unsigned int posmod(int v, int m) {
     int r = v % m;
     return (unsigned int)(r < 0 ? r + m : r);
 }
-
-// void build_quad(Chunk* chunk, size_t* offsets, BlockInstance* blocks, Mesh* mesh, ChunkLayerEnum layer, uint8_t x, uint8_t y, uint8_t brightness) {
-//     int i = x + (y * CHUNK_WIDTH);
-// 	BlockRegistry* brg = br_get_block_registry(blocks[i].id);
-//     if (blocks[i].id <= 0 || brg->flags & BLOCK_FLAG_LIQUID) return;
-    
-//     // Start by brightness value
-//     uint8_t cornerValues[4] = { brightness, brightness, brightness, brightness };
-
-//     // Flipping the block texture when requested
-//     unsigned int h = (unsigned int)(chunk->position.x * 73856093 ^ chunk->position.y * 19349663);
-//     h ^= x * 374761393u;
-//     h ^= y * 668265263u;
-//     h ^= (unsigned int)isWall * 1442695040888963407ull;
-//     h = (h ^ (h >> 13)) * 1274126177u;
-
-//     bool flipUVH = (brg->flags & BLOCK_FLAG_FLIP_H) && (h & 1) ? true : false;
-//     bool flipUVV = (brg->flags & BLOCK_FLAG_FLIP_V) && (h & 2) ? true : false;
-
-//     bool flipTriangles = false;
-
-//     // Calculating brightness based on light values
-//     if (!smoothLighting) {
-//         uint8_t lightValue = (uint8_t)((chunk->light[i] / 15.0f) * 255.0f);
-//         uint8_t reduction = 255 - lightValue;
-
-//         for (int i = 0; i < 4; i++) {
-//             if (cornerValues[i] > reduction) cornerValues[i] -= reduction;
-//             else cornerValues[i] = 0;
-//         }
-//     } else {
-//         // Do not apply smooth lighting to blocks that emits light
-//         if (brg->lightLevel > 0) {
-//             uint8_t lightValue = (uint8_t)((chunk->light[i] / 15.0f) * 255.0f);
-//             uint8_t reduction = 255 - lightValue;
-
-//             for (int i = 0; i < 4; i++) {
-//                 if (cornerValues[i] > reduction) cornerValues[i] -= reduction;
-//                 else cornerValues[i] = 0;
-//             }
-//         } else {
-//             uint8_t neighbors[8];
-//             chunk_get_light_neighbors_with_corners(chunk, (Vector2u) { x, y }, neighbors);
-    
-//             // 0 = Top Left
-//             // 1 = Top Right
-//             // 2 = Bottom Right
-//             // 3 = Bottom Left
-    
-//             int cornerNeighbors[4][3] = {
-//                 {NEIGHBOR_LEFT, NEIGHBOR_TOP_LEFT, NEIGHBOR_TOP},           // Top Left
-//                 {NEIGHBOR_RIGHT, NEIGHBOR_TOP_RIGHT, NEIGHBOR_TOP},         // Top Right
-//                 {NEIGHBOR_RIGHT, NEIGHBOR_BOTTOM_RIGHT, NEIGHBOR_BOTTOM},   // Bottom Right
-//                 {NEIGHBOR_LEFT, NEIGHBOR_BOTTOM_LEFT, NEIGHBOR_BOTTOM}      // Bottom Left
-//             };
-    
-//             for (int corner = 0; corner < 4; corner++) {
-//                 float lightSum = (float)chunk->light[i];
-//                 for (int n = 0; n < 3; n++) {
-//                     lightSum += (float)neighbors[cornerNeighbors[corner][n]];
-//                 }
-//                 float average = lightSum / 4.0f;
-    
-//                 uint8_t lightValue = (uint8_t)((average / 15.0f) * 255.0f);
-    
-//                 uint8_t reduction = 255 - lightValue;
-//                 if (cornerValues[corner] > reduction) cornerValues[corner] -= reduction;
-//                 else cornerValues[corner] = 0;
-//             }
-//         }
-//     }
-
-//     // Wall "ambient occulsion" for walls only
-//     if (wallAmbientOcclusion && isWall && brg->lightLevel <= 0) {
-//         BlockInstance neighbors[8];
-//         chunk_get_block_neighbors_with_corners(chunk, (Vector2u) { x, y }, false, neighbors);
-
-//         BlockRegistry* registries[8];
-//         for (int i = 0; i < 8; i++) registries[i] = br_get_block_registry(neighbors[i].id);
-
-//         struct {
-//             int corners[2];
-//             bool flipTri;
-//         } aoRules[8] = {
-//             {{0, 1}, false},    // Top
-//             {{1, 2}, false},    // Right
-//             {{2, 3}, false},    // Bottom
-//             {{0, 3}, false},    // Left
-
-//             {{0, -1}, true},    // Top Left
-//             {{1, -1}, false},   // Top Right
-//             {{2, -1}, true},    // Bottom Right
-//             {{3, -1}, false}    // Bottom Left
-//         };
-
-//         for (int dir = 0; dir < 8; dir++) {
-//             if (registries[dir] == NULL) continue;
-//             if ((!(registries[dir]->lightLevel == BLOCK_LIGHT_TRANSPARENT) && (registries[dir]->flags & BLOCK_FLAG_FULL_BLOCK) && (registries[dir]->lightLevel <= 0))) {
-//                 for (int c = 0; c < 2; c++) {
-//                     int corner = aoRules[dir].corners[c];
-//                     if (corner >= 0) {
-//                         cornerValues[corner] = fminf(cornerValues[corner], wallAOvalue);
-//                     }
-//                 }
-
-//                 flipTriangles = aoRules[dir].flipTri;
-//             }
-//         }
-//     }
-
-//     Color colors[4];
-//     for (int i = 0; i < 4; i++) {
-//         colors[i] = (Color){
-//             .r = cornerValues[i],
-//             .g = cornerValues[i],
-//             .b = cornerValues[i],
-//             .a = 255
-//         };
-//     }
-
-//     // Block state rendering
-//     uint8_t variantIdx = blocks[i].state;
-//     if (brg->variant_selector) {
-//         variantIdx = brg->variant_selector(blocks[i].state);
-//     }
-//     BlockVariant bvar = br_get_block_variant(blocks[i].id, variantIdx);
-
-//     bm_set_block_model(offsets, mesh, (Vector2u) { x, y }, colors, bvar.model_idx, bvar.atlas_idx, flipUVH, flipUVV, bvar.flipH, bvar.flipV, bvar.rotation);
-// }

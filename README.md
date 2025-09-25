@@ -1,4 +1,6 @@
-<img src="https://github.com/pvini07BR/squarebox/blob/main/assets/logo.svg">
+<p align="center">
+	<img src="https://github.com/pvini07BR/squarebox/blob/main/assets/logo.svg">
+</p>
 
 ## What is this?
 
@@ -54,12 +56,12 @@ But here is a list of all the features this game currently has, and what I plan 
 
 ## How to compile 
 
-# Windows (Visual Studio/MSVC)
+**Windows (Visual Studio/MSVC)**
 
 You can simply clone this repo and open it with Visual Studio. It will automatically configure the project.
 Then, on the top, make sure to select the correct executable (squarebox.exe).
 
-# Linux (or GCC)
+**Linux (or GCC)**
 
 You will need CMake installed on your system.
 

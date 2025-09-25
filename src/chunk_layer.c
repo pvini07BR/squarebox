@@ -1,11 +1,11 @@
 #include "chunk_layer.h"
-#include "raymath.h"
 #include "registries/block_models.h"
 #include "registries/block_registry.h"
 #include "texture_atlas.h"
 #include "types.h"
 
 #include <raylib.h>
+#include <raymath.h>
 #include <rlgl.h>
 
 void chunk_layer_init(ChunkLayer* layer, uint8_t brightness) {

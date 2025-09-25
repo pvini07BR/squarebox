@@ -47,6 +47,11 @@ But here is a list of all the features this game currently has, and what I plan 
 - Press E to open the creative menu.
 - Press Q to drop an holding item to the ground.
 - Press Z or X to cycle between possible states for a block (like stairs and slabs).
+- Press Tab to change between foreground and background placing modes.
+
+- Mouse left click to destroy a block, and right click to place a block.
+- Scroll wheel to scroll through items in the hotbar.
+- Ctrl + Scroll wheel to zoom in or out.
 
 # Known bugs
 

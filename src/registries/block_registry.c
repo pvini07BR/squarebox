@@ -10,7 +10,7 @@ static BlockRegistry* blockRegistry = NULL;
 void block_registry_init() {
     blockRegistry = calloc(BLOCK_COUNT, sizeof(BlockRegistry));
     if (blockRegistry == NULL) {
-        fprintf(stderr, "[ERROR] Could not allocate memory for the block registry.\n");
+        TraceLog(LOG_ERROR, "Could not allocate memory for the block registry.");
         return;
     };
 

@@ -1,6 +1,7 @@
 ﻿#include "chunk.h"
 
 #include "chunk_layer.h"
+#include "game_settings.h"
 #include "registries/block_registry.h"
 #include "lists/block_tick_list.h"
 #include "block_state_bitfields.h"
@@ -21,17 +22,11 @@
 #include <thirdparty/FastNoiseLite.h>
 
 static unsigned int posmod(int v, int m);
-static void reset_meshes(Chunk* chunk, int blockVertexCount, int wallVertexCount);
-static void build_quad(Chunk* chunk, size_t* offsets, BlockInstance* blocks, Mesh* mesh, ChunkLayerEnum layer, uint8_t x, uint8_t y, uint8_t brightness);
 
 static Material matDefault;
 static bool loadedMatDefault = false;
 
 int seed = 0;
-bool wallAmbientOcclusion = true;
-bool smoothLighting = true;
-unsigned int wallBrightness = 128;
-unsigned int wallAOvalue = 64;
 
 static bool chance_at(fnl_noise_type noiseType, float frequency, int gx, int gy, float threshold, int seed_offset) {
     fnl_state noise = fnlCreateState();
@@ -49,7 +44,7 @@ void chunk_init(Chunk* chunk)
     block_tick_list_clear(&chunk->blockTickList);
 
     chunk_layer_init(&chunk->layers[CHUNK_LAYER_FOREGROUND], 255);
-    chunk_layer_init(&chunk->layers[CHUNK_LAYER_BACKGROUND], 128);
+    chunk_layer_init(&chunk->layers[CHUNK_LAYER_BACKGROUND], get_game_settings()->wall_brightness);
 
     // The liquid mesh won't change the amount of vertices so it doesn't need to allocate again
     chunk->liquidMesh = (Mesh){ 0 };
@@ -236,7 +231,6 @@ void chunk_gen_liquid_mesh(Chunk* chunk) {
 void chunk_genmesh(Chunk* chunk) {
     if (chunk == NULL) return;
 
-
     for (int i = 0; i < CHUNK_LAYER_COUNT; i++) {
         unsigned int seed = (unsigned int)(chunk->position.x * 73856093 ^ chunk->position.y * 19349663);
         seed ^= (unsigned int)i * 1442695040888963407ull;
@@ -244,39 +238,6 @@ void chunk_genmesh(Chunk* chunk) {
     }
 
     chunk_gen_liquid_mesh(chunk);
-
-    // int blockVertexCount = 0;
-    // int wallVertexCount = 0;
-
-    // for (int i = 0; i < CHUNK_AREA; i++) {
-    //     BlockRegistry* rg = br_get_block_registry(chunk->blocks[i].id);
-    //     BlockVariant bvar = br_get_block_variant(chunk->blocks[i].id, chunk->blocks[i].state);
-    //     chunk->blockOffsets[i] = blockVertexCount;
-    //     blockVertexCount += block_models_get_vertex_count(bvar.model_idx);
-
-    //     rg = br_get_block_registry(chunk->walls[i].id);
-    //     bvar = br_get_block_variant(chunk->walls[i].id, chunk->walls[i].state);
-    //     chunk->wallOffsets[i] = wallVertexCount;
-    //     wallVertexCount += block_models_get_vertex_count(bvar.model_idx);
-    // }
-
-    // reset_meshes(chunk, blockVertexCount, wallVertexCount);
-
-    // for (int i = 0; i < CHUNK_AREA; i++) {
-    //     int x = i % CHUNK_WIDTH;
-    //     int y = i / CHUNK_WIDTH;
-
-    //     BlockRegistry* brg = br_get_block_registry(chunk->walls[i].id);
-
-    //     // Blocks that emit light will not be darkened when its placed as a wall.
-    //     build_quad(chunk, chunk->wallOffsets, chunk->walls, &chunk->wallMesh, true, x, y, brg->lightLevel <= 0 ? wallBrightness : 255);
-    //     build_quad(chunk, chunk->blockOffsets, chunk->blocks, &chunk->blockMesh, false, x, y, 255);
-    // }
-
-    // 
-
-    // UploadMesh(&chunk->blockMesh, false);
-    // UploadMesh(&chunk->wallMesh, false);
 }
 
 void chunk_draw(Chunk* chunk) {

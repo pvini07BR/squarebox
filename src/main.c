@@ -1,5 +1,8 @@
 #include "item_container.h"
+#include "game_settings.h"
 #include "sign_editor.h"
+#include "game.h"
+
 #include <limits.h>
 
 #include <raylib.h>
@@ -8,8 +11,6 @@
 
 #define RAYGUI_IMPLEMENTATION
 #include "thirdparty/raygui.h"
-
-#include "game.h"
 
 #define TICK_DELTA (1.0f / 20.0f)
 
@@ -31,6 +32,8 @@ int main() {
     SetTraceLogLevel(LOG_WARNING);
     rlDisableBackfaceCulling();
     GuiSetStyle(DEFAULT, TEXT_SIZE, 24.0f);
+
+    load_game_settings();
 
     bool paused = false;
 

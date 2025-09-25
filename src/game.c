@@ -1,5 +1,6 @@
 #include "game.h"
 
+#include "game_settings.h"
 #include "entity/entity.h"
 #include "registries/block_colliders.h"
 #include "registries/block_models.h"
@@ -57,7 +58,7 @@ void game_init() {
     item_registry_init();
     block_registry_init();
 
-    chunk_manager_init(5, 3);
+    chunk_manager_init(get_game_settings()->chunk_view_width, get_game_settings()->chunk_view_height);
 
     item_container_create(&creativeMenu, "Creative Menu", 5, 10, true);
     for (int i = 1; i < ITEM_COUNT; i++) {
@@ -85,7 +86,7 @@ void game_init() {
         entity_list_add(&player->entity);
         camera.target = Vector2Add(player_get_position(player), Vector2Scale(player_get_size(player), 0.5f));
     } else {
-        fprintf(stderr, "[ERROR] Could not create the player entity. The game will crash now.\n");
+        TraceLog(LOG_ERROR, "Could not create the player entity. The game will crash now.\n");
     }
 }
 

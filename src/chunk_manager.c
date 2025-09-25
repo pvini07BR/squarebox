@@ -85,7 +85,7 @@ void chunk_manager_set_view(size_t new_view_width, size_t new_view_height) {
 
         chunks = (Chunk*)malloc(sizeof(Chunk) * chunk_count);
         if (!chunks) {
-            fprintf(stderr, "[ERROR] Failed to allocate memory for the Chunks.\n");
+            TraceLog(LOG_ERROR, "Failed to allocate memory for the Chunks.\n");
             return;
         }
 
@@ -106,7 +106,7 @@ void chunk_manager_set_view(size_t new_view_width, size_t new_view_height) {
 
         Chunk* tempChunksPtr = (Chunk*)realloc(chunks, sizeof(Chunk) * chunk_count);
         if (!tempChunksPtr) {
-            fprintf(stderr, "[ERROR] Failed to reallocate the Chunks.\n");
+            TraceLog(LOG_ERROR, "Failed to reallocate the Chunks.\n");
             return;
         }
         chunks = tempChunksPtr;
@@ -138,7 +138,7 @@ void chunk_manager_relocate(Vector2i newCenter) {
 
     Chunk* tempChunks = calloc(chunk_count, sizeof(Chunk));
     if (!tempChunks) {
-        printf("[ERROR] Could not allocate memory for tempChunks.\n");
+        TraceLog(LOG_ERROR, "Could not allocate memory for tempChunks.\n");
         return;
     };
 

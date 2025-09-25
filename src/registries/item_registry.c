@@ -10,7 +10,7 @@ static ItemRegistry* itemRegistry = NULL;
 void item_registry_init() {
 	itemRegistry = calloc(ITEM_COUNT, sizeof(ItemRegistry));
 	if (itemRegistry == NULL) {
-		fprintf(stderr, "[ERROR] Could not allocate memory for the item registry.\n");
+		TraceLog(LOG_ERROR, "Could not allocate memory for the item registry.");
 		return;
 	};
 	

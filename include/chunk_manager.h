@@ -9,18 +9,19 @@
 
 #include "chunk.h"
 
-void chunk_manager_init(size_t chunk_view_width, size_t chunk_view_height);
+void chunk_manager_init(uint8_t chunk_view_width, uint8_t chunk_view_height);
 void chunk_manager_draw(bool draw_lines);
 void chunk_manager_draw_liquids();
 void chunk_manager_tick();
 void chunk_manager_free();
-void chunk_manager_set_view(size_t new_view_width, size_t new_view_height);
+void chunk_manager_set_view(uint8_t new_view_width, uint8_t new_view_height);
 void chunk_manager_reload_chunks();
 void chunk_manager_relocate(Vector2i newCenter);
+// This function recalculates all lighting in all chunks, and regenerates their meshes.
 void chunk_manager_update_lighting();
 
-size_t chunk_manager_get_view_width();
-size_t chunk_manager_get_view_height();
+uint8_t chunk_manager_get_view_width();
+uint8_t chunk_manager_get_view_height();
 
 // Returns true when a interaction occurred, false when not.
 bool chunk_manager_interact(Vector2i position, ChunkLayerEnum layer);

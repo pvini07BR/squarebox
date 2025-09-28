@@ -9,6 +9,8 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#include <raylib.h>
+
 typedef enum {
 	CHUNK_LAYER_BACKGROUND,
 	CHUNK_LAYER_FOREGROUND,
@@ -36,5 +38,15 @@ typedef struct {
 	// does not have an associated external data.
 	void* data;
 } BlockInstance;
+
+typedef struct {
+	Font font;
+	const char* str;
+	Vector2 bounds;
+	float fontSize;
+	float spacing;
+} Label;
+
+Label create_label(const char* str, float fontSize, float spacing, Font font);
 
 #endif

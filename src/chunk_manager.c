@@ -13,8 +13,8 @@
 #include <rlgl.h>
 #include <raymath.h>
 
-static size_t chunk_view_width = 5;
-static size_t chunk_view_height = 3;
+static uint8_t chunk_view_width = 5;
+static uint8_t chunk_view_height = 3;
 static size_t chunk_count = 0;
 
 static Chunk* chunks = NULL;
@@ -22,7 +22,7 @@ static Vector2i currentChunkPos = { 0, 0 };
 
 static unsigned int tick_counter = 0;
 
-void chunk_manager_init(size_t chunk_view_width, size_t chunk_view_height) {
+void chunk_manager_init(uint8_t chunk_view_width, uint8_t chunk_view_height) {
     chunk_manager_set_view(chunk_view_width, chunk_view_height);
 }
 
@@ -77,7 +77,7 @@ void chunk_manager_free() {
     }
 }
 
-void chunk_manager_set_view(size_t new_view_width, size_t new_view_height) {
+void chunk_manager_set_view(uint8_t new_view_width, uint8_t new_view_height) {
     if (chunks == NULL) {
         chunk_view_width = new_view_width;
         chunk_view_height = new_view_height;
@@ -248,12 +248,12 @@ void chunk_manager_update_lighting() {
     for (int c = 0; c < chunk_count; c++) chunk_genmesh(&chunks[c]);
 }
 
-size_t chunk_manager_get_view_width()
+uint8_t chunk_manager_get_view_width()
 {
     return chunk_view_width;
 }
 
-size_t chunk_manager_get_view_height()
+uint8_t chunk_manager_get_view_height()
 {
     return chunk_view_height;
 }

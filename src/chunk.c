@@ -244,7 +244,7 @@ void chunk_genmesh(Chunk* chunk) {
             front_layer_id,
             chunk,
             seed,
-            i == CHUNK_LAYER_BACKGROUND ? get_game_settings()->wall_brightness : 255
+            i == CHUNK_LAYER_BACKGROUND ? (uint8_t)get_game_settings()->wall_brightness : 255
         );
     }
 

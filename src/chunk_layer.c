@@ -136,7 +136,7 @@ void chunk_layer_genmesh(ChunkLayer* layer, ChunkLayerEnum layer_id, ChunkLayerE
                     for (int c = 0; c < 2; c++) {
                         int corner = aoRules[dir][c];
                         if (corner >= 0) {
-                            cornerValues[corner] = fminf(cornerValues[corner], get_game_settings()->wall_ao_brightness);
+                            cornerValues[corner] = fminf(cornerValues[corner], (uint8_t)get_game_settings()->wall_ao_brightness);
                         }
                     }
                 }

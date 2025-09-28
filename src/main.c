@@ -14,16 +14,11 @@
 
 #define TICK_DELTA (1.0f / 20.0f)
 
-// extern int seed;
-// extern bool wallAmbientOcclusion;
-// extern bool smoothLighting;
-// extern unsigned int wallBrightness;
-// extern unsigned int wallAOvalue;
-
-// extern bool drawChunkLines;
-
-// unsigned int temp_chunk_view_width = 5;
-// unsigned int temp_chunk_view_height = 3;
+typedef enum {
+    GAME_RUNNING,
+    GAME_PAUSED,
+    GAME_SETTINGS
+} GameState;
 
 int main() {
     SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT);
@@ -35,17 +30,19 @@ int main() {
 
     load_game_settings();
 
-    bool paused = false;
+    GameState state = GAME_RUNNING;
 
     game_init();
 
     float accumulator = 0.0f;
     while (!WindowShouldClose()) {
         if (!item_container_is_open() && !sign_editor_is_open() && IsKeyPressed(KEY_ESCAPE)) {
-            paused = !paused;
+            if (state == GAME_RUNNING) state = GAME_PAUSED;
+            else if (state == GAME_PAUSED) state = GAME_RUNNING;
+            else if (state == GAME_SETTINGS) state = GAME_PAUSED;
         }
 
-        if (!paused) {
+        if (state == GAME_RUNNING) {
             // Tick chunks
             accumulator += GetFrameTime();
             while (accumulator >= TICK_DELTA) {
@@ -60,11 +57,11 @@ int main() {
 
         ClearBackground(BLACK);
 
-        game_draw(!paused);
+        game_draw(state == GAME_RUNNING);
 
-        if (paused) {
-            DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), (Color){ 0, 0, 0, 128 });
+        if (state != GAME_RUNNING) DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), (Color){ 0, 0, 0, 128 });
 
+        if (state == GAME_PAUSED) {
             const char* pausedTextStr = "PAUSED";
             const float pausedTextSize = 48.0f;
             const float pausedTextSpacing = pausedTextSize / 8.0f;
@@ -100,13 +97,13 @@ int main() {
             float buttonX = centerX - buttonW * 0.5f;
 
             if (GuiButton((Rectangle){ buttonX, y, buttonW, buttonH }, "Resume")) {
-                paused = false;
+                state = GAME_RUNNING;
             }
 
             y += buttonH + gapBetweenButtons;
 
-            if (GuiButton((Rectangle){ buttonX, y, buttonW, buttonH }, "Options")) {
-                // TODO
+            if (GuiButton((Rectangle){ buttonX, y, buttonW, buttonH }, "Settings")) {
+                state = GAME_SETTINGS;
             }
 
             y += buttonH + gapBetweenButtons;
@@ -115,38 +112,15 @@ int main() {
                 break;
             }
         }
+        else if (state == GAME_SETTINGS) {
+            // This function returns true when the back button is pressed
+            if (game_settings_draw()) {
+                state = GAME_PAUSED;
+            }
+        }
 
         EndDrawing();
     }
-
-    //     Vector2 textSize = MeasureTextEx(GetFontDefault(), buffer, 24, 0);
-    //     DrawText(buffer, 0, 0, 24, WHITE);
-
-    //     if (!item_container_is_open()) {
-    //         interPanel.y = textSize.y;
-
-    //         mouseIsInUI = CheckCollisionPointRec(GetMousePosition(), interPanel);
-
-    //         const int padding = 8;
-    //         const int elementHeight = 16;
-    //         const int sum = elementHeight + padding;
-    //         int height = (-elementHeight) + (padding/2);
-
-    //         GuiPanel(interPanel, NULL);
-    //         if (GuiValueBox((Rectangle) { MeasureText("Seed ", 8) + padding, textSize.y + (height += sum), 64, elementHeight }, "Seed ", & seed, INT_MIN, INT_MAX, seedEdit)) seedEdit = !seedEdit;
-    //         if (GuiValueBox((Rectangle) { MeasureText("Chunk View Width ", 8) + padding, textSize.y + (height += sum), 64, elementHeight }, "Chunk View Width ", &temp_chunk_view_width, 0, INT_MAX, chunkViewWidthEdit)) chunkViewWidthEdit = !chunkViewWidthEdit;
-    //         if (GuiValueBox((Rectangle) { MeasureText("Chunk View Height ", 8) + padding, textSize.y + (height += sum), 64, elementHeight }, "Chunk View Height ", &temp_chunk_view_height, 0, INT_MAX, chunkViewHeightEdit)) chunkViewHeightEdit = !chunkViewHeightEdit;
-    //         GuiCheckBox((Rectangle) { padding, textSize.y + (height += sum), elementHeight, elementHeight }, "Toggle Wall AO", & wallAmbientOcclusion);
-    //         GuiCheckBox((Rectangle) { padding, textSize.y + (height += sum), elementHeight, elementHeight }, "Toggle Smooth Lighting", &smoothLighting);
-    //         GuiCheckBox((Rectangle) { padding, textSize.y + (height += sum), elementHeight, elementHeight }, "Draw Chunk Lines", &drawChunkLines);
-    //         if (GuiValueBox((Rectangle) { MeasureText("Wall Brightness  ", 8) + padding, textSize.y + (height += sum), 64, elementHeight }, "Wall Brightness ", &wallBrightness, 0, 255, wallBrightEdit)) wallBrightEdit = !wallBrightEdit;
-    //         if (GuiValueBox((Rectangle) { MeasureText("Wall AO Value  ", 8) + padding, textSize.y + (height += sum), 64, elementHeight }, "Wall AO Value ", &wallAOvalue, 0, 255, wallAOEdit)) wallAOEdit = !wallAOEdit;
-    //         if (GuiButton((Rectangle) { padding, textSize.y + (height += sum), interPanel.width - (padding * 2), 32 }, "Apply Settings")) {
-    //             chunk_manager_set_view(temp_chunk_view_width, temp_chunk_view_height);
-    //         }
-
-    //         interPanel.height = height + sum + 16;
-    //     }
 
     game_free();
 

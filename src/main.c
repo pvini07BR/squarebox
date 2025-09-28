@@ -1,5 +1,6 @@
 #include "item_container.h"
 #include "game_settings.h"
+#include "world_manager.h"
 #include "sign_editor.h"
 #include "game.h"
 
@@ -29,6 +30,8 @@ int main() {
     GuiSetStyle(DEFAULT, TEXT_SIZE, 24.0f);
 
     load_game_settings();
+
+    world_manager_init();
 
     GameState state = GAME_RUNNING;
 

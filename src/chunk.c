@@ -37,9 +37,11 @@ static bool chance_at(fnl_noise_type noiseType, float frequency, int gx, int gy,
     return fnlGetNoise2D(&noise, gx, gy) > threshold;
 }
 
-void chunk_init(Chunk* chunk)
+void chunk_init(Chunk* chunk, Vector2i position)
 {
     if (chunk == NULL) return;
+
+    chunk->position = position;
 
     block_tick_list_clear(&chunk->blockTickList);
 
@@ -59,6 +61,8 @@ void chunk_init(Chunk* chunk)
         matDefault = LoadMaterialDefault();
         loadedMatDefault = true;
     }
+
+    chunk->initialized = true;
 }
 
 void chunk_regenerate(Chunk* chunk) {
@@ -338,6 +342,8 @@ void chunk_free(Chunk* chunk)
     }
 
     UnloadMesh(chunk->liquidMesh);
+
+    chunk->initialized = false;
 }
 
 void chunk_fill_light(Chunk* chunk, Vector2u startPoint, uint8_t newLightValue) {

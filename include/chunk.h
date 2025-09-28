@@ -35,6 +35,7 @@ typedef struct {
 } ChunkNeighbors;
 
 typedef struct {
+	bool initialized;
 	unsigned int seed;
 	Vector2i position;
 	ChunkLayer layers[2];
@@ -67,7 +68,7 @@ typedef struct {
 	BlockExtraResult down;
 } DownProjectionResult;
 
-void chunk_init(Chunk* chunk);
+void chunk_init(Chunk* chunk, Vector2i position);
 void chunk_regenerate(Chunk* chunk);
 void chunk_genmesh(Chunk* chunk);
 void chunk_draw(Chunk* chunk);

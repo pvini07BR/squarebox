@@ -9,16 +9,15 @@
 
 #include "chunk.h"
 
-void chunk_manager_init(uint8_t chunk_view_width, uint8_t chunk_view_height);
+void chunk_manager_init(Vector2i center, uint8_t cvw, uint8_t cvh);
+void chunk_manager_relocate(Vector2i newCenter);
+void chunk_manager_set_view(uint8_t new_view_width, uint8_t new_view_height);
+// This function recalculates all lighting in all chunks, and regenerates their meshes.
+void chunk_manager_update_lighting();
 void chunk_manager_draw(bool draw_lines);
 void chunk_manager_draw_liquids();
 void chunk_manager_tick();
 void chunk_manager_free();
-void chunk_manager_set_view(uint8_t new_view_width, uint8_t new_view_height);
-void chunk_manager_reload_chunks();
-void chunk_manager_relocate(Vector2i newCenter);
-// This function recalculates all lighting in all chunks, and regenerates their meshes.
-void chunk_manager_update_lighting();
 
 uint8_t chunk_manager_get_view_width();
 uint8_t chunk_manager_get_view_height();

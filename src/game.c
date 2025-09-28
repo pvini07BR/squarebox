@@ -58,8 +58,6 @@ void game_init() {
     item_registry_init();
     block_registry_init();
 
-    chunk_manager_init(get_game_settings()->chunk_view_width, get_game_settings()->chunk_view_height);
-
     item_container_create(&creativeMenu, "Creative Menu", 5, 10, true);
     for (int i = 1; i < ITEM_COUNT; i++) {
         item_container_set_item(&creativeMenu, (i - 1) / creativeMenu.columns, (i - 1) % creativeMenu.columns, (ItemSlot){ i, 1 });
@@ -68,6 +66,7 @@ void game_init() {
     init_inventory();
 
     camera = (Camera2D){
+		.target = { 0.0f, 0.0f },
         .offset =  { GetScreenWidth() / 2.0f, GetScreenHeight() / 2.0f },
         .rotation = 0.0f,
         .zoom = 1.0f
@@ -88,6 +87,13 @@ void game_init() {
     } else {
         TraceLog(LOG_ERROR, "Could not create the player entity. The game will crash now.\n");
     }
+
+    currentChunkPos = (Vector2i) {
+        (int)floorf(camera.target.x / (CHUNK_WIDTH * TILE_SIZE)),
+        (int)floorf(camera.target.y / (CHUNK_WIDTH * TILE_SIZE))
+    };
+
+    chunk_manager_init((Vector2i) { currentChunkPos.x, currentChunkPos.y }, get_game_settings()->chunk_view_width, get_game_settings()->chunk_view_height);
 }
 
 void game_tick() {

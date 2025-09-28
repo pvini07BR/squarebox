@@ -5,7 +5,7 @@
 #include <stdint.h>
 
 #define GAME_SETTINGS_FILE_NAME "settings.bin"
-#define GAME_SETTINGS_MAX_CHUNK_VIEW 20
+#define GAME_SETTINGS_MAX_CHUNK_VIEW 16
 
 typedef struct {
 	uint8_t chunk_view_width;

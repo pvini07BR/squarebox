@@ -223,12 +223,13 @@ int main() {
         EndDrawing();
     }
 
+
     if (!game_is_demo_mode() && world_manager_is_world_loaded()) {
 	    Player* player = game_get_player();
         if (player) {
 		    get_world_info()->player_position = player_get_position(player);
         }
-        world_manager_save_world_info_and_unload();
+        world_manager_save_world_info();
     }
 
     game_free();

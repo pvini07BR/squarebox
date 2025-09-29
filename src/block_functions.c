@@ -127,7 +127,9 @@ bool chest_solver(BlockExtraResult result, BlockExtraResult other, BlockExtraRes
     if (result.block->data == NULL) {
         result.block->data = malloc(sizeof(ItemContainer));
         if (!result.block->data) return false;
-        item_container_create(result.block->data, "Chest", 3, 10, false);
+		char* str = calloc(6, sizeof(char));
+		strcpy(str, "Chest");
+        item_container_create(result.block->data, str, 3, 10, false);
     }
     return true;
 }

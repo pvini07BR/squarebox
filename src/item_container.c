@@ -5,6 +5,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include <rlgl.h>
 #include <raylib.h>
@@ -95,7 +96,9 @@ void distribute_item(ItemSlot* item, ItemContainer* container) {
 }
 
 void init_inventory() {
-	item_container_create(&inventory, "Inventory", 1, 10, false);
+	char* str = calloc(10, sizeof(char));
+	strcpy(str, "Inventory");
+	item_container_create(&inventory, str, 1, 10, false);
 }
 
 ItemContainer* get_inventory()
@@ -267,13 +270,15 @@ void item_container_draw_specific(ItemContainer* ic, int x, int y) {
 		BG_COLOR
 	);
 
-	DrawText(
-		ic->name,
-		x + ITEM_SLOT_GAP,
-		y + ITEM_SLOT_GAP,
-		TITLE_SIZE,
-		TITLE_COLOR
-	);
+	if (ic->name) {
+		DrawText(
+			ic->name,
+			x + ITEM_SLOT_GAP,
+			y + ITEM_SLOT_GAP,
+			TITLE_SIZE,
+			TITLE_COLOR
+		);
+	}
 
 	// Drawing slots, items and registering input
 	for (int i = 0; i < (ic->rows * ic->columns); i++) {
@@ -453,8 +458,61 @@ void item_container_draw() {
 void item_container_free(ItemContainer* ic)
 {
 	if (!ic) return;
+	if (ic->name) {
+		free(ic->name);
+		ic->name == NULL;
+	}
 	if (ic->items) {
 		free(ic->items);
 		ic->items = NULL;
 	}
+}
+
+uint32_t item_container_serialized_size(ItemContainer* ic) {
+	if (!ic) return 0;
+	
+	// Rows, columns and immutable
+	uint32_t size = sizeof(uint8_t) * 2 + sizeof(bool);
+	// Name string length + bytes
+	size += sizeof(uint32_t); // Length
+	size += strlen(ic->name) + 1; // String bytes
+	// Items
+	size += sizeof(ItemSlot) * ic->rows * ic->columns;
+	return size;
+}
+
+void item_container_serialize(ItemContainer* ic, FILE* fileptr) {
+	if (!ic || !fileptr) return;
+	
+	// Rows, columns and immutable
+	fwrite(&ic->rows, sizeof(uint8_t), 1, fileptr);
+	fwrite(&ic->columns, sizeof(uint8_t), 1, fileptr);
+	fwrite(&ic->immutable, sizeof(bool), 1, fileptr);
+
+	// Name string length + bytes
+	int namelen = strlen(ic->name) + 1;
+	fwrite(&namelen, sizeof(uint32_t), 1, fileptr);
+	fwrite(ic->name, sizeof(char), namelen, fileptr);
+
+	// Items
+	fwrite(ic->items, sizeof(ItemSlot), ic->rows * ic->columns, fileptr);
+}
+
+void item_container_deserialize(ItemContainer* ic, FILE* fileptr) {
+	if (!ic || !fileptr) return;
+	// Rows, columns and immutable
+	fread(&ic->rows, sizeof(uint8_t), 1, fileptr);
+	fread(&ic->columns, sizeof(uint8_t), 1, fileptr);
+	fread(&ic->immutable, sizeof(bool), 1, fileptr);
+	// Name string length + bytes
+	uint32_t namelen = 0;
+	fread(&namelen, sizeof(uint32_t), 1, fileptr);
+	char* namebuf = calloc(namelen, sizeof(char));
+	if (namebuf) {
+		fread(namebuf, sizeof(char), namelen, fileptr);
+		ic->name = namebuf;
+	}
+	// Items
+	ic->items = calloc(ic->rows * ic->columns, sizeof(ItemSlot));
+	fread(ic->items, sizeof(ItemSlot), ic->rows * ic->columns, fileptr);
 }

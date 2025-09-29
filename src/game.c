@@ -15,7 +15,9 @@
 #include "texture_atlas.h"
 #include "types.h"
 
+#include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <stddef.h>
 #include <limits.h>
 
@@ -58,7 +60,9 @@ void game_init() {
     item_registry_init();
     block_registry_init();
 
-    item_container_create(&creativeMenu, "Creative Menu", 5, 10, true);
+	char* str = calloc(14, sizeof(char));
+	strcpy(str, "Creative Menu");
+    item_container_create(&creativeMenu, str, 5, 10, true);
     for (int i = 1; i < ITEM_COUNT; i++) {
         item_container_set_item(&creativeMenu, (i - 1) / creativeMenu.columns, (i - 1) % creativeMenu.columns, (ItemSlot){ i, 1 });
     }

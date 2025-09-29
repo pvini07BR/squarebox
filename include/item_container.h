@@ -5,6 +5,7 @@
 #include <stdint.h>
 
 #include <raylib.h>
+#include <stdio.h>
 
 #define ITEM_SLOT_SIZE 42
 #define ITEM_SLOT_GAP 8
@@ -17,7 +18,7 @@ typedef struct {
 } ItemSlot;
 
 typedef struct {
-	const char* name;
+	char* name;
 	ItemSlot* items;
 	uint8_t rows;
 	uint8_t columns;
@@ -26,7 +27,7 @@ typedef struct {
 
 // Creates a item container with given parameters.
 // the name NEEDS to be a string literal. The container does not free it.
-void item_container_create(ItemContainer* ic, const char* name, uint8_t rows, uint8_t columns, bool immutable);
+void item_container_create(ItemContainer* ic, char* name, uint8_t rows, uint8_t columns, bool immutable);
 ItemSlot item_container_get_item(ItemContainer* ic, uint8_t row, uint8_t column);
 void item_container_set_item(ItemContainer* ic, uint8_t row, uint8_t column, ItemSlot item);
 Vector2 item_container_get_size(ItemContainer* ic);
@@ -35,6 +36,10 @@ void item_container_close();
 bool item_container_is_open();
 void item_container_draw();
 void item_container_free(ItemContainer* ic);
+
+uint32_t item_container_serialized_size(ItemContainer* ic);
+void item_container_serialize(ItemContainer* ic, FILE* fileptr);
+void item_container_deserialize(ItemContainer* ic, FILE* fileptr);
 
 void distribute_item(ItemSlot* item, ItemContainer* container);
 

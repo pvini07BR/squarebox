@@ -2,6 +2,7 @@
 
 #include "chunk_layer.h"
 #include "game_settings.h"
+#include "world_manager.h"
 #include "registries/block_registry.h"
 #include "lists/block_tick_list.h"
 #include "block_state_bitfields.h"
@@ -26,11 +27,9 @@ static unsigned int posmod(int v, int m);
 static Material matDefault;
 static bool loadedMatDefault = false;
 
-int seed = 0;
-
 static bool chance_at(fnl_noise_type noiseType, float frequency, int gx, int gy, float threshold, int seed_offset) {
     fnl_state noise = fnlCreateState();
-    noise.seed = seed + seed_offset;
+    noise.seed = get_world_info()->seed + seed_offset;
     noise.frequency = frequency;
     noise.noise_type = noiseType;
 
@@ -74,13 +73,13 @@ void chunk_regenerate(Chunk* chunk) {
     }
 
     fnl_state terrainNoise = fnlCreateState();
-    terrainNoise.seed = seed;
+    terrainNoise.seed = get_world_info()->seed;
     terrainNoise.frequency = 0.008f;
     terrainNoise.noise_type = FNL_NOISE_OPENSIMPLEX2;
     terrainNoise.fractal_type = FNL_FRACTAL_FBM;
 
     fnl_state detailNoise = fnlCreateState();
-    detailNoise.seed = seed + 1337;
+    detailNoise.seed = get_world_info()->seed + 1337;
     detailNoise.frequency = 0.025f;
     detailNoise.noise_type = FNL_NOISE_OPENSIMPLEX2;
     detailNoise.fractal_type = FNL_FRACTAL_FBM;

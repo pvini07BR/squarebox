@@ -32,6 +32,12 @@ int main() {
     load_game_settings();
 
     world_manager_init();
+    world_manager_create_world((WorldInfo) {
+        .name = "test world",
+        .player_position = Vector2Zero(),
+        .seed = 0
+    });
+	world_manager_load_world_info("test_world");
 
     GameState state = GAME_RUNNING;
 
@@ -125,6 +131,14 @@ int main() {
         EndDrawing();
     }
 
+	Player* player = game_get_player();
+    if (player) {
+		get_world_info()->player_position = player_get_position(player);
+    }
+    else {
+        get_world_info()->player_position = game_get_camera_pos();
+    }
+    world_manager_save_world_info();
     game_free();
 
     CloseWindow();

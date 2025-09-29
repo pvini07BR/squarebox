@@ -11,5 +11,6 @@ void game_draw(bool draw_overlay);
 void game_free();
 
 Player* game_get_player();
+Vector2 game_get_camera_pos();
 
 #endif

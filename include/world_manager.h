@@ -4,13 +4,22 @@
 #include "chunk.h"
 #include <raylib.h>
 
+#define WORLD_NAME_LENGTH 64
+
 typedef struct {
-    char name[64];
+    char name[WORLD_NAME_LENGTH];
+    int seed;
     Vector2 player_position;
 } WorldInfo;
 
 void world_manager_init();
-void world_manager_load_world(const char* name);
+
+bool world_manager_create_world(WorldInfo info);
+
+bool world_manager_load_world_info(const char* worldDirName);
+bool world_manager_save_world_info();
+
+WorldInfo* get_world_info();
 
 bool world_manager_save_chunk(Chunk* chunk);
 bool world_manager_load_chunk(Chunk* chunk);

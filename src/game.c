@@ -1,5 +1,6 @@
 #include "game.h"
 
+#include "world_manager.h"
 #include "game_settings.h"
 #include "entity/entity.h"
 #include "registries/block_colliders.h"
@@ -70,8 +71,10 @@ void game_init() {
 
     init_inventory();
 
+	Vector2 savedPlayerPos = get_world_info()->player_position;
+
     camera = (Camera2D){
-		.target = { 0.0f, 0.0f },
+		.target = savedPlayerPos,
         .offset =  { GetScreenWidth() / 2.0f, GetScreenHeight() / 2.0f },
         .rotation = 0.0f,
         .zoom = 1.0f
@@ -86,7 +89,7 @@ void game_init() {
     };
      
     // You can comment out the player creation if you want the camera only
-    player = player_create((Vector2) { 0, -TILE_SIZE });
+    player = player_create(savedPlayerPos);
     if (player) {
         entity_list_add(&player->entity);
         camera.target = Vector2Add(player_get_position(player), Vector2Scale(player_get_size(player), 0.5f));
@@ -494,4 +497,8 @@ void game_free() {
 
 Player* game_get_player() {
     return player;
+}
+
+Vector2 game_get_camera_pos() {
+    return camera.target;
 }

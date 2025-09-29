@@ -54,6 +54,11 @@ But here is a list of all the features this game currently has, and what I plan 
 - Scroll wheel to scroll through items in the hotbar.
 - Ctrl + Scroll wheel to zoom in or out.
 
+- Press F1 to show/hide game UI.
+- Press F2 to take a screenshot (it will be saved as screenshot.png on the game's directory)
+- Press F3 to show/hide debug info.
+- Press F11 to toggle fullscreen mode (borderless window).
+
 # Known bugs
 
 - The collision system for the entities is currently not 100% robust, so entities might still clip through blocks, and it doesn't work well under low framerates.

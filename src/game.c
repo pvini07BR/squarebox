@@ -46,6 +46,7 @@ size_t last_blockState = SIZE_MAX;
 uint8_t lastItemId = UCHAR_MAX;
 int8_t hotbarIdx = 0;
 
+bool draw_ui = true;
 bool debug_info = false;
 char debug_text[1024];
 
@@ -149,7 +150,12 @@ void game_update(float deltaTime) {
         }
 
         if (IsKeyPressed(KEY_F)) player->entity.gravity_affected = !player->entity.gravity_affected;
+
+        if (IsKeyPressed(KEY_F1)) draw_ui = !draw_ui;
+		if (IsKeyPressed(KEY_F2)) TakeScreenshot("screenshot.png");
         if (IsKeyPressed(KEY_F3)) debug_info = !debug_info;
+
+        if (IsKeyPressed(KEY_F11)) ToggleBorderlessWindowed();
 
         // When pressing Q, the holding item will be dropped and launched at the direction of the mouse.
         // the force of throwing is determined by how far the mouse is from the player (in screen coordinates)
@@ -373,7 +379,7 @@ void game_draw(bool draw_overlay) {
 
     chunk_manager_draw_liquids();
 
-    if (!item_container_is_open() && !sign_editor_is_open() && draw_overlay) {
+    if (!item_container_is_open() && !sign_editor_is_open() && draw_overlay && draw_ui) {
         // Draw block model if it is rotatable
         if (loadedGhostMesh == true) {
             DrawMesh(
@@ -390,7 +396,7 @@ void game_draw(bool draw_overlay) {
 
     EndMode2D();
 
-    if (!item_container_is_open() && !sign_editor_is_open() && draw_overlay) {
+    if (!item_container_is_open() && !sign_editor_is_open() && draw_overlay && draw_ui) {
         if (inventory_get_item(0, hotbarIdx).item_id > 0) {
             draw_item(inventory_get_item(0, hotbarIdx), GetMouseX(), GetMouseY(), 0, 0.8f, false);
         }
@@ -415,40 +421,42 @@ void game_draw(bool draw_overlay) {
         );
     }
 
-    Vector2 center = { GetScreenWidth() / 2.0f, GetScreenHeight()};
+    if (draw_ui) {
+        Vector2 center = { GetScreenWidth() / 2.0f, GetScreenHeight()};
 
-    int width = (get_inventory()->columns * (ITEM_SLOT_SIZE + 4)) + 4;
-    int height = (get_inventory()->rows * (ITEM_SLOT_SIZE + 4)) + 4;
+        int width = (get_inventory()->columns * (ITEM_SLOT_SIZE + 4)) + 4;
+        int height = (get_inventory()->rows * (ITEM_SLOT_SIZE + 4)) + 4;
 
-    const Color hotbarBg = { 0, 0, 0, 128 };
-    const Color selHotbarSlot = { 128, 128, 128, 128 };
+        const Color hotbarBg = { 0, 0, 0, 128 };
+        const Color selHotbarSlot = { 128, 128, 128, 128 };
 
-    DrawRectangle(
-        center.x - (width / 2.0f),
-        center.y - height,
-        width,
-        height,
-        hotbarBg
-    );
+        DrawRectangle(
+            center.x - (width / 2.0f),
+            center.y - height,
+            width,
+            height,
+            hotbarBg
+        );
 
-    for (int r = 0; r < get_inventory()->rows; r++) {
-        for (int c = 0; c < get_inventory()->columns; c++) {
-            int i = c + (r * get_inventory()->columns);
+        for (int r = 0; r < get_inventory()->rows; r++) {
+            for (int c = 0; c < get_inventory()->columns; c++) {
+                int i = c + (r * get_inventory()->columns);
 
-            Rectangle slotRect = {
-                .x = ((center.x - (width / 2.0f)) + 4) + (c * (ITEM_SLOT_SIZE + 4)),
-                .y = ((center.y - height) + 4) + (r * (ITEM_SLOT_SIZE + 4)),
-                .width = ITEM_SLOT_SIZE,
-                .height = ITEM_SLOT_SIZE
-            };
+                Rectangle slotRect = {
+                    .x = ((center.x - (width / 2.0f)) + 4) + (c * (ITEM_SLOT_SIZE + 4)),
+                    .y = ((center.y - height) + 4) + (r * (ITEM_SLOT_SIZE + 4)),
+                    .width = ITEM_SLOT_SIZE,
+                    .height = ITEM_SLOT_SIZE
+                };
 
-            DrawRectangleRec(slotRect, i == hotbarIdx ? selHotbarSlot : hotbarBg);
+                DrawRectangleRec(slotRect, i == hotbarIdx ? selHotbarSlot : hotbarBg);
 
-            draw_item(get_inventory()->items[i], slotRect.x, slotRect.y, ((ITEM_SLOT_SIZE - TILE_SIZE) / 2.0f), 1.0f, true);
+                draw_item(get_inventory()->items[i], slotRect.x, slotRect.y, ((ITEM_SLOT_SIZE - TILE_SIZE) / 2.0f), 1.0f, true);
+            }
         }
     }
 
-    if (debug_info) {
+    if (debug_info && draw_ui) {
         sprintf(debug_text,
             "FPS: %d\n"
             "Loaded chunk area: %ux%u\n"

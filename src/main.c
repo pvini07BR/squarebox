@@ -9,21 +9,23 @@
 #include <raylib.h>
 #include <raymath.h>
 #include <rlgl.h>
+#include <time.h>
 
 #define RAYGUI_IMPLEMENTATION
 #include "thirdparty/raygui.h"
 
 #define TICK_DELTA (1.0f / 20.0f)
 
-typedef enum {
-    GAME_RUNNING,
-    GAME_PAUSED,
-    GAME_SETTINGS
-} GameState;
+#define SPLASH_TEXT_COUNT 3
+const char* splashTexts[] = {
+    "Made with Raylib!",
+	"Written entirely in C!",
+    "NOT Terraria!"
+};
 
 int main() {
     SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT);
-    InitWindow(1280, 720, "squaredbox");
+    InitWindow(1280, 720, "squarebox");
     SetExitKey(KEY_NULL);
     SetTraceLogLevel(LOG_WARNING);
     rlDisableBackfaceCulling();
@@ -33,40 +35,128 @@ int main() {
 
     world_manager_init();
     world_manager_create_world((WorldInfo) {
-        .name = "test world",
-        .player_position = Vector2Zero(),
-        .seed = 0
-    });
-	world_manager_load_world_info("test_world");
-
-    GameState state = GAME_RUNNING;
+        .name = "Test World",
+        .seed = 12345,
+        .player_position = { 0, 0 }
+	});
 
     game_init();
 
-    float accumulator = 0.0f;
-    while (!WindowShouldClose()) {
-        if (!item_container_is_open() && !sign_editor_is_open() && IsKeyPressed(KEY_ESCAPE)) {
-            if (state == GAME_RUNNING) state = GAME_PAUSED;
-            else if (state == GAME_PAUSED) state = GAME_RUNNING;
-            else if (state == GAME_SETTINGS) state = GAME_PAUSED;
-        }
+    const float spacing = 50.0f;
+    const Vector2 buttonPadding = { 30.0f, 20.0f };
 
-        if (state == GAME_RUNNING) {
-            // Tick chunks
-            accumulator += GetFrameTime();
-            while (accumulator >= TICK_DELTA) {
-                game_tick();
-                accumulator -= TICK_DELTA;
-            }
-    
-            game_update(GetFrameTime());
+    Texture2D logo = LoadTexture(ASSETS_PATH "logo.png");
+
+	//SetRandomSeed(time(NULL));
+    Label splashLabel = create_label(splashTexts[GetRandomValue(0, (SPLASH_TEXT_COUNT - 1))], 32.0f, 4.0f, GetFontDefault());
+
+    Label playButtonLabel = create_label("Play", GuiGetStyle(DEFAULT, TEXT_SIZE), GuiGetStyle(DEFAULT, TEXT_SPACING), GetFontDefault());
+    Label settingsButtonLabel = create_label("Settings", GuiGetStyle(DEFAULT, TEXT_SIZE), GuiGetStyle(DEFAULT, TEXT_SPACING), GetFontDefault());
+    Label quitButtonLabel = create_label("Quit", GuiGetStyle(DEFAULT, TEXT_SIZE), GuiGetStyle(DEFAULT, TEXT_SPACING), GetFontDefault());
+
+	Label versionLabel = create_label("Version InDev", 24.0f, 2.0f, GetFontDefault());
+	Label creditsLabel = create_label("Made by pvini07BR", 24.0f, 2.0f, GetFontDefault());
+
+    Vector2 bounds[] = {
+        Vector2Add(settingsButtonLabel.bounds, buttonPadding),
+        Vector2Add(settingsButtonLabel.bounds, buttonPadding),
+        Vector2Add(settingsButtonLabel.bounds, buttonPadding)
+    };
+
+    Vector2 totalSize = { 0.0f, 0.0f };
+    for (size_t i = 0; i < 3; i++) {
+        totalSize.x = fmaxf(totalSize.x, bounds[i].x);
+        totalSize.y += bounds[i].y;
+		if (i < 2) totalSize.y += spacing;
+	}
+
+    float accumulator = 0.0f;
+    bool closeGame = false;
+
+    while (!WindowShouldClose() && !closeGame) {
+        accumulator += GetFrameTime();
+        while (accumulator >= TICK_DELTA) {
+            game_tick();
+            accumulator -= TICK_DELTA;
         }
+    
+        game_update(GetFrameTime());
 
         BeginDrawing();
 
         ClearBackground(BLACK);
 
-        game_draw(state == GAME_RUNNING);
+        game_draw();
+
+        if (game_is_demo_mode()) {
+			Vector2 screenCenter = (Vector2){ GetScreenWidth() / 2.0f, GetScreenHeight() / 2.0f };
+            Vector2 logoPos = { screenCenter.x - (logo.width / 2.0f), (GetScreenHeight() / 8.0f) - (logo.height / 2.0f)};
+
+            DrawTexture(logo, logoPos.x, logoPos.y, WHITE);
+
+            DrawTextPro(
+                splashLabel.font,
+                splashLabel.str,
+                Vector2Add(logoPos, Vector2SubtractValue((Vector2) { logo.width, logo.height }, 15.0f)),
+                (Vector2) { splashLabel.bounds.x / 2.0f, splashLabel.bounds.y / 2.0f },
+                -20.0f,
+                splashLabel.fontSize,
+                splashLabel.spacing,
+                YELLOW
+            );
+
+            screenCenter = Vector2Subtract(screenCenter, Vector2Scale(totalSize, 0.5f));
+
+			//DrawRectangle(screenCenter.x, screenCenter.y, totalSize.x, totalSize.y, (Color) { 0, 0, 0, 128 });
+
+            for (int i = 0; i < 4; i++) {
+                Rectangle rect = { screenCenter.x + ((totalSize.x / 2.0f) - (bounds[i].x / 2.0f)), screenCenter.y, bounds[i].x, bounds[i].y};
+                //DrawRectangleRec(rect, (Color) { (i == 0) * 255, (i == 1) * 255, (i == 2) * 255, 255 });
+                switch (i) {
+                case 0:
+                    if (GuiButton(rect, playButtonLabel.str)) {
+                        if (world_manager_load_world_info("test_world")) {
+                            game_set_demo_mode(false);
+                        }
+                    }
+                    break;
+                case 1:
+                    if (GuiButton(rect, settingsButtonLabel.str)) {
+                        // Open settings
+                    }
+                    break;
+                case 2:
+                    if (GuiButton(rect, quitButtonLabel.str)) {
+                        closeGame = true;
+                    }
+                    break;
+                }
+                screenCenter.y += bounds[i].y + spacing;
+            }
+
+            DrawTextPro(
+                versionLabel.font,
+                versionLabel.str,
+                (Vector2) { 0.0f, GetScreenHeight() },
+                (Vector2) { 0.0f, creditsLabel.bounds.y },
+                0.0f,
+                versionLabel.fontSize,
+                versionLabel.spacing,
+                WHITE
+            );
+
+            DrawTextPro(
+                creditsLabel.font,
+                creditsLabel.str,
+                (Vector2) { GetScreenWidth(), GetScreenHeight() },
+                (Vector2) { creditsLabel.bounds.x, creditsLabel.bounds.y },
+                0.0f,
+                creditsLabel.fontSize,
+                creditsLabel.spacing,
+                WHITE
+            );
+        }
+        /*
 
         if (state != GAME_RUNNING) DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), (Color){ 0, 0, 0, 128 });
 
@@ -127,18 +217,19 @@ int main() {
                 state = GAME_PAUSED;
             }
         }
+        */
 
         EndDrawing();
     }
 
-	Player* player = game_get_player();
-    if (player) {
-		get_world_info()->player_position = player_get_position(player);
+    if (!game_is_demo_mode() && world_manager_is_world_loaded()) {
+	    Player* player = game_get_player();
+        if (player) {
+		    get_world_info()->player_position = player_get_position(player);
+        }
+        world_manager_save_world_info_and_unload();
     }
-    else {
-        get_world_info()->player_position = game_get_camera_pos();
-    }
-    world_manager_save_world_info();
+
     game_free();
 
     CloseWindow();

@@ -80,6 +80,11 @@ bool world_manager_create_world(WorldInfo info) {
 }
 
 bool world_manager_save_world_info() {
+    if (!currentWorldDir) {
+		TraceLog(LOG_ERROR, "Could not save world info: no world is currently loaded.");
+        return false;
+    }
+
     if (!DirectoryExists(currentWorldDir)) {
         TraceLog(LOG_ERROR, "World directory does not exist: %s", currentWorldDir);
         return false;
@@ -96,6 +101,8 @@ bool world_manager_save_world_info() {
 }
 
 bool world_manager_load_world_info(const char* worldDirName) {
+    if (currentWorldDir) free(currentWorldDir);
+
 	char* tmp = formatted_string("worlds/%s", worldDirName);
 
     if (!DirectoryExists(tmp)) {
@@ -230,6 +237,21 @@ bool world_manager_load_chunk(Chunk* chunk) {
     return true;
 }
 
+bool world_manager_save_world_info_and_unload() {
+    if (!currentWorldDir) return false;
+    bool saved = world_manager_save_world_info();
+    if (currentWorldDir) {
+        free(currentWorldDir);
+        currentWorldDir = NULL;
+    }
+    memset(&worldInfo, 0, sizeof(WorldInfo));
+	return saved;
+}
+
 WorldInfo* get_world_info() {
     return &worldInfo;
+}
+
+bool world_manager_is_world_loaded() {
+	return currentWorldDir != NULL;
 }

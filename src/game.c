@@ -47,6 +47,7 @@ size_t last_blockState = SIZE_MAX;
 uint8_t lastItemId = UCHAR_MAX;
 int8_t hotbarIdx = 0;
 
+bool demo_mode = true;
 bool draw_ui = true;
 bool debug_info = false;
 char debug_text[1024];
@@ -71,10 +72,8 @@ void game_init() {
 
     init_inventory();
 
-	Vector2 savedPlayerPos = get_world_info()->player_position;
-
     camera = (Camera2D){
-		.target = savedPlayerPos,
+		.target = { 0, 0 },
         .offset =  { GetScreenWidth() / 2.0f, GetScreenHeight() / 2.0f },
         .rotation = 0.0f,
         .zoom = 1.0f
@@ -87,13 +86,6 @@ void game_init() {
     blockPlacerRect = (Rectangle){
         0, 0, TILE_SIZE, TILE_SIZE
     };
-     
-    // You can comment out the player creation if you want the camera only
-    player = player_create(savedPlayerPos);
-    if (player) {
-        entity_list_add(&player->entity);
-        camera.target = Vector2Add(player_get_position(player), Vector2Scale(player_get_size(player), 0.5f));
-    }
 
     currentChunkPos = (Vector2i) {
         (int)floorf(camera.target.x / (CHUNK_WIDTH * TILE_SIZE)),
@@ -108,6 +100,21 @@ void game_tick() {
 }
 
 void game_update(float deltaTime) {
+    Vector2i cameraChunkPos = {
+        (int)floorf(camera.target.x / (CHUNK_WIDTH * TILE_SIZE)),
+        (int)floorf(camera.target.y / (CHUNK_WIDTH * TILE_SIZE))
+    };
+
+    if (cameraChunkPos.x != currentChunkPos.x || cameraChunkPos.y != currentChunkPos.y) {
+        chunk_manager_relocate(cameraChunkPos);
+        currentChunkPos = cameraChunkPos;
+    }
+
+    if (demo_mode) {
+        camera.target.x += 300.0f * deltaTime;
+        return;
+    }
+
     mouseWorldPos = GetScreenToWorld2D(GetMousePosition(), camera);
     mouseBlockPos = (Vector2i){
         (int)floorf((float)mouseWorldPos.x / (float)TILE_SIZE),
@@ -242,16 +249,6 @@ void game_update(float deltaTime) {
         Vector2 newTarget = Vector2Add(player_get_position(player), Vector2Scale(player_get_size(player), 0.5f));
         camera.target = Vector2Lerp(camera.target, newTarget, 25.0f * GetFrameTime());
     }
-    else {
-        Vector2 dir = {
-            ((IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_D)) - (IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_A))),
-            ((IsKeyDown(KEY_DOWN) || IsKeyDown(KEY_S)) - (IsKeyDown(KEY_UP) || IsKeyDown(KEY_W)))
-        };
-
-        if (dir.x != 0.0f || dir.y != 0.0f) dir = Vector2Normalize(dir);
-
-		camera.target = Vector2Add(camera.target, Vector2Scale(dir, 500.0f * deltaTime));
-    }
 
     if (IsKeyPressed(KEY_E) && !item_container_is_open() && !sign_editor_is_open())
         item_container_open(&creativeMenu);
@@ -311,19 +308,9 @@ void game_update(float deltaTime) {
             loadedGhostMesh = false;
         }
     }
-
-    Vector2i cameraChunkPos = {
-        (int)floorf(camera.target.x / (CHUNK_WIDTH * TILE_SIZE)),
-        (int)floorf(camera.target.y / (CHUNK_WIDTH * TILE_SIZE))
-    };
-
-    if (cameraChunkPos.x != currentChunkPos.x || cameraChunkPos.y != currentChunkPos.y) {
-        chunk_manager_relocate(cameraChunkPos);
-        currentChunkPos = cameraChunkPos;
-    }
 }
 
-void game_draw(bool draw_overlay) {
+void game_draw() {
     camera.offset = (Vector2){
         .x = GetScreenWidth() / 2.0f, 
         .y = GetScreenHeight() / 2.0f
@@ -382,7 +369,12 @@ void game_draw(bool draw_overlay) {
 
     chunk_manager_draw_liquids();
 
-    if (!item_container_is_open() && !sign_editor_is_open() && draw_overlay && draw_ui) {
+    if (demo_mode) {
+        EndMode2D();
+        return;
+    }
+    
+    if (!item_container_is_open() && !sign_editor_is_open() && draw_ui) {
         // Draw block model if it is rotatable
         if (loadedGhostMesh == true) {
             DrawMesh(
@@ -399,7 +391,7 @@ void game_draw(bool draw_overlay) {
 
     EndMode2D();
 
-    if (!item_container_is_open() && !sign_editor_is_open() && draw_overlay && draw_ui) {
+    if (!item_container_is_open() && !sign_editor_is_open() && draw_ui) {
         if (inventory_get_item(0, hotbarIdx).item_id > 0) {
             draw_item(inventory_get_item(0, hotbarIdx), GetMouseX(), GetMouseY(), 0, 0.8f, false);
         }
@@ -493,6 +485,35 @@ void game_free() {
     block_registry_free();
     block_models_free();
     texture_atlas_free();
+}
+
+void game_set_demo_mode(bool demo) {
+    if (demo_mode && !demo) {
+        // Switching from demo to normal mode
+        chunk_manager_clear(false);
+
+        Vector2 playerPosition = get_world_info()->player_position;
+        Vector2i playerChunkPos = {
+            (int)floorf(playerPosition.x / (CHUNK_WIDTH * TILE_SIZE)),
+            (int)floorf(playerPosition.y / (CHUNK_WIDTH * TILE_SIZE))
+		};
+
+        chunk_manager_relocate(playerChunkPos);
+
+        if (player == NULL) {
+            player = player_create(playerPosition);
+            if (player) {
+                entity_list_add(&player->entity);
+                camera.target = Vector2Add(player_get_position(player), Vector2Scale(player_get_size(player), 0.5f));
+            }
+		}
+    }
+
+    demo_mode = demo;
+}
+
+bool game_is_demo_mode() {
+    return demo_mode;
 }
 
 Player* game_get_player() {

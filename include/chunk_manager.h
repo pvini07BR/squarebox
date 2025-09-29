@@ -17,6 +17,7 @@ void chunk_manager_update_lighting();
 void chunk_manager_draw(bool draw_lines);
 void chunk_manager_draw_liquids();
 void chunk_manager_tick();
+void chunk_manager_clear(bool saveChunks);
 void chunk_manager_free();
 
 uint8_t chunk_manager_get_view_width();

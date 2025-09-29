@@ -328,17 +328,31 @@ void chunk_manager_tick() {
     tick_counter++;
 }
 
+void chunk_manager_clear(bool saveChunks) {
+    if (!initialized) return;
+    for (int c = 0; c < chunk_count; c++) {
+        if (chunks[c].initialized) {
+			if (saveChunks) world_manager_save_chunk(&chunks[c]);
+            chunk_free(&chunks[c]);
+        }
+	}
+}
+
 void chunk_manager_free() {
     if (!initialized) return;
 
     if (chunks) {
         for (int c = 0; c < chunk_count; c++) {
-			world_manager_save_chunk(&chunks[c]);
-            chunk_free(&chunks[c]);
+            if (chunks[c].initialized) {
+                world_manager_save_chunk(&chunks[c]);
+                chunk_free(&chunks[c]);
+            }
         }
         free(chunks);
         chunks = NULL;
     }
+
+    initialized = false;
 }
 
 uint8_t chunk_manager_get_view_width()

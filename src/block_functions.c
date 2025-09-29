@@ -200,8 +200,8 @@ bool trapdoor_interact(BlockExtraResult result) {
 
 bool sign_interact(BlockExtraResult result) {
     if (result.block->data != NULL) {
-        char** strings = result.block->data;
-        sign_editor_open(strings);
+        SignLines* lines = result.block->data;
+        sign_editor_open(lines);
         return true;
     }
     return false;

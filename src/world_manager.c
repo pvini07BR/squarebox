@@ -24,13 +24,13 @@ void world_manager_load_world(const char* name) {
     
 }
 
-void world_manager_save_chunk(Chunk* chunk) {
-    if (!chunk) return;
+bool world_manager_save_chunk(Chunk* chunk) {
+    if (!chunk) return false;
     
     FILE* fptr = fopen(TextFormat("worlds/test_world/chunks/%d_%d.bin", chunk->position.x, chunk->position.y), "wb");
     if (!fptr) {
         TraceLog(LOG_ERROR, "Could not save chunk at position (%d, %d): %s", chunk->position.x, chunk->position.y, strerror(errno));
-        return;
+        return false;
     }
 
 	uint32_t baseOffset = (sizeof(uint8_t) * 2 + sizeof(uint32_t)) * CHUNK_AREA * CHUNK_LAYER_COUNT;
@@ -69,6 +69,8 @@ void world_manager_save_chunk(Chunk* chunk) {
 	}
 
     fclose(fptr);
+    
+    return true;
 }
 
 bool world_manager_load_chunk(Chunk* chunk) {

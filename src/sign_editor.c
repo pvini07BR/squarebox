@@ -1,8 +1,6 @@
 #include "sign_editor.h"
 #include "texture_atlas.h"
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include <raylib.h>
@@ -77,11 +75,11 @@ void sign_editor_draw() {
 	);
 
 	for (int i = 0; i < SIGN_LINE_COUNT; i++) {
-		Vector2 textMeasure = MeasureTextEx(GetFontDefault(), &lines->lines[i], fontSize, letterSpacing);
+		Vector2 textMeasure = MeasureTextEx(GetFontDefault(), lines->lines[i], fontSize, letterSpacing);
 
 		DrawTextPro(
             GetFontDefault(),
-			&lines->lines[i],
+			lines->lines[i],
             (Vector2) { posX, originY },
             (Vector2) { textMeasure.x / 2.0f, 0.0f },
             0.0f,

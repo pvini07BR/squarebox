@@ -255,6 +255,25 @@ void chunk_genmesh(Chunk* chunk) {
     chunk_gen_liquid_mesh(chunk);
 }
 
+void chunk_update_tick_list(Chunk* chunk) {
+    if (!chunk) return;
+    block_tick_list_clear(&chunk->blockTickList);
+    for (int i = 0; i < CHUNK_AREA; i++) {
+        for (int l = 0; l < CHUNK_LAYER_COUNT; l++) {
+            BlockInstance* binst = &chunk->layers[l].blocks[i];
+            if (binst->id == BLOCK_AIR) continue;
+            BlockRegistry* brg = br_get_block_registry(binst->id);
+            if (!brg) continue;
+            if (brg->tick_callback == NULL) continue;
+            BlockTickListEntry entry = {
+                .position = { i % CHUNK_WIDTH, i / CHUNK_WIDTH },
+                .layer = l
+            };
+            block_tick_list_add(&chunk->blockTickList, entry);
+        }
+	}
+}
+
 void chunk_draw(Chunk* chunk) {
     if (!chunk) return;
 

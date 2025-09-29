@@ -71,6 +71,7 @@ typedef struct {
 void chunk_init(Chunk* chunk, Vector2i position);
 void chunk_regenerate(Chunk* chunk);
 void chunk_genmesh(Chunk* chunk);
+void chunk_update_tick_list(Chunk* chunk);
 void chunk_draw(Chunk* chunk);
 void chunk_draw_liquids(Chunk* chunk);
 void chunk_tick(Chunk* chunk, uint8_t tick_value);

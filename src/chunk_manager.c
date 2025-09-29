@@ -95,7 +95,7 @@ void chunk_manager_relocate(Vector2i newCenter) {
     for (size_t i = 0; i < count; i++) {
         Chunk* old = &chunks[i];
         if (old->initialized) {
-            //world_manager_save_chunk(old);
+            world_manager_save_chunk(old);
             chunk_free(old);
         }
     }
@@ -108,7 +108,10 @@ void chunk_manager_relocate(Vector2i newCenter) {
             int chunk_y = min_y + y;
 
             chunk_init(&new_chunks[i], (Vector2i) { chunk_x, chunk_y });
-            chunk_regenerate(&new_chunks[i]);
+            if (!world_manager_load_chunk(&new_chunks[i])) {
+                chunk_regenerate(&new_chunks[i]);
+            }
+			chunk_update_tick_list(&new_chunks[i]);
             occupied[i] = true;
         }
     }
@@ -196,7 +199,7 @@ void chunk_manager_set_view(uint8_t new_view_width, uint8_t new_view_height) {
     for (size_t i = 0; i < old_count; i++) {
         Chunk* old = &chunks[i];
         if (old->initialized) {
-            //world_manager_save_chunk(old);
+            world_manager_save_chunk(old);
             chunk_free(old);
             old->initialized = false;
         }
@@ -211,7 +214,10 @@ void chunk_manager_set_view(uint8_t new_view_width, uint8_t new_view_height) {
 
             memset(&new_chunks[i], 0, sizeof(Chunk));
             chunk_init(&new_chunks[i], (Vector2i) { chunk_x, chunk_y });
-            chunk_regenerate(&new_chunks[i]);
+            if (!world_manager_load_chunk(&new_chunks[i])) {
+                chunk_regenerate(&new_chunks[i]);
+            }
+			chunk_update_tick_list(&new_chunks[i]);
             occupied[i] = true;
         }
     }
@@ -327,7 +333,7 @@ void chunk_manager_free() {
 
     if (chunks) {
         for (int c = 0; c < chunk_count; c++) {
-			//world_manager_save_chunk(&chunks[c]);
+			world_manager_save_chunk(&chunks[c]);
             chunk_free(&chunks[c]);
         }
         free(chunks);

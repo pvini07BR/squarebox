@@ -120,8 +120,8 @@ bool game_settings_draw() {
 
 	GuiLabel((Rectangle) { originX, originY, chunkViewSizeLabel.bounds.x, chunkViewSizeLabel.bounds.y }, chunkViewSizeLabel.str);
 	originX += biggest + spacing;
-	if (GuiValueBox((Rectangle) { originX, originY, 50, 30 }, NULL, &tempSettings.chunk_view_width, 1, 20, editing_chunk_view_width)) editing_chunk_view_width = !editing_chunk_view_width;
-	if (GuiValueBox((Rectangle) { originX += 65, originY, 50, 30 }, "x", &tempSettings.chunk_view_height, 1, 20, editing_chunk_view_height)) editing_chunk_view_height = !editing_chunk_view_height;
+	if (GuiValueBox((Rectangle) { originX, originY, 50, 30 }, NULL, &tempSettings.chunk_view_width, 1, GAME_SETTINGS_MAX_CHUNK_VIEW, editing_chunk_view_width)) editing_chunk_view_width = !editing_chunk_view_width;
+	if (GuiValueBox((Rectangle) { originX += 65, originY, 50, 30 }, "x", &tempSettings.chunk_view_height, 1, GAME_SETTINGS_MAX_CHUNK_VIEW, editing_chunk_view_height)) editing_chunk_view_height = !editing_chunk_view_height;
 	originX = centerX; originY += line_vert_spacing;
 	GuiLabel((Rectangle) { originX, originY, wallBrightnessLabel.bounds.x, wallBrightnessLabel.bounds.y }, wallBrightnessLabel.str);
 	originX += biggest + spacing;

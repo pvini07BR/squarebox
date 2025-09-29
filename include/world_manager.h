@@ -11,6 +11,8 @@ typedef struct {
 
 void world_manager_init();
 void world_manager_load_world(const char* name);
-void world_manager_save_chunk(Chunk* chunk);
+
+bool world_manager_save_chunk(Chunk* chunk);
+bool world_manager_load_chunk(Chunk* chunk);
 
 #endif

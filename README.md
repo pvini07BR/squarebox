@@ -30,8 +30,8 @@ But here is a list of all the features this game currently has, and what I plan 
 - ✅ Liquids (only water is added)
 - ✅ Lighting system
 - 🟩 World generation (there's only a generic noise world gen and it does not have any trees yet)
+- 🟩 World saving (working on chunk saving first)
 - ⬜ Structure generation
-- ⬜ World saving
 - ⬜ Moving structures (so you can make elevators)
 - ⬜ Some redstone-like circuit system (with logic gates, pistons, buttons, pressure plates, etc.)
 - ⬜ Proper coordinate system using fixed points

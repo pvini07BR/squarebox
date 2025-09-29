@@ -126,7 +126,7 @@ void free_inventory()
 	item_container_free(&inventory);
 }
 
-void item_container_create(ItemContainer* ic, const char* name, uint8_t rows, uint8_t columns, bool immutable)
+void item_container_create(ItemContainer* ic, char* name, uint8_t rows, uint8_t columns, bool immutable)
 {
 	if (!ic) return;
 	ic->name = name;
@@ -460,7 +460,7 @@ void item_container_free(ItemContainer* ic)
 	if (!ic) return;
 	if (ic->name) {
 		free(ic->name);
-		ic->name == NULL;
+		ic->name = NULL;
 	}
 	if (ic->items) {
 		free(ic->items);

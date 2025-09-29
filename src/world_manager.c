@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
-#include <varargs.h>
+#include <stdarg.h>
 
 WorldInfo worldInfo;
 char* currentWorldDir = NULL;
@@ -48,7 +48,7 @@ void world_manager_init() {
 }
 
 bool world_manager_create_world(WorldInfo info) {
-    const char* dirName = TextReplace(TextToLower(&info.name), " ", "_");
+    char* dirName = TextReplace(TextToLower(info.name), " ", "_");
 
     if (DirectoryExists(TextFormat("worlds/%s", dirName))) {
         TraceLog(LOG_ERROR, "World directory already exists: worlds/%s", dirName);

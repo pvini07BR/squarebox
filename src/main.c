@@ -1,7 +1,5 @@
-#include "item_container.h"
 #include "game_settings.h"
 #include "world_manager.h"
-#include "sign_editor.h"
 #include "game.h"
 
 #include <limits.h>
@@ -16,12 +14,16 @@
 
 #define TICK_DELTA (1.0f / 20.0f)
 
-#define SPLASH_TEXT_COUNT 3
 const char* splashTexts[] = {
     "Made with Raylib!",
 	"Written entirely in C!",
-    "NOT Terraria!"
+    "NOT Terraria!",
+    "NOT written in Rust!",
+    "Segfault free!",
+    "2^Box"
 };
+
+#define SPLASH_TEXT_COUNT (sizeof(splashTexts) / sizeof(splashTexts[0]))
 
 int main() {
     SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT);
@@ -47,8 +49,7 @@ int main() {
 
     Texture2D logo = LoadTexture(ASSETS_PATH "logo.png");
 
-	//SetRandomSeed(time(NULL));
-    Label splashLabel = create_label(splashTexts[GetRandomValue(0, (SPLASH_TEXT_COUNT - 1))], 32.0f, 4.0f, GetFontDefault());
+    Label splashLabel = create_label(splashTexts[GetRandomValue(0, (SPLASH_TEXT_COUNT - 1))], 32.0f, 2.0f, GetFontDefault());
 
     Label playButtonLabel = create_label("Play", GuiGetStyle(DEFAULT, TEXT_SIZE), GuiGetStyle(DEFAULT, TEXT_SPACING), GetFontDefault());
     Label settingsButtonLabel = create_label("Settings", GuiGetStyle(DEFAULT, TEXT_SIZE), GuiGetStyle(DEFAULT, TEXT_SPACING), GetFontDefault());

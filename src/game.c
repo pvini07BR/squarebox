@@ -83,13 +83,12 @@ void game_init() {
     blockPlacerRect = (Rectangle){
         0, 0, TILE_SIZE, TILE_SIZE
     };
-
+     
+    // You can comment out the player creation if you want the camera only
     player = player_create((Vector2) { 0, -TILE_SIZE });
     if (player) {
         entity_list_add(&player->entity);
         camera.target = Vector2Add(player_get_position(player), Vector2Scale(player_get_size(player), 0.5f));
-    } else {
-        TraceLog(LOG_ERROR, "Could not create the player entity. The game will crash now.\n");
     }
 
     currentChunkPos = (Vector2i) {
@@ -123,7 +122,18 @@ void game_update(float deltaTime) {
                 ItemRegistry* itr = ir_get_item_registry(inventory_get_item(0, hotbarIdx).item_id);
                 if (itr->blockId > 0 && !(itr->placingFlags & (sel_layer == CHUNK_LAYER_BACKGROUND ? ITEM_PLACE_FLAG_NOT_WALL : ITEM_PLACE_FLAG_NOT_BLOCK))) {
                     BlockRegistry* br = br_get_block_registry(itr->blockId);
-                    if (sel_layer == CHUNK_LAYER_BACKGROUND || (sel_layer == CHUNK_LAYER_FOREGROUND && ((br->flags & BLOCK_FLAG_SOLID && !CheckCollisionRecs(blockPlacerRect, player->entity.rect) || !(br->flags & BLOCK_FLAG_SOLID))))) {
+
+					bool blockIsSolid = (br->flags & BLOCK_FLAG_SOLID) != 0;
+                    bool playerAllowsPlacement = true;
+                    if (blockIsSolid && player) {
+						playerAllowsPlacement = !CheckCollisionRecs(blockPlacerRect, player->entity.rect);
+                    }
+
+                    bool canPlace =
+                        (sel_layer == CHUNK_LAYER_BACKGROUND) ||
+                        (sel_layer == CHUNK_LAYER_FOREGROUND && (!blockIsSolid || playerAllowsPlacement));
+
+                    if (canPlace) {
                         uint8_t state = blockStateIdx;
                         if (br->state_selector) {
                             state = br->state_selector(blockStateIdx);
@@ -216,11 +226,23 @@ void game_update(float deltaTime) {
         if (IsKeyPressed(KEY_ZERO)) hotbarIdx = 9;
     }
 
-    player->disable_input = item_container_is_open() || sign_editor_is_open();
+    if (player) player->disable_input = item_container_is_open() || sign_editor_is_open();
     entity_list_update(GetFrameTime());
         
-    Vector2 newTarget = Vector2Add(player_get_position(player), Vector2Scale(player_get_size(player), 0.5f));
-    camera.target = Vector2Lerp(camera.target, newTarget, 25.0f * GetFrameTime());
+    if (player) {
+        Vector2 newTarget = Vector2Add(player_get_position(player), Vector2Scale(player_get_size(player), 0.5f));
+        camera.target = Vector2Lerp(camera.target, newTarget, 25.0f * GetFrameTime());
+    }
+    else {
+        Vector2 dir = {
+            ((IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_D)) - (IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_A))),
+            ((IsKeyDown(KEY_DOWN) || IsKeyDown(KEY_S)) - (IsKeyDown(KEY_UP) || IsKeyDown(KEY_W)))
+        };
+
+        if (dir.x != 0.0f || dir.y != 0.0f) dir = Vector2Normalize(dir);
+
+		camera.target = Vector2Add(camera.target, Vector2Scale(dir, 500.0f * deltaTime));
+    }
 
     if (IsKeyPressed(KEY_E) && !item_container_is_open() && !sign_editor_is_open())
         item_container_open(&creativeMenu);

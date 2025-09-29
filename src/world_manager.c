@@ -1,10 +1,13 @@
 #include "world_manager.h"
+#include "registries/block_registry.h"
+#include "sign_editor.h"
 #include "raylib.h"
 
 #include <errno.h>
 
-#include <stdarg.h>
+#include <stdlib.h>
 #include <stdio.h>
+#include <stdarg.h>
 #include <string.h>
 #include <sys/stat.h>
 
@@ -30,14 +33,40 @@ void world_manager_save_chunk(Chunk* chunk) {
         return;
     }
 
+	uint32_t baseOffset = (sizeof(uint8_t) * 2 + sizeof(uint32_t)) * CHUNK_AREA * CHUNK_LAYER_COUNT;
+    uint32_t dataOffset = baseOffset;
+    uint32_t zero = 0;
+
     for (int l = 0; l < CHUNK_LAYER_COUNT; l++) {
-        size_t written = fwrite(chunk->layers[l].blocks, sizeof(BlockInstance), CHUNK_AREA, fptr);
-        if (written != CHUNK_AREA) {
-            TraceLog(LOG_ERROR, "Could not write chunk layer %d data: %s", l, strerror(errno));
-            fclose(fptr);
-            return;
-		}
+        for (int b = 0; b < CHUNK_AREA; b++) {
+			fwrite(&chunk->layers[l].blocks[b].id, sizeof(uint8_t), 1, fptr);
+            fwrite(&chunk->layers[l].blocks[b].state, sizeof(uint8_t), 1, fptr);
+
+            if (chunk->layers[l].blocks[b].data) {
+                if (chunk->layers[l].blocks[b].id == BLOCK_SIGN) {
+                    fwrite(&dataOffset, sizeof(uint32_t), 1, fptr);
+					dataOffset += sizeof(SignLines);
+                }
+                else {
+                    fwrite(&zero, sizeof(uint32_t), 1, fptr);
+                }
+            }
+            else {
+				fwrite(&zero, sizeof(uint32_t), 1, fptr);
+            }
+        }
     }
+
+    for (int l = 0; l < CHUNK_LAYER_COUNT; l++) {
+        for (int b = 0; b < CHUNK_AREA; b++) {
+            if (chunk->layers[l].blocks[b].data) {
+                if (chunk->layers[l].blocks[b].id == BLOCK_SIGN) {
+                    SignLines* lines = chunk->layers[l].blocks[b].data;
+                    fwrite(lines, sizeof(SignLines), 1, fptr);
+                }
+            }
+        }
+	}
 
     fclose(fptr);
 }
@@ -54,11 +83,26 @@ bool world_manager_load_chunk(Chunk* chunk) {
     }
 
     for (int l = 0; l < CHUNK_LAYER_COUNT; l++) {
-        size_t read = fread(chunk->layers[l].blocks, sizeof(BlockInstance), CHUNK_AREA, fptr);
-        if (read != CHUNK_AREA) {
-            TraceLog(LOG_ERROR, "Could not read chunk layer %d data: %s", l, strerror(errno));
-            fclose(fptr);
-            return false;
+        for (int b = 0; b < CHUNK_AREA; b++) {
+			fread(&chunk->layers[l].blocks[b].id, sizeof(uint8_t), 1, fptr);
+            fread(&chunk->layers[l].blocks[b].state, sizeof(uint8_t), 1, fptr);
+            uint32_t dataOffset = 0;
+            fread(&dataOffset, sizeof(uint32_t), 1, fptr);
+            if (dataOffset != 0) {
+                long currentPos = ftell(fptr);
+                fseek(fptr, dataOffset, SEEK_SET);
+                if (chunk->layers[l].blocks[b].id == BLOCK_SIGN) {
+                    chunk->layers[l].blocks[b].data = malloc(sizeof(SignLines));
+                    if (chunk->layers[l].blocks[b].data) {
+                        fread(chunk->layers[l].blocks[b].data, sizeof(SignLines), 1, fptr);
+                    } else {
+                        TraceLog(LOG_ERROR, "Could not allocate memory for sign data in chunk at (%d, %d)", chunk->position.x, chunk->position.y);
+                    }
+                }
+                fseek(fptr, currentPos, SEEK_SET);
+            } else {
+                chunk->layers[l].blocks[b].data = NULL;
+			}
         }
     }
 

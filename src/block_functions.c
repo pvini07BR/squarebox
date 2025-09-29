@@ -166,13 +166,15 @@ bool sign_solver(BlockExtraResult result, BlockExtraResult other, BlockExtraResu
     }
 
     if (valid && result.block->data == NULL) {
-        result.block->data = calloc(SIGN_LINE_COUNT, sizeof(char*));
+        result.block->data = malloc(sizeof(SignLines));
         if (result.block->data) {
-            char** strings = result.block->data;
+            SignLines* lines = result.block->data;
             for (int i = 0; i < SIGN_LINE_COUNT; i++) {
-                strings[i] = calloc(SIGN_LINE_LENGTH, sizeof(char));
+                for (int j = 0; j < SIGN_LINE_LENGTH; j++) {
+                    lines->lines[i][j] = '\0';
+                }
             }
-            sign_editor_open(strings);
+            sign_editor_open(lines);
         }
         else {
             valid = false;
@@ -184,10 +186,6 @@ bool sign_solver(BlockExtraResult result, BlockExtraResult other, BlockExtraResu
 
 void on_sign_destroy(BlockExtraResult result) {
     if (result.block->data != NULL) {
-        char** strings = result.block->data;
-        for (int i = 0; i < SIGN_LINE_COUNT; i++) {
-            free(strings[i]);
-        }
         free(result.block->data);
         result.block->data = NULL;
     }
@@ -393,7 +391,7 @@ bool water_flowing_tick(BlockExtraResult result, BlockExtraResult neighbors[4], 
 
 void sign_text_draw(void* data, Vector2 position, uint8_t state) {
     if (data != NULL) {
-        char** strings = data;
+        SignLines* lines = data;
         float fontSize = 4.0f;
         float disloc = state == 1 ? 5.0f : 0.0f;
         Vector2 textPos = (Vector2){
@@ -401,13 +399,12 @@ void sign_text_draw(void* data, Vector2 position, uint8_t state) {
             position.y + TILE_SIZE / 8.0f + disloc
         };
 
-        for (int i = 0; i < 3; i++) {
-            char* str = strings[i];
-            Vector2 textMeasure = MeasureTextEx(GetFontDefault(), str, fontSize, fontSize / 8.0f);
+        for (int i = 0; i < SIGN_LINE_COUNT; i++) {;
+            Vector2 textMeasure = MeasureTextEx(GetFontDefault(), lines->lines[i], fontSize, fontSize / 8.0f);
 
             DrawTextPro(
                 GetFontDefault(),
-                str,
+                lines->lines[i],
                 textPos,
                 (Vector2) { textMeasure.x / 2.0f, 0.0f },
                 0.0f,

@@ -9,16 +9,16 @@
 #include <thirdparty/raygui.h>
 
 static bool open = false;
-static char** lines = NULL;
+static SignLines* lines = NULL;
 
 static unsigned int cur_line = 0;
 static unsigned int line_cursor = 0;
 
-void sign_editor_open(char** new_lines) {
+void sign_editor_open(SignLines* new_lines) {
 	if (!new_lines) return;
 	lines = new_lines;
 	open = true;
-	line_cursor = (int)strlen(lines[cur_line]);
+	line_cursor = (int)strlen(lines->lines[cur_line]);
 }
 
 void sign_editor_close() {
@@ -39,23 +39,23 @@ void sign_editor_draw() {
 
 	if (IsKeyPressed(KEY_UP) && cur_line > 0) {
 		cur_line--;
-		line_cursor = (int)strlen(lines[cur_line]);
+		line_cursor = (int)strlen(lines->lines[cur_line]);
 	}
 	if (IsKeyPressed(KEY_DOWN) && cur_line < (SIGN_LINE_COUNT - 1)) {
 		cur_line++;
-		line_cursor = (int)strlen(lines[cur_line]);
+		line_cursor = (int)strlen(lines->lines[cur_line]);
 	}
 
-	int key = GetCharPressed();
-	if (key >= 32 && key <= 126) {
-		if (line_cursor < SIGN_LINE_LENGTH - 1) {
-			lines[cur_line][line_cursor++] = (char)key;
-			lines[cur_line][line_cursor] = '\0';
+	int key;
+	while ((key = GetCharPressed()) > 0) {
+		if (key >= 32 && key <= 126 && line_cursor < SIGN_LINE_LENGTH - 1) {
+			lines->lines[cur_line][line_cursor++] = (char)key;
+			lines->lines[cur_line][line_cursor] = '\0';
 		}
 	}
 
 	if ((IsKeyPressed(KEY_BACKSPACE) || IsKeyPressedRepeat(KEY_BACKSPACE)) && line_cursor > 0) {
-		lines[cur_line][--line_cursor] = '\0';
+		lines->lines[cur_line][--line_cursor] = '\0';
 	}
 
 	DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), (Color) { 0, 0, 0, 128 });
@@ -77,11 +77,11 @@ void sign_editor_draw() {
 	);
 
 	for (int i = 0; i < SIGN_LINE_COUNT; i++) {
-		char* str = lines[i];
-		Vector2 textMeasure = MeasureTextEx(GetFontDefault(), str, fontSize, letterSpacing);
+		Vector2 textMeasure = MeasureTextEx(GetFontDefault(), &lines->lines[i], fontSize, letterSpacing);
+
 		DrawTextPro(
             GetFontDefault(),
-            str,
+			&lines->lines[i],
             (Vector2) { posX, originY },
             (Vector2) { textMeasure.x / 2.0f, 0.0f },
             0.0f,
@@ -94,7 +94,7 @@ void sign_editor_draw() {
 			char tmp[SIGN_LINE_LENGTH];
 			int caretLen = line_cursor;
 			if (caretLen > 0) {
-				memcpy(tmp, str, caretLen);
+				memcpy(tmp, lines->lines[i], caretLen);
 			}
 			tmp[caretLen] = '\0';
 			Vector2 caretMeasure = MeasureTextEx(GetFontDefault(), tmp, (float)fontSize, letterSpacing);

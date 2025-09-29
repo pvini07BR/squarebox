@@ -426,6 +426,7 @@ void game_draw(bool draw_overlay) {
         sprintf(debug_text,
             "FPS: %d\n"
             "Loaded chunk area: %ux%u\n"
+            "Camera chunk position: (%d, %d)\n"
             "Camera Zoom: %f\n"
             "Player position: (%f, %f)\n"
             "Holding item: %s\n",
@@ -433,6 +434,7 @@ void game_draw(bool draw_overlay) {
             GetFPS(),
             chunk_manager_get_view_width(),
             chunk_manager_get_view_height(),
+			currentChunkPos.x, currentChunkPos.y,
             camera.zoom,
             player->entity.rect.x, player->entity.rect.y,
             ir_get_item_registry(inventory_get_item(0, hotbarIdx).item_id)->name

@@ -115,9 +115,16 @@ bool world_manager_load_chunk(Chunk* chunk) {
                     } else {
                         TraceLog(LOG_ERROR, "Could not allocate memory for sign data in chunk at (%d, %d)", chunk->position.x, chunk->position.y);
                     }
+                    break;
 				case BLOCK_CHEST:
 					chunk->layers[l].blocks[b].data = malloc(sizeof(ItemContainer));
-					item_container_deserialize(chunk->layers[l].blocks[b].data, fptr);
+                    if (chunk->layers[l].blocks[b].data) {
+                        item_container_deserialize(chunk->layers[l].blocks[b].data, fptr);
+                    }
+                    else {
+                        TraceLog(LOG_ERROR, "Could not allocate memory for chest data in chunk at (%d, %d)", chunk->position.x, chunk->position.y);
+                    }
+                    break;
                 }
                 fseek(fptr, currentPos, SEEK_SET);
             } else {

@@ -103,6 +103,7 @@ int main() {
 
         ClearBackground(BLACK);
 
+		game_set_draw_ui(!paused);
         game_draw();
 
         if (game_is_demo_mode() || (!game_is_demo_mode() && paused)) {
@@ -175,7 +176,10 @@ int main() {
                             }
                             else {
                                 Player* player = game_get_player();
-                                if (player) get_world_info()->player_position = player_get_position(player);
+                                if (player) {
+                                    get_world_info()->player_position = player_get_position(player);
+                                    get_world_info()->player_flying = player->entity.gravity_affected;
+                                }
                                 game_set_demo_mode(true);
                                 world_manager_save_world_info_and_unload();
                                 chunk_manager_relocate((Vector2i) { 0, 0 });

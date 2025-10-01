@@ -10,7 +10,6 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
-#include <stdarg.h>
 
 WorldInfo worldInfo;
 char* currentWorldDir = NULL;

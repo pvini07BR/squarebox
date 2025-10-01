@@ -15,6 +15,8 @@ bool game_is_ui_open();
 void game_set_demo_mode(bool demo);
 bool game_is_demo_mode();
 
+void game_set_draw_ui(bool draw);
+
 Player* game_get_player();
 Vector2 game_get_camera_pos();
 

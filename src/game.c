@@ -310,7 +310,7 @@ void game_update(float deltaTime) {
     }
 }
 
-void game_draw() {
+void game_draw(bool draw_overlay) {
     camera.offset = (Vector2){
         .x = GetScreenWidth() / 2.0f, 
         .y = GetScreenHeight() / 2.0f
@@ -511,6 +511,7 @@ void game_set_demo_mode(bool demo) {
         if (player == NULL) {
             player = player_create(playerPosition);
             if (player) {
+				player->entity.gravity_affected = get_world_info()->player_flying;
                 entity_list_add(&player->entity);
                 camera.target = Vector2Add(player_get_position(player), Vector2Scale(player_get_size(player), 0.5f));
             }
@@ -533,6 +534,10 @@ void game_set_demo_mode(bool demo) {
 
 bool game_is_demo_mode() {
     return demo_mode;
+}
+
+void game_set_draw_ui(bool draw) {
+	draw_ui = draw;
 }
 
 Player* game_get_player() {

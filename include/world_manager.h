@@ -10,6 +10,7 @@ typedef struct {
     char name[WORLD_NAME_LENGTH];
     int seed;
     Vector2 player_position;
+    bool player_flying;
 } WorldInfo;
 
 void world_manager_init();

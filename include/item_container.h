@@ -49,6 +49,7 @@ void init_inventory();
 ItemContainer* get_inventory();
 void inventory_set_item(uint8_t row, uint8_t column, ItemSlot item);
 ItemSlot inventory_get_item(uint8_t row, uint8_t column);
+void inventory_clear();
 void free_inventory();
 
 #endif

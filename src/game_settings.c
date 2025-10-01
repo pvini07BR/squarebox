@@ -10,6 +10,7 @@
 
 #include "types.h"
 #include "chunk_manager.h"
+#include "game.h"
 
 static GameSettings settings = {
 	.chunk_view_width = 5,
@@ -169,7 +170,7 @@ bool game_settings_draw() {
 void game_settings_apply() {
 	if (settings.chunk_view_height != tempSettings.chunk_view_height || settings.chunk_view_width != tempSettings.chunk_view_width) {
 		temp_to_game_settings();
-		chunk_manager_set_view(tempSettings.chunk_view_width, tempSettings.chunk_view_height);
+		if (!game_is_demo_mode()) chunk_manager_set_view(tempSettings.chunk_view_width, tempSettings.chunk_view_height);
 	}
 	else if (settings.wall_ao != tempSettings.wall_ao || settings.smooth_lighting != tempSettings.smooth_lighting || settings.wall_ao_brightness != tempSettings.wall_ao_brightness || settings.wall_brightness != tempSettings.wall_brightness) {
 		temp_to_game_settings();

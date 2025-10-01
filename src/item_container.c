@@ -121,6 +121,12 @@ ItemSlot inventory_get_item(uint8_t row, uint8_t column)
 	return inventory.items[i];
 }
 
+void inventory_clear() {
+	for (int i = 0; i < (inventory.rows * inventory.columns); i++) {
+		inventory.items[i] = (ItemSlot){ 0, 0 };
+	}
+}
+
 void free_inventory()
 {
 	item_container_free(&inventory);

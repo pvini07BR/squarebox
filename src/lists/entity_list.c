@@ -57,7 +57,13 @@ void entity_list_draw(bool draw_bounds) {
 	}
 }
 
-void entity_list_free() {
+void entity_list_remove_all() {
+	for (int i = 0; i < entity_count; i++) {
+		entities[i]->to_remove = true;
+	}
+}
+
+void entity_list_clear() {
 	for (int i = 0; i < entity_count; i++) {
 		Entity* e = entities[i];
 		if (e && e->destroy) {

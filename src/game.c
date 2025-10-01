@@ -92,7 +92,7 @@ void game_init() {
         (int)floorf(camera.target.y / (CHUNK_WIDTH * TILE_SIZE))
     };
 
-    chunk_manager_init((Vector2i) { currentChunkPos.x, currentChunkPos.y }, get_game_settings()->chunk_view_width, get_game_settings()->chunk_view_height);
+    chunk_manager_init((Vector2i) { currentChunkPos.x, currentChunkPos.y }, 5, 3);
 }
 
 void game_tick() {
@@ -123,7 +123,7 @@ void game_update(float deltaTime) {
     blockPlacerRect.x = mouseBlockPos.x * TILE_SIZE;
     blockPlacerRect.y = mouseBlockPos.y * TILE_SIZE;
 
-    if (!item_container_is_open() && !sign_editor_is_open()) {
+    if (!game_is_ui_open()) {
         if (IsKeyPressed(KEY_TAB)) sel_layer = sel_layer == CHUNK_LAYER_FOREGROUND ? CHUNK_LAYER_BACKGROUND : CHUNK_LAYER_FOREGROUND;
 
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
@@ -242,7 +242,7 @@ void game_update(float deltaTime) {
         if (IsKeyPressed(KEY_ZERO)) hotbarIdx = 9;
     }
 
-    if (player) player->disable_input = item_container_is_open() || sign_editor_is_open();
+    if (player) player->disable_input = game_is_ui_open();
     entity_list_update(GetFrameTime());
         
     if (player) {
@@ -250,7 +250,7 @@ void game_update(float deltaTime) {
         camera.target = Vector2Lerp(camera.target, newTarget, 25.0f * GetFrameTime());
     }
 
-    if (IsKeyPressed(KEY_E) && !item_container_is_open() && !sign_editor_is_open())
+    if (IsKeyPressed(KEY_E) && !game_is_ui_open())
         item_container_open(&creativeMenu);
     else if ((IsKeyPressed(KEY_E) || IsKeyPressed(KEY_ESCAPE) && item_container_is_open()))
         item_container_close();
@@ -374,7 +374,7 @@ void game_draw() {
         return;
     }
     
-    if (!item_container_is_open() && !sign_editor_is_open() && draw_ui) {
+    if (!game_is_ui_open() && draw_ui) {
         // Draw block model if it is rotatable
         if (loadedGhostMesh == true) {
             DrawMesh(
@@ -391,7 +391,7 @@ void game_draw() {
 
     EndMode2D();
 
-    if (!item_container_is_open() && !sign_editor_is_open() && draw_ui) {
+    if (!game_is_ui_open() && draw_ui) {
         if (inventory_get_item(0, hotbarIdx).item_id > 0) {
             draw_item(inventory_get_item(0, hotbarIdx), GetMouseX(), GetMouseY(), 0, 0.8f, false);
         }
@@ -477,7 +477,7 @@ void game_draw() {
 }
 
 void game_free() {
-    entity_list_free();
+    entity_list_clear();
     free_inventory();
     item_container_free(&creativeMenu);
     item_registry_free();
@@ -485,6 +485,10 @@ void game_free() {
     block_registry_free();
     block_models_free();
     texture_atlas_free();
+}
+
+bool game_is_ui_open() {
+	return item_container_is_open() || sign_editor_is_open();
 }
 
 void game_set_demo_mode(bool demo) {
@@ -498,6 +502,10 @@ void game_set_demo_mode(bool demo) {
             (int)floorf(playerPosition.y / (CHUNK_WIDTH * TILE_SIZE))
 		};
 
+        chunk_manager_set_view(
+            get_game_settings()->chunk_view_width,
+            get_game_settings()->chunk_view_height
+		);
         chunk_manager_relocate(playerChunkPos);
 
         if (player == NULL) {
@@ -508,6 +516,17 @@ void game_set_demo_mode(bool demo) {
             }
 		}
     }
+    else if (!demo_mode && demo) {
+        // Switching from normal to demo mode
+        player = NULL;
+        entity_list_clear();
+        chunk_manager_set_view(5, 3);
+        chunk_manager_clear(true);
+        camera.target = (Vector2){ 0, 0 };
+        camera.zoom = 1.0f;
+        debug_info = false;
+		inventory_clear();
+	}
 
     demo_mode = demo;
 }

@@ -332,7 +332,7 @@ void chunk_manager_clear(bool saveChunks) {
     if (!initialized) return;
     for (int c = 0; c < chunk_count; c++) {
         if (chunks[c].initialized) {
-			if (saveChunks) world_manager_save_chunk(&chunks[c]);
+            if (saveChunks) world_manager_save_chunk(&chunks[c]);
             chunk_free(&chunks[c]);
         }
 	}

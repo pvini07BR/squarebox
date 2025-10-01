@@ -10,6 +10,8 @@ void game_update(float deltaTime);
 void game_draw();
 void game_free();
 
+bool game_is_ui_open();
+
 void game_set_demo_mode(bool demo);
 bool game_is_demo_mode();
 

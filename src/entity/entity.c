@@ -166,7 +166,7 @@ static void resolve_solid_blocks(Entity* entity, float deltaTime) {
 			BlockVariant variant = br_get_block_variant(block.id, variantIdx);
 			block_colliders_get_rects(variant.collider_idx, variant.rotation, &collider_count, collider_rects);
 
-			for (int i = 0; i < collider_count; i++) {
+			for (size_t i = 0; i < collider_count; i++) {
 				Rectangle rect = collider_rects[i];
 				rect.x += x * TILE_SIZE;
 				rect.y += y * TILE_SIZE;
@@ -184,7 +184,7 @@ static void resolve_solid_blocks(Entity* entity, float deltaTime) {
 
 	qsort(rects, rect_count, sizeof(RectPair), compare_rects);
 
-	for (int i = 0; i < rect_count; i++) {
+	for (size_t i = 0; i < rect_count; i++) {
 		Rectangle* rect = &rects[i].rect;
 		Vector2 contact_normal;
 		if (resolve_entity_vs_rect(entity, rect, deltaTime, &contact_normal)) {
@@ -246,7 +246,7 @@ void resolve_area_blocks(Entity* entity) {
 				block_colliders_get_rects(variant.collider_idx, variant.rotation, &collider_count, collider_rects);
 			}
 
-			for (int i = 0; i < collider_count; i++) {
+			for (size_t i = 0; i < collider_count; i++) {
 				Rectangle rect = collider_rects[i];
 				if (!(reg->flags & BLOCK_FLAG_LIQUID)) {
 					rect.x += x * TILE_SIZE;

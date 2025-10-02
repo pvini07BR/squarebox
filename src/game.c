@@ -36,14 +36,12 @@ Vector2i currentChunkPos;
 Rectangle blockPlacerRect;
 
 ChunkLayerEnum sel_layer = CHUNK_LAYER_FOREGROUND;
-uint8_t blockStateIdx = 0;
+int8_t blockStateIdx = 0;
 
 bool loadedGhostMesh = false;
 Mesh ghostBlockMesh = { 0 };
 
 ItemContainer creativeMenu;
-int8_t last_hotbarIdx = -1;
-size_t last_blockState = SIZE_MAX;
 uint8_t lastItemId = UCHAR_MAX;
 int8_t hotbarIdx = 0;
 
@@ -127,7 +125,7 @@ void game_update(float deltaTime) {
         if (IsKeyPressed(KEY_TAB)) sel_layer = sel_layer == CHUNK_LAYER_FOREGROUND ? CHUNK_LAYER_BACKGROUND : CHUNK_LAYER_FOREGROUND;
 
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-            chunk_manager_set_block_safe(mouseBlockPos, (BlockInstance) { 0, 0 }, sel_layer);
+            chunk_manager_set_block_safe(mouseBlockPos, (BlockInstance) { 0, 0, NULL }, sel_layer);
         else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {
             if (!chunk_manager_interact(mouseBlockPos, sel_layer)) {
                 ItemRegistry* itr = ir_get_item_registry(inventory_get_item(0, hotbarIdx).item_id);
@@ -250,7 +248,7 @@ void game_update(float deltaTime) {
 
     if (IsKeyPressed(KEY_E) && !game_is_ui_open())
         item_container_open(&creativeMenu);
-    else if ((IsKeyPressed(KEY_E) || IsKeyPressed(KEY_ESCAPE) && item_container_is_open()))
+    else if ((IsKeyPressed(KEY_E) || (IsKeyPressed(KEY_ESCAPE) && item_container_is_open())))
         item_container_close();
     
     if (IsKeyPressed(KEY_ESCAPE) && sign_editor_is_open()) {
@@ -308,7 +306,7 @@ void game_update(float deltaTime) {
     }
 }
 
-void game_draw(bool draw_overlay) {
+void game_draw() {
     camera.offset = (Vector2){
         .x = GetScreenWidth() / 2.0f, 
         .y = GetScreenHeight() / 2.0f
@@ -509,7 +507,7 @@ void game_set_demo_mode(bool demo) {
         if (player == NULL) {
             player = player_create(playerPosition);
             if (player) {
-				player->entity.gravity_affected = get_world_info()->player_flying;
+				player->entity.gravity_affected = !get_world_info()->player_flying;
                 entity_list_add(&player->entity);
                 camera.target = Vector2Add(player_get_position(player), Vector2Scale(player_get_size(player), 0.5f));
             }
@@ -523,6 +521,8 @@ void game_set_demo_mode(bool demo) {
         chunk_manager_clear(true);
         camera.target = (Vector2){ 0, 0 };
         camera.zoom = 1.0f;
+        sel_layer = CHUNK_LAYER_FOREGROUND;
+        hotbarIdx = 0;
         debug_info = false;
 		inventory_clear();
 	}

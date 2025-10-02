@@ -22,7 +22,7 @@ bool entity_list_remove_at(size_t idx) {
 }
 
 void entity_list_update(float deltaTime) {
-	for (int i = 0; i < entity_count; i++) {
+	for (size_t i = 0; i < entity_count; i++) {
 		Entity* e = entities[i];
 		
 		if (e->update) e->update(e, deltaTime);
@@ -49,7 +49,7 @@ void entity_list_update(float deltaTime) {
 }
 
 void entity_list_draw(bool draw_bounds) {
-	for (int i = 0; i < entity_count; i++) {
+	for (size_t i = 0; i < entity_count; i++) {
 		Entity* e = entities[i];
 
 		if (e->draw) e->draw(e);
@@ -58,13 +58,13 @@ void entity_list_draw(bool draw_bounds) {
 }
 
 void entity_list_remove_all() {
-	for (int i = 0; i < entity_count; i++) {
+	for (size_t i = 0; i < entity_count; i++) {
 		entities[i]->to_remove = true;
 	}
 }
 
 void entity_list_clear() {
-	for (int i = 0; i < entity_count; i++) {
+	for (size_t i = 0; i < entity_count; i++) {
 		Entity* e = entities[i];
 		if (e && e->destroy) {
 			e->destroy(e);

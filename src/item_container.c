@@ -108,7 +108,7 @@ ItemContainer* get_inventory()
 
 void inventory_set_item(uint8_t row, uint8_t column, ItemSlot item)
 {
-	if (row < 0 || row >= inventory.rows || column < 0 || column >= inventory.columns) return;
+	if (row >= inventory.rows || column >= inventory.columns) return;
 	if (item.amount <= 0) item.amount = 1;
 	int i = column + (row * inventory.columns);
 	inventory.items[i] = item;
@@ -116,7 +116,7 @@ void inventory_set_item(uint8_t row, uint8_t column, ItemSlot item)
 
 ItemSlot inventory_get_item(uint8_t row, uint8_t column)
 {
-	if (row < 0 || row >= inventory.rows || column < 0 || column >= inventory.columns) return (ItemSlot){ 0, 0 };
+	if (row >= inventory.rows || column >= inventory.columns) return (ItemSlot){ 0, 0 };
 	int i = column + (row * inventory.columns);
 	return inventory.items[i];
 }
@@ -147,7 +147,7 @@ void item_container_create(ItemContainer* ic, char* name, uint8_t rows, uint8_t 
 ItemSlot item_container_get_item(ItemContainer* ic, uint8_t row, uint8_t column)
 {
 	if (!ic) return (ItemSlot) { 0, 0 };
-	if (row < 0 || row >= ic->rows || column < 0 || column >= ic->columns) return (ItemSlot) { 0, 0 };
+	if (row >= ic->rows || column >= ic->columns) return (ItemSlot) { 0, 0 };
 	int i = column + (row * ic->columns);
 	return ic->items[i];
 }
@@ -155,7 +155,7 @@ ItemSlot item_container_get_item(ItemContainer* ic, uint8_t row, uint8_t column)
 void item_container_set_item(ItemContainer* ic, uint8_t row, uint8_t column, ItemSlot item)
 {
 	if (!ic) return;
-	if (row < 0 || row >= ic->rows || column < 0 || column >= ic->columns) return;
+	if (row >= ic->rows || column >= ic->columns) return;
 	if (item.amount <= 0) item.amount = 1;
 	int i = column + (row * ic->columns);
 	ic->items[i] = item;
@@ -197,7 +197,7 @@ void item_container_close() {
 
 bool item_container_is_open() { return openedContainer != NULL; }
 
-void handleNormalClick(ItemSlot* curItem, int i, ItemContainer* ic) {
+void handleNormalClick(ItemSlot* curItem, ItemContainer* ic) {
 	if (holdingItem.item_id != curItem->item_id) {
 		// Different items - swap or copy
 		if (!ic->immutable) {
@@ -307,11 +307,10 @@ void item_container_draw_specific(ItemContainer* ic, int x, int y) {
 		DrawRectangleRec(slotRect, SLOT_HOVER_COLOR);
 
 		ItemSlot* curItem = &ic->items[i];
-		ItemRegistry* curItemReg = ir_get_item_registry(curItem->item_id);
 
 		if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
 			if (!IsKeyDown(KEY_LEFT_SHIFT)) {
-				handleNormalClick(curItem, i, ic);
+				handleNormalClick(curItem, ic);
 			}
 			else {
 				if (!ic->immutable) {
@@ -383,7 +382,7 @@ void item_container_draw_specific(ItemContainer* ic, int x, int y) {
 			}
 			else {
 				// Shift + right click = same as normal left click
-				handleNormalClick(curItem, i, ic);
+				handleNormalClick(curItem, ic);
 			}
 		}
 	}

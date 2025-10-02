@@ -8,7 +8,6 @@
 #include <raylib.h>
 #include <raymath.h>
 #include <rlgl.h>
-#include <time.h>
 
 #define TICK_DELTA (1.0f / 20.0f)
 
@@ -37,7 +36,7 @@ MenuState menuState = MENU_STATE_MAIN;
 bool paused = false;
 
 float bounce_wave(float x, float min, float max) {
-    float f = fabsf(sin(x));
+    float f = fabs(sin(x));
     return min + (max - min) * f;
 }
 
@@ -50,16 +49,11 @@ int main() {
 
     int fontSize = 24;
     struct nk_context* ctx = InitNuklear(fontSize);
-    ctx->style.window.fixed_background = nk_style_item_hide();
+    //ctx->style.window.fixed_background = nk_style_item_hide();
 
     load_game_settings();
 
     world_manager_init();
-    world_manager_create_world((WorldInfo) {
-        .name = "Test World",
-        .seed = 12345,
-        .player_position = { 0, 0 }
-	});
 
     game_init();
 
@@ -157,12 +151,10 @@ int main() {
                 nk_layout_row_dynamic(ctx, 40.0f, 1);
                 if (nk_button_label(ctx, menuState == MENU_STATE_MAIN ? "Play" : "Resume")) {
                     if (menuState == MENU_STATE_MAIN) {
-                        if (world_manager_load_world_info("test_world")) {
-                            game_set_demo_mode(false);
-                            menuState = MENU_STATE_PAUSED;
-                        }
+                        menuState = MENU_STATE_WORLDS;
                     }
                     else if (menuState == MENU_STATE_PAUSED) {
+                        game_set_draw_ui(true);
                         paused = false;
                     }
                 }
@@ -179,7 +171,7 @@ int main() {
                         Player* player = game_get_player();
                         if (player) {
                             get_world_info()->player_position = player_get_position(player);
-                            get_world_info()->player_flying = player->entity.gravity_affected;
+                            get_world_info()->player_flying = !player->entity.gravity_affected;
                         }
                         game_set_demo_mode(true);
                         world_manager_save_world_info_and_unload();
@@ -201,6 +193,16 @@ int main() {
                 }
             }
         }
+        else if (menuState == MENU_STATE_WORLDS && game_is_demo_mode()) {
+            WorldListReturnType ret = world_manager_draw_list(ctx);
+            if (ret == WORLD_RETURN_CLOSE) {
+                menuState = MENU_STATE_MAIN;
+            } else if (ret == WORLD_RETURN_OPEN_WORLD) {
+                game_set_demo_mode(false);
+                game_set_draw_ui(true);
+                menuState = MENU_STATE_PAUSED;
+            }
+        }
 
         DrawNuklear(ctx);
 
@@ -211,11 +213,13 @@ int main() {
 	    Player* player = game_get_player();
         if (player) {
 		    get_world_info()->player_position = player_get_position(player);
+            get_world_info()->player_flying = !player->entity.gravity_affected;
         }
         world_manager_save_world_info();
     }
 
     game_free();
+    world_manager_free();
 
     UnloadNuklear(ctx);
 

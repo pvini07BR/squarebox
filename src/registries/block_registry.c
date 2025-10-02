@@ -475,7 +475,7 @@ BlockRegistry* br_get_block_registry(size_t idx) {
 
 BlockVariant br_get_block_variant(size_t reg_idx, size_t variant_idx) {
     BlockRegistry* br = br_get_block_registry(reg_idx);
-    if (br == NULL) return (BlockVariant){ 0, 0, 0, 0, 0 };
+    if (br == NULL) return (BlockVariant){ 0, 0, 0, 0, 0, 0 };
     if (variant_idx >= br->variant_count) return br->variants[0];
     return br->variants[variant_idx];
 }

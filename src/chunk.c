@@ -68,8 +68,8 @@ void chunk_regenerate(Chunk* chunk) {
     if (!chunk) return;
 
     for (int i = 0; i < CHUNK_AREA; i++) {
-        chunk->layers[CHUNK_LAYER_BACKGROUND].blocks[i] = (BlockInstance){ 0, 0 };
-        chunk->layers[CHUNK_LAYER_FOREGROUND].blocks[i] = (BlockInstance){ 0, 0 };
+        chunk->layers[CHUNK_LAYER_BACKGROUND].blocks[i] = (BlockInstance){ 0, 0, NULL };
+        chunk->layers[CHUNK_LAYER_FOREGROUND].blocks[i] = (BlockInstance){ 0, 0, NULL };
     }
 
     fnl_state terrainNoise = fnlCreateState();
@@ -96,7 +96,7 @@ void chunk_regenerate(Chunk* chunk) {
                 int i = x + y * CHUNK_WIDTH;
                 int gy = chunk->position.y * CHUNK_WIDTH + y;
 
-                BlockInstance newInst = { 0,0 };
+                BlockInstance newInst = { 0, 0, NULL };
 
                 if (gy == (surfaceY - 1)) {
                     if (chance_at(FNL_NOISE_VALUE, 32.0f, gx, gy, 0.0f, w)) {
@@ -313,7 +313,7 @@ void chunk_tick(Chunk* chunk, uint8_t tick_value) {
     bool changed = false;
     size_t count = chunk->blockTickList.count;
 
-    for (int i = 0; i < count; i++) {
+    for (size_t i = 0; i < count; i++) {
         BlockTickListEntry entry = chunk->blockTickList.entries[i];
 
         BlockInstance* ptr = chunk_get_block_ptr(chunk, entry.position, entry.layer);
@@ -367,8 +367,8 @@ void chunk_free(Chunk* chunk)
 void chunk_fill_light(Chunk* chunk, Vector2u startPoint, uint8_t newLightValue) {
     if (!chunk) return;
     if (newLightValue < 1 || newLightValue > 15) return;
-    if (startPoint.x < 0 || startPoint.x >= CHUNK_WIDTH) return;
-    if (startPoint.y < 0 || startPoint.y >= CHUNK_WIDTH) return;
+    if (startPoint.x >= CHUNK_WIDTH) return;
+    if (startPoint.y >= CHUNK_WIDTH) return;
 
     uint8_t current = chunk_get_light(chunk, startPoint);
     if (current >= newLightValue) return;
@@ -379,7 +379,6 @@ void chunk_fill_light(Chunk* chunk, Vector2u startPoint, uint8_t newLightValue) 
 
     BlockInstance binst = chunk_get_block(chunk, startPoint, CHUNK_LAYER_FOREGROUND);
     BlockRegistry* br = br_get_block_registry(binst.id);
-    BlockVariant bvar = br_get_block_variant(binst.id, binst.state);
 
     if (br->lightLevel == BLOCK_LIGHT_TRANSPARENT || !(br->flags & BLOCK_FLAG_FULL_BLOCK)) {
         decayAmount = 1;
@@ -422,7 +421,7 @@ DownProjectionResult chunk_get_block_projected_downwards(Chunk* chunk, Vector2u 
     DownProjectionResult empty = { { NULL, NULL, NULL, { UINT8_MAX, UINT8_MAX }, UINT8_MAX }, { NULL, NULL, NULL, { UINT8_MAX, UINT8_MAX }, UINT8_MAX } };
     if (!chunk) return empty;
 
-    for (int y = startPoint.y; y < CHUNK_WIDTH; y++) {
+    for (unsigned int y = startPoint.y; y < CHUNK_WIDTH; y++) {
         if (y == startPoint.y) {
             BlockRegistry* br = br_get_block_registry(chunk_get_block(chunk, startPoint, layer).id);
             if (!(br->flags & BLOCK_FLAG_REPLACEABLE)) return empty;
@@ -457,7 +456,7 @@ DownProjectionResult chunk_get_block_projected_downwards(Chunk* chunk, Vector2u 
 
 BlockInstance* chunk_get_block_ptr(Chunk* chunk, Vector2u position, ChunkLayerEnum layer) {
     if (!chunk) return NULL;
-    if (position.x < 0 || position.x >= CHUNK_WIDTH || position.y < 0 || position.y >= CHUNK_WIDTH) return NULL;
+    if (position.x >= CHUNK_WIDTH ||position.y >= CHUNK_WIDTH) return NULL;
     return &chunk->layers[layer].blocks[position.x + (position.y * CHUNK_WIDTH)];
 }
 
@@ -506,7 +505,7 @@ BlockExtraResult chunk_get_block_extrapolating_ptr(Chunk* chunk, Vector2i positi
 
 uint8_t* chunk_get_light_ptr(Chunk* chunk, Vector2u position) {
     if (!chunk) return NULL;
-    if (position.x < 0 || position.x >= CHUNK_WIDTH || position.y < 0 || position.y >= CHUNK_WIDTH) return NULL;
+    if (position.x >= CHUNK_WIDTH || position.y >= CHUNK_WIDTH) return NULL;
     return &chunk->light[position.x + (position.y * CHUNK_WIDTH)];
 }
 
@@ -629,14 +628,14 @@ void chunk_set_block(Chunk* chunk, Vector2u position, BlockInstance blockValue, 
 
         if (nbr_br->state_resolver) {
             bool r = nbr_br->state_resolver(neighbors[i], otherNeighbors[i], neighbors2, layer);
-            if (!r) *neighbors[i].block = (BlockInstance){ 0, 0 };
+            if (!r) *neighbors[i].block = (BlockInstance){ 0, 0, NULL };
         }
     }
 
     // Resolve state for the other block (wall or block)
     if (other_br->state_resolver) {
         bool r = other_br->state_resolver(other, self, otherNeighbors, otherLayer);
-        if (!r) *other.block = (BlockInstance){ 0, 0 };
+        if (!r) *other.block = (BlockInstance){ 0, 0, NULL };
     }
 
     if (update_lighting) chunk_manager_update_lighting();
@@ -644,7 +643,7 @@ void chunk_set_block(Chunk* chunk, Vector2u position, BlockInstance blockValue, 
     // Add tick for new block if applicable
     if (new_br->tick_callback != NULL) {
         if (!block_tick_list_contains(&chunk->blockTickList, (BlockTickListEntry){ position, layer })) {
-            bool ret = block_tick_list_add(&chunk->blockTickList, (BlockTickListEntry){ position, layer });
+            block_tick_list_add(&chunk->blockTickList, (BlockTickListEntry){ position, layer });
         }
     }
 }
@@ -658,13 +657,13 @@ BlockExtraResult chunk_set_block_extrapolating(Chunk* chunk, Vector2i position, 
 
 BlockInstance chunk_get_block(Chunk* chunk, Vector2u position, ChunkLayerEnum layer) {
     BlockInstance* ptr = chunk_get_block_ptr(chunk, position, layer);
-    if (!ptr) return (BlockInstance){ 0, 0 };
+    if (!ptr) return (BlockInstance){ 0, 0, NULL };
     return *ptr;
 }
 
 BlockInstance chunk_get_block_extrapolating(Chunk* chunk, Vector2i position, ChunkLayerEnum layer) {
     BlockExtraResult result = chunk_get_block_extrapolating_ptr(chunk, (Vector2i) { position.x, position.y }, layer);
-    if (!result.block || !result.chunk) return (BlockInstance){ 0, 0 };
+    if (!result.block || !result.chunk) return (BlockInstance){ 0, 0, NULL };
     return chunk_get_block(result.chunk, result.position, layer);
 }
 

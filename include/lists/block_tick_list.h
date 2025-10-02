@@ -20,9 +20,9 @@ typedef struct {
 void block_tick_list_clear(BlockTickList* list);
 bool block_tick_list_add(BlockTickList* list, BlockTickListEntry entry);
 bool block_tick_list_remove(BlockTickList* list, BlockTickListEntry entry);
-bool block_tick_list_remove_by_index(BlockTickList* list, int index);
+bool block_tick_list_remove_by_index(BlockTickList* list, size_t index);
 bool block_tick_list_contains(BlockTickList* list, BlockTickListEntry entry);
 int block_tick_list_count(const BlockTickList* list);
-bool block_tick_list_get(const BlockTickList* list, int index, BlockTickListEntry* out);
+bool block_tick_list_get(const BlockTickList* list, size_t index, BlockTickListEntry* out);
 
 #endif

@@ -73,7 +73,7 @@ void sign_editor_draw() {
 		WHITE
 	);
 
-	for (int i = 0; i < SIGN_LINE_COUNT; i++) {
+	for (unsigned int i = 0; i < SIGN_LINE_COUNT; i++) {
 		Vector2 textMeasure = MeasureTextEx(GetFontDefault(), lines->lines[i], fontSize, letterSpacing);
 
 		DrawTextPro(

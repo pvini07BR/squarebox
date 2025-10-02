@@ -23,6 +23,8 @@ void draw_label(Label* label, Vector2 pos, float rotation, float scale, Color co
     case LABEL_ALIGN_END:
         origin.x += label->bounds.x;
         break;
+    default:
+        break;
     }
 
     switch (vertical_alignment) {
@@ -31,6 +33,8 @@ void draw_label(Label* label, Vector2 pos, float rotation, float scale, Color co
         break;
     case LABEL_ALIGN_END:
         origin.y += label->bounds.y;
+        break;
+    default:
         break;
     }
 

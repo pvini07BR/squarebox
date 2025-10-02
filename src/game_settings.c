@@ -7,7 +7,6 @@
 #include <raylib.h>
 #include <raymath.h>
 
-#include "types.h"
 #include "chunk_manager.h"
 #include "game.h"
 
@@ -21,9 +20,6 @@ static GameSettings settings = {
 };
 
 static TempGameSettings tempSettings;
-
-static bool editing_chunk_view_width = false;
-static bool editing_chunk_view_height = false;
 
 void game_settings_to_temp() {
 	tempSettings.chunk_view_width = settings.chunk_view_width;
@@ -68,7 +64,7 @@ bool load_game_settings() {
 	FILE* file_ptr = fopen(GAME_SETTINGS_FILE_NAME, "rb");
 	if (!file_ptr) {
 		if (errno == ENOENT) {
-			TraceLog(LOG_WARNING, "The config file config.bin was not found. The default settings values will be used.");
+			TraceLog(LOG_WARNING, "The config file config.bin was not found. The default settings will be used instead.");
 		}
 		else {
 			TraceLog(LOG_ERROR, "Could not open config.bin: %s", strerror(errno));

@@ -30,7 +30,6 @@ void chunk_layer_genmesh(ChunkLayer* layer, ChunkLayerEnum layer_id, ChunkLayerE
     // Get total amount of vertices needed
     int vertexCount = 0;
     for (int i = 0; i < CHUNK_AREA; i++) {
-        BlockRegistry* rg = br_get_block_registry(layer->blocks[i].id);
         BlockVariant bvar = br_get_block_variant(layer->blocks[i].id, layer->blocks[i].state);
         layer->vertexOffsets[i] = vertexCount;
         vertexCount += block_models_get_vertex_count(bvar.model_idx);

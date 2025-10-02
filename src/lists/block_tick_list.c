@@ -15,7 +15,7 @@ void block_tick_list_clear(BlockTickList* list) {
 bool block_tick_list_add(BlockTickList* list, BlockTickListEntry entry) {
     if (!list) return false;
 
-    for (int i = 0; i < list->count; i++) {
+    for (size_t i = 0; i < list->count; i++) {
         if (is_equal(&list->entries[i], &entry)) {
             return true;
         }
@@ -32,7 +32,7 @@ bool block_tick_list_add(BlockTickList* list, BlockTickListEntry entry) {
 bool block_tick_list_remove(BlockTickList* list, BlockTickListEntry entry) {
     if (!list) return false;
 
-    for (int i = 0; i < list->count; i++) {
+    for (size_t i = 0; i < list->count; i++) {
         if (is_equal(&list->entries[i], &entry)) {
             list->entries[i] = list->entries[list->count - 1];
             list->count--;
@@ -42,9 +42,9 @@ bool block_tick_list_remove(BlockTickList* list, BlockTickListEntry entry) {
     return false;
 }
 
-bool block_tick_list_remove_by_index(BlockTickList* list, int index) {
+bool block_tick_list_remove_by_index(BlockTickList* list, size_t index) {
     if (!list) return false;
-    if (index < 0 || index >= list->count) return false;
+    if (index >= list->count) return false;
     list->entries[index] = list->entries[list->count - 1];
     list->count--;
     return true;
@@ -52,7 +52,7 @@ bool block_tick_list_remove_by_index(BlockTickList* list, int index) {
 
 bool block_tick_list_contains(BlockTickList* list, BlockTickListEntry entry) {
     if (!list) return false;
-    for (int i = 0; i < list->count; i++) {
+    for (unsigned int i = 0; i < list->count; i++) {
         if (is_equal(&list->entries[i], &entry)) {
             return true;
         }
@@ -64,9 +64,9 @@ int block_tick_list_count(const BlockTickList* list) {
     return list ? list->count : 0;
 }
 
-bool block_tick_list_get(const BlockTickList* list, int index, BlockTickListEntry* out) {
+bool block_tick_list_get(const BlockTickList* list, size_t index, BlockTickListEntry* out) {
     if (!list || !out) return false;
-    if (index < 0 || index >= list->count) return false;
+    if (index >= list->count) return false;
     *out = list->entries[index];
     return true;
 }

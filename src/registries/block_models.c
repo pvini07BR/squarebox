@@ -92,8 +92,6 @@ void block_models_init() {
 	models[BLOCK_MODEL_TORCH].vertices[4] = (Vertex2D){ p2.x * TILE_SIZE, p2.y * TILE_SIZE, p2.x, p2.y };
 	models[BLOCK_MODEL_TORCH].vertices[5] = (Vertex2D){ p3.x * TILE_SIZE, p3.y * TILE_SIZE, p3.x, p3.y };
 
-	Vector2 p = Vector2Rotate((Vector2){ models[BLOCK_MODEL_TORCH].vertices[0].x, models[BLOCK_MODEL_TORCH].vertices[0].y }, PI / 2.0f);
-
 	// Torch on the wall model
 	models[BLOCK_MODEL_TORCH_WALL] = (BlockModel){
 		.vertexCount = 6,
@@ -123,7 +121,7 @@ void block_models_init() {
 
 int block_models_get_vertex_count(size_t model_idx)
 {
-	if (model_idx < 0 || model_idx >= BLOCK_MODEL_COUNT) return 0;
+	if (model_idx >= BLOCK_MODEL_COUNT) return 0;
 	return models[model_idx].vertexCount;
 }
 
@@ -159,7 +157,7 @@ void bm_set_block_model(size_t* offsets, Mesh* mesh, Vector2u position, Color co
 	BlockModel* model = &models[modelIdx];
 	Rectangle uvRect = texture_atlas_get_uv(atlasIdx, flipUV_H, flipUV_V);
 
-	for (int v = 0; v < model->vertexCount; v++) {
+	for (size_t v = 0; v < model->vertexCount; v++) {
 		Vertex2D* vert = &model->vertices[v];
 
 		float vert_x = vert->x;

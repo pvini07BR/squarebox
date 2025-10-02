@@ -36,7 +36,7 @@ void chunk_manager_init(Vector2i center, uint8_t cvw, uint8_t cvh) {
         return;
     }
 
-    for (int c = 0; c < chunk_count; c++) chunks[c].initialized = false;
+    for (size_t c = 0; c < chunk_count; c++) chunks[c].initialized = false;
 
     initialized = true;
 
@@ -146,8 +146,6 @@ void chunk_manager_set_view(uint8_t new_view_width, uint8_t new_view_height) {
     if (!initialized) return;
     if (new_view_width == chunk_view_width && new_view_height == chunk_view_height) return;
 
-    int old_cw = chunk_view_width;
-    int old_ch = chunk_view_height;
     size_t old_count = chunk_count;
 
     int new_cw = new_view_width;
@@ -253,11 +251,11 @@ void chunk_manager_set_view(uint8_t new_view_width, uint8_t new_view_height) {
 void chunk_manager_update_lighting() {
     if (!initialized) return;
 
-    for (int c = 0; c < chunk_count; c++) {
+    for (size_t c = 0; c < chunk_count; c++) {
         for (int i = 0; i < CHUNK_AREA; i++) chunks[c].light[i] = 0;
     }
 
-    for (int c = 0; c < chunk_count; c++) {
+    for (size_t c = 0; c < chunk_count; c++) {
         for (int i = 0; i < CHUNK_AREA; i++) {
             BlockInstance b = chunks[c].layers[CHUNK_LAYER_FOREGROUND].blocks[i];
             BlockInstance w = chunks[c].layers[CHUNK_LAYER_BACKGROUND].blocks[i];
@@ -278,18 +276,18 @@ void chunk_manager_update_lighting() {
         }
     }
 
-    for (int c = 0; c < chunk_count; c++) chunk_genmesh(&chunks[c]);
+    for (size_t c = 0; c < chunk_count; c++) chunk_genmesh(&chunks[c]);
 }
 
 void chunk_manager_draw(bool draw_lines) {
     if (!initialized) return;
 
-    for (int i = 0; i < chunk_count; i++) {
+    for (size_t i = 0; i < chunk_count; i++) {
         chunk_draw(&chunks[i]);
     }
 
     if (draw_lines) {
-        for (int i = 0; i < chunk_count; i++) {
+        for (size_t i = 0; i < chunk_count; i++) {
             rlPushMatrix();
             rlTranslatef(
                 chunks[i].position.x * CHUNK_WIDTH * TILE_SIZE,
@@ -313,7 +311,7 @@ void chunk_manager_draw(bool draw_lines) {
 void chunk_manager_draw_liquids() {
     if (!initialized) return;
 
-    for (int i = 0; i < chunk_count; i++) {
+    for (size_t i = 0; i < chunk_count; i++) {
         chunk_draw_liquids(&chunks[i]);
     }
 }
@@ -321,7 +319,7 @@ void chunk_manager_draw_liquids() {
 void chunk_manager_tick() {
     if (!initialized) return;
 
-    for (int i = 0; i < chunk_count; i++) {
+    for (size_t i = 0; i < chunk_count; i++) {
 		chunk_tick(&chunks[i], tick_counter);
     }
 
@@ -330,7 +328,7 @@ void chunk_manager_tick() {
 
 void chunk_manager_clear(bool saveChunks) {
     if (!initialized) return;
-    for (int c = 0; c < chunk_count; c++) {
+    for (size_t c = 0; c < chunk_count; c++) {
         if (chunks[c].initialized) {
             if (saveChunks) world_manager_save_chunk(&chunks[c]);
             chunk_free(&chunks[c]);
@@ -342,7 +340,7 @@ void chunk_manager_free() {
     if (!initialized) return;
 
     if (chunks) {
-        for (int c = 0; c < chunk_count; c++) {
+        for (size_t c = 0; c < chunk_count; c++) {
             if (chunks[c].initialized) {
                 world_manager_save_chunk(&chunks[c]);
                 chunk_free(&chunks[c]);
@@ -513,7 +511,7 @@ void chunk_manager_set_block(Vector2i position, BlockInstance blockValue, ChunkL
 }
 
 BlockInstance chunk_manager_get_block(Vector2i position, ChunkLayerEnum layer) {
-	if (!initialized) return (BlockInstance) { 0, 0 };
+	if (!initialized) return (BlockInstance) { 0, 0, NULL };
 
     Vector2i chunkPos = {
         (int)floorf((float)position.x / (float)CHUNK_WIDTH),
@@ -537,7 +535,7 @@ BlockInstance chunk_manager_get_block(Vector2i position, ChunkLayerEnum layer) {
             layer
         );
     }
-    return (BlockInstance) { 0, 0 };
+    return (BlockInstance) { 0, 0, NULL };
 }
 
 uint8_t chunk_manager_get_light(Vector2i position) {

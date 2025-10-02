@@ -2,6 +2,8 @@
 	<img src="https://github.com/pvini07BR/squarebox/blob/main/assets/logo.svg">
 </p>
 
+<img src="https://github.com/pvini07BR/squarebox/blob/main/assets/showcase.svg">
+
 # What is this?
 
 This is a 2D, Minecraft-like game made completely with the C language and [Raylib](https://www.raylib.com).

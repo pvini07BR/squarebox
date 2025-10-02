@@ -76,6 +76,8 @@ int main() {
     while (!WindowShouldClose() && !closeGame) {
         UpdateNuklear(ctx);
 
+        if (IsKeyPressed(KEY_F11)) ToggleBorderlessWindowed();
+
         if (!game_is_ui_open() && IsKeyPressed(KEY_ESCAPE)) {
             if (!game_is_demo_mode() && menuState == MENU_STATE_PAUSED) {
                 game_set_draw_ui(paused);

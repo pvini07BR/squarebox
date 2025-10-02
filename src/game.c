@@ -165,8 +165,6 @@ void game_update(float deltaTime) {
 		if (IsKeyPressed(KEY_F2)) TakeScreenshot("screenshot.png");
         if (IsKeyPressed(KEY_F3)) debug_info = !debug_info;
 
-        if (IsKeyPressed(KEY_F11)) ToggleBorderlessWindowed();
-
         // When pressing Q, the holding item will be dropped and launched at the direction of the mouse.
         // the force of throwing is determined by how far the mouse is from the player (in screen coordinates)
         ItemSlot item = inventory_get_item(0, hotbarIdx);

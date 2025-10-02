@@ -6,6 +6,7 @@
 
 #include <errno.h>
 
+#include <limits.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -54,7 +55,7 @@ char* formatted_string(const char* fmt, ...) {
 int gen_random_int() {
     const int BITS_PER_RAND = (int)(log2(RAND_MAX / 2 + 1) + 1.0);
     int ret = 0;
-    for (int i = 0; i < sizeof(int) * CHAR_BIT; i += BITS_PER_RAND) {
+    for (unsigned long i = 0; i < sizeof(int) * CHAR_BIT; i += BITS_PER_RAND) {
         ret <<= BITS_PER_RAND;
         ret |= rand();
     }
@@ -444,7 +445,7 @@ WorldListReturnType world_manager_draw_list(struct nk_context* ctx) {
                 if (nk_button_label(ctx, "Random")) {
                     tempWorldInfo.seed = gen_random_int();
                 }
-                tempWorldInfo.seed = nk_propertyi(ctx, "", INT_MIN, tempWorldInfo.seed, INT_MAX, 1, 10.0f);
+                tempWorldInfo.seed = nk_propertyi(ctx, "", INT32_MIN, tempWorldInfo.seed, INT32_MAX, 1, 10.0f);
 
                 nk_layout_row_dynamic(ctx, 40, 2);
                 if (nk_button_label(ctx, "Back")) {

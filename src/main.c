@@ -78,6 +78,7 @@ int main() {
 
         if (!game_is_ui_open() && IsKeyPressed(KEY_ESCAPE)) {
             if (!game_is_demo_mode() && menuState == MENU_STATE_PAUSED) {
+                game_set_draw_ui(paused);
                 paused = !paused;
             }
             else if (menuState == MENU_STATE_SETTINGS) {
@@ -104,7 +105,6 @@ int main() {
 
         ClearBackground(BLACK);
 
-		game_set_draw_ui(!paused);
         game_draw();
 
         if (!game_is_demo_mode() && paused) {

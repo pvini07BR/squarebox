@@ -50,11 +50,9 @@ But here is a list of all the features this game currently has, and what I plan 
 - Press Z or X to cycle between possible states for a block (like stairs and slabs).
 - Press Tab to change between foreground and background placing modes.
 
-
 - Mouse left click to destroy a block, and right click to place a block.
 - Scroll wheel to scroll through items in the hotbar.
 - Ctrl + Scroll wheel to zoom in or out.
-
 
 - Press F1 to show/hide game UI.
 - Press F2 to take a screenshot (it will be saved as screenshot.png on the game's directory)
@@ -95,3 +93,5 @@ Any other compilers or operating systems is not confirmed nor garanteed to work,
 All arts and programming has been done by me, pvini07BR.
 
 This game has been made using the [Raylib](https://www.raylib.com) library, made by raysan5.
+Using [Nuklear](https://github.com/Immediate-Mode-UI/Nuklear/) for the UI of this game,
+and [raylib-nuklear](https://github.com/RobLoach/raylib-nuklear) to implement it for Raylib.

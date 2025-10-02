@@ -67,8 +67,6 @@ int main() {
     bool closeGame = false;
 
     while (!WindowShouldClose() && !closeGame) {
-        UpdateNuklear(ctx);
-
         if (IsKeyPressed(KEY_F11)) ToggleBorderlessWindowed();
 
         if (!game_is_ui_open() && IsKeyPressed(KEY_ESCAPE)) {
@@ -102,6 +100,7 @@ int main() {
 
         game_draw();
 
+        UpdateNuklear(ctx);
         if (!game_is_demo_mode() && paused) {
             DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), (Color) { 0, 0, 0, 128 });
         }

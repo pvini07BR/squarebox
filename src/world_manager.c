@@ -469,7 +469,7 @@ WorldListReturnType world_manager_draw_list(struct nk_context* ctx) {
             for (size_t i = 0; i < worldListCount; i++) {
                 WorldListEntry* entry = &worldList[i];
 
-                if(nk_select_text(ctx, entry->info.name, WORLD_NAME_LENGTH, NK_TEXT_LEFT, entry->selected)) {
+                if (nk_select_text(ctx, entry->info.name, WORLD_NAME_LENGTH, NK_TEXT_LEFT, entry->selected)) {
                     if (selectedEntry) selectedEntry->selected = false;
                     selectedEntry = entry;
                     selectedEntry->selected = true;

@@ -20,12 +20,6 @@ const char* presetComboboxItems[] = {
     "Empty"
 };
 
-typedef enum {
-    POPUP_TYPE_NONE,
-    POPUP_TYPE_DELETING,
-    POPUP_TYPE_CREATING
-} PopupType;
-
 WorldInfo worldInfo;
 char* currentWorldDir = NULL;
 
@@ -33,7 +27,7 @@ WorldListEntry* worldList = NULL;
 size_t worldListCount = 0;
 
 WorldListEntry* selectedEntry = NULL;
-PopupType popupType = POPUP_TYPE_NONE;
+bool creatingWorld = false;
 
 WorldInfo tempWorldInfo;
 
@@ -413,116 +407,116 @@ bool world_manager_load_world_list() {
 WorldListReturnType world_manager_draw_list(struct nk_context* ctx) {
     WorldListReturnType returnType = WORLD_RETURN_NONE;
 
-    const Vector2 totalSize = { 620, 243 };
+    if (!creatingWorld) {
+        const Vector2 totalSize = { 620, 243 };
+    
+        const Vector2 screenCenter = {
+            (GetScreenWidth() / 2.0f) - (totalSize.x / 2.0f),
+            (GetScreenHeight() / 2.0f) - (totalSize.y / 2.0f),
+        };
 
-    const Vector2 screenCenter = {
-        (GetScreenWidth() / 2.0f) - (totalSize.x / 2.0f),
-        (GetScreenHeight() / 2.0f) - (totalSize.y / 2.0f),
-    };
-
-    const Vector2 popupSize = { totalSize.x, 250 };
-    const Vector2 popupCenter = {
-        (totalSize.x / 2.0f) - (popupSize.x / 2.0f),
-        (totalSize.y / 2.0f) - (popupSize.y / 2.0f),
-    };
-
-    if (nk_begin(ctx, "World List", nk_rect(screenCenter.x, screenCenter.y, totalSize.x, totalSize.y - 70), 0)) {
-        if (popupType == POPUP_TYPE_CREATING) {
-            if (nk_popup_begin(ctx, NK_POPUP_STATIC, "World Creation", 0, nk_rect(popupCenter.x, popupCenter.y, popupSize.x, popupSize.y))) {
-                nk_layout_row_dynamic(ctx, 40, 3);
-                nk_label(ctx, "World Name", NK_TEXT_LEFT);
-
-                nk_spacing(ctx, 1);
-
-                nk_edit_string_zero_terminated(
-                    ctx,
-                    NK_EDIT_BOX | NK_EDIT_AUTO_SELECT,
-                    tempWorldInfo.name,
-                    sizeof(tempWorldInfo.name),
-                    nk_filter_ascii
-                );
-
-                nk_layout_row_dynamic(ctx, 40, 3);
-                nk_label(ctx, "World Preset", NK_TEXT_LEFT);
-
-                nk_spacing(ctx, 1);
-
-                tempWorldInfo.preset = nk_propertyi(ctx, "", 0, tempWorldInfo.preset, 2, 1, 0.1f);
-
-                nk_layout_row_dynamic(ctx, 40, 4);
-
-                nk_label(ctx, "Seed", NK_TEXT_LEFT);
-
-                nk_spacing(ctx, 1);
-
-                if (nk_button_label(ctx, "Random")) {
-                    tempWorldInfo.seed = gen_random_int();
-                }
-                tempWorldInfo.seed = nk_propertyi(ctx, "", INT32_MIN, tempWorldInfo.seed, INT32_MAX, 1, 10.0f);
-
-                nk_layout_row_dynamic(ctx, 40, 2);
-                if (nk_button_label(ctx, "Back")) {
-                    memset(&tempWorldInfo, 0, sizeof(WorldInfo));
-                    popupType = POPUP_TYPE_NONE;
-                    nk_popup_close(ctx);
-                }
-                if (nk_button_label(ctx, "Create")) {
-                    if (world_manager_create_world(tempWorldInfo)) {
-                        world_manager_load_world_list();
-                        memset(&tempWorldInfo, 0, sizeof(WorldInfo));
-                        popupType = POPUP_TYPE_NONE;
-                        nk_popup_close(ctx);
+        if (nk_begin(ctx, "World List", nk_rect(screenCenter.x, screenCenter.y, totalSize.x, totalSize.y - 70), 0)) {            
+            nk_layout_row_dynamic(ctx, 30, 1);
+            if (worldList) {
+                for (size_t i = 0; i < worldListCount; i++) {
+                    WorldListEntry* entry = &worldList[i];
+    
+                    if (nk_select_text(ctx, entry->info.name, WORLD_NAME_LENGTH, NK_TEXT_LEFT, entry->selected)) {
+                        if (selectedEntry) selectedEntry->selected = false;
+                        selectedEntry = entry;
+                        selectedEntry->selected = true;
                     }
                 }
             }
-            nk_popup_end(ctx);
-        }
-        
-        nk_layout_row_dynamic(ctx, 30, 1);
-        if (worldList) {
-            for (size_t i = 0; i < worldListCount; i++) {
-                WorldListEntry* entry = &worldList[i];
+            nk_end(ctx);
 
-                if (nk_select_text(ctx, entry->info.name, WORLD_NAME_LENGTH, NK_TEXT_LEFT, entry->selected)) {
+            if (nk_begin(ctx, "World List Buttons", nk_rect(screenCenter.x, screenCenter.y + totalSize.y - 70, totalSize.x, 70), NK_WINDOW_NO_SCROLLBAR)) {
+                nk_layout_row_dynamic(ctx, 30, 2);
+
+                if (selectedEntry) {
+                    if (nk_button_label(ctx, "Play")) {
+                        if (world_manager_load_world_info(selectedEntry->worldDir)) {
+                            returnType = WORLD_RETURN_OPEN_WORLD;
+                        }
+                    }
+                } else {
+                    nk_spacing(ctx, 1);
+                }
+                if (nk_button_label(ctx, "Create New World")) {
+                    tempWorldInfo.seed = gen_random_int();
+                    creatingWorld = true;
+                }
+                
+                nk_layout_row_dynamic(ctx, 30, 2);
+
+                if (nk_button_label(ctx, "Back")) {
+                    returnType = WORLD_RETURN_CLOSE;
+                }
+
+                if (nk_button_label(ctx, "Refresh")) {
                     if (selectedEntry) selectedEntry->selected = false;
-                    selectedEntry = entry;
-                    selectedEntry->selected = true;
+                    selectedEntry = NULL;
+                    world_manager_load_world_list();
                 }
             }
+            nk_end(ctx);
         }
-    }
-    nk_end(ctx);
+    } else {
+        const Vector2 popupSize = { 610, 190 };
 
-    if (nk_begin(ctx, "World List Buttons", nk_rect(screenCenter.x, screenCenter.y + totalSize.y - 70, totalSize.x, 70), NK_WINDOW_NO_SCROLLBAR)) {
-        nk_layout_row_dynamic(ctx, 30, 2);
+        const Vector2 popupCenter = {
+            (GetScreenWidth() / 2.0f) - (popupSize.x / 2.0f),
+            (GetScreenHeight() / 2.0f) - (popupSize.y / 2.0f),
+        };
 
-        if (selectedEntry) {
-            if (nk_button_label(ctx, "Play")) {
-                if (world_manager_load_world_info(selectedEntry->worldDir)) {
-                    returnType = WORLD_RETURN_OPEN_WORLD;
-                }
-            }
-        } else {
+        if (nk_begin(ctx, "World Creator", nk_rect(popupCenter.x, popupCenter.y, popupSize.x, popupSize.y), 0)) {
+            nk_layout_row_dynamic(ctx, 40, 3);
+            nk_label(ctx, "World Name", NK_TEXT_LEFT);
+
             nk_spacing(ctx, 1);
-        }
-        if (nk_button_label(ctx, "Create New World")) {
-            tempWorldInfo.seed = gen_random_int();
-            popupType = POPUP_TYPE_CREATING;
-        }
-        
-        nk_layout_row_dynamic(ctx, 30, 2);
 
-        if (nk_button_label(ctx, "Back")) {
-            returnType = WORLD_RETURN_CLOSE;
-        }
+            nk_edit_string_zero_terminated(
+                ctx,
+                NK_EDIT_BOX | NK_EDIT_AUTO_SELECT,
+                tempWorldInfo.name,
+                sizeof(tempWorldInfo.name),
+                nk_filter_ascii
+            );
 
-        if (nk_button_label(ctx, "Refresh")) {
-            if (selectedEntry) selectedEntry->selected = false;
-            selectedEntry = NULL;
-            world_manager_load_world_list();
+            nk_layout_row_dynamic(ctx, 40, 3);
+            nk_label(ctx, "World Preset", NK_TEXT_LEFT);
+
+            nk_spacing(ctx, 1);
+
+            //tempWorldInfo.preset = nk_propertyi(ctx, "", 0, tempWorldInfo.preset, 2, 1, 0.1f);
+            nk_combobox(ctx, presetComboboxItems, 3, (int*)&tempWorldInfo.preset, 30, nk_vec2(popupSize.x / 3.0f - 8.0f, 128));
+
+            nk_layout_row_dynamic(ctx, 40, 4);
+
+            nk_label(ctx, "Seed", NK_TEXT_LEFT);
+
+            nk_spacing(ctx, 1);
+
+            if (nk_button_label(ctx, "Random")) {
+                tempWorldInfo.seed = gen_random_int();
+            }
+            tempWorldInfo.seed = nk_propertyi(ctx, "", INT32_MIN, tempWorldInfo.seed, INT32_MAX, 1, 10.0f);
+
+            nk_layout_row_dynamic(ctx, 40, 2);
+            if (nk_button_label(ctx, "Back")) {
+                memset(&tempWorldInfo, 0, sizeof(WorldInfo));
+                creatingWorld = false;
+            }
+            if (nk_button_label(ctx, "Create")) {
+                if (world_manager_create_world(tempWorldInfo)) {
+                    world_manager_load_world_list();
+                    memset(&tempWorldInfo, 0, sizeof(WorldInfo));
+                    creatingWorld = false;
+                }
+            }
         }
+        nk_end(ctx);
     }
-    nk_end(ctx);
 
     if (returnType != WORLD_RETURN_NONE) {
         if (selectedEntry) selectedEntry->selected = false;

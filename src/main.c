@@ -1,4 +1,5 @@
 #include "game_settings.h"
+#include "item_container.h"
 #include "world_manager.h"
 #include "chunk_manager.h"
 #include "game.h"
@@ -38,6 +39,17 @@ bool paused = false;
 float bounce_wave(float x, float min, float max) {
     float f = fabs(sin(x));
     return min + (max - min) * f;
+}
+
+void collect_game_info() {
+    Player* player = game_get_player();
+    if (player) {
+        get_world_info()->player_position = player_get_position(player);
+        get_world_info()->player_flying = !player->entity.gravity_affected;
+        for (int i = 0; i < 10; i++) {
+            get_world_info()->hotbar_items[i] = inventory_get_item(0, i);
+        }
+    }
 }
 
 int main() {
@@ -168,11 +180,7 @@ int main() {
                         closeGame = true;
                     }
                     else if (menuState == MENU_STATE_PAUSED) {
-                        Player* player = game_get_player();
-                        if (player) {
-                            get_world_info()->player_position = player_get_position(player);
-                            get_world_info()->player_flying = !player->entity.gravity_affected;
-                        }
+                        collect_game_info();
                         game_set_demo_mode(true);
                         world_manager_save_world_info_and_unload();
                         chunk_manager_relocate((Vector2i) { 0, 0 });
@@ -212,11 +220,7 @@ int main() {
     }
 
     if (!game_is_demo_mode() && world_manager_is_world_loaded()) {
-	    Player* player = game_get_player();
-        if (player) {
-		    get_world_info()->player_position = player_get_position(player);
-            get_world_info()->player_flying = !player->entity.gravity_affected;
-        }
+	    collect_game_info();
         world_manager_save_world_info();
     }
 

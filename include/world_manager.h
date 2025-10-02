@@ -1,6 +1,7 @@
 #ifndef WORLD_MANAGER_H
 #define WORLD_MANAGER_H
 
+#include "item_container.h"
 #include "chunk.h"
 #include <raylib.h>
 
@@ -16,11 +17,12 @@ typedef enum {
 } WorldGenPreset;
 
 typedef struct {
-    uint8_t version;
-    char name[WORLD_NAME_LENGTH];
-    WorldGenPreset preset;
-    int seed;
     Vector2 player_position;
+    ItemSlot hotbar_items[10];
+    char name[WORLD_NAME_LENGTH];
+    int seed;
+    WorldGenPreset preset;
+    uint8_t version;
     bool player_flying;
 } WorldInfo;
 

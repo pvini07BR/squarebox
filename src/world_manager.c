@@ -488,7 +488,6 @@ WorldListReturnType world_manager_draw_list(struct nk_context* ctx) {
 
             nk_spacing(ctx, 1);
 
-            //tempWorldInfo.preset = nk_propertyi(ctx, "", 0, tempWorldInfo.preset, 2, 1, 0.1f);
             nk_combobox(ctx, presetComboboxItems, 3, (int*)&tempWorldInfo.preset, 30, nk_vec2(popupSize.x / 3.0f - 8.0f, 128));
 
             nk_layout_row_dynamic(ctx, 40, 4);

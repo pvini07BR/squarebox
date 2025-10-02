@@ -512,6 +512,10 @@ void game_set_demo_mode(bool demo) {
                 camera.target = Vector2Add(player_get_position(player), Vector2Scale(player_get_size(player), 0.5f));
             }
 		}
+
+        for (int i = 0; i < 10; i++) {
+            inventory_set_item(0, i, get_world_info()->hotbar_items[i]);
+        }
     }
     else if (!demo_mode && demo) {
         // Switching from normal to demo mode

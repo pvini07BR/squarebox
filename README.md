@@ -50,9 +50,11 @@ But here is a list of all the features this game currently has, and what I plan 
 - Press Z or X to cycle between possible states for a block (like stairs and slabs).
 - Press Tab to change between foreground and background placing modes.
 
+
 - Mouse left click to destroy a block, and right click to place a block.
 - Scroll wheel to scroll through items in the hotbar.
 - Ctrl + Scroll wheel to zoom in or out.
+
 
 - Press F1 to show/hide game UI.
 - Press F2 to take a screenshot (it will be saved as screenshot.png on the game's directory)
@@ -64,6 +66,7 @@ But here is a list of all the features this game currently has, and what I plan 
 - The collision system for the entities is currently not 100% robust, so entities might still clip through blocks, and it doesn't work well under low framerates.
 - You can go up in blocks with small notches like stairs and slabs, but the code for this isn't very robust so it might feel wrong.
 - Beware of crashes and memory leaks: This game has been entirely coded in C without any heavy testing, so be aware of that. but I did make some effort to make it crash and memory leak free. You can always report a issue in GitHub, you know that.
+- Some code is incosistent or messed up, so bugs can appear because of that.
 
 # How to compile 
 

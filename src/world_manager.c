@@ -453,11 +453,12 @@ WorldListReturnType world_manager_draw_list(struct nk_context* ctx) {
                     nk_popup_close(ctx);
                 }
                 if (nk_button_label(ctx, "Create")) {
-                    world_manager_create_world(tempWorldInfo);
-                    world_manager_load_world_list();
-                    memset(&tempWorldInfo, 0, sizeof(WorldInfo));
-                    popupType = POPUP_TYPE_NONE;
-                    nk_popup_close(ctx);
+                    if (world_manager_create_world(tempWorldInfo)) {
+                        world_manager_load_world_list();
+                        memset(&tempWorldInfo, 0, sizeof(WorldInfo));
+                        popupType = POPUP_TYPE_NONE;
+                        nk_popup_close(ctx);
+                    }
                 }
             }
             nk_popup_end(ctx);

@@ -49,7 +49,6 @@ int main() {
 
     int fontSize = 24;
     struct nk_context* ctx = InitNuklear(fontSize);
-    //ctx->style.window.fixed_background = nk_style_item_hide();
 
     load_game_settings();
 
@@ -147,6 +146,8 @@ int main() {
 
             Vector2 menuSize = (Vector2){ 220, 225 };
 
+            nk_style_push_style_item(ctx, &ctx->style.window.fixed_background, nk_style_item_hide());
+
             if (nk_begin(ctx, "Menu", nk_rect(screenCenter.x - (menuSize.x / 2.0f), screenCenter.y - (menuSize.y / 2.0f), menuSize.x, menuSize.y), NK_WINDOW_NO_SCROLLBAR)) {
                 nk_layout_row_dynamic(ctx, 40.0f, 1);
                 if (nk_button_label(ctx, menuState == MENU_STATE_MAIN ? "Play" : "Resume")) {
@@ -182,6 +183,8 @@ int main() {
                 }
             }
             nk_end(ctx);
+
+            nk_style_pop_style_item(ctx);
         }
         else if (menuState == MENU_STATE_SETTINGS) {
             if (game_settings_draw(ctx)) {

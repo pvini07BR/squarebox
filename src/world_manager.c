@@ -413,7 +413,7 @@ WorldListReturnType world_manager_draw_list(struct nk_context* ctx) {
         (GetScreenHeight() / 2.0f) - (totalSize.y / 2.0f),
     };
 
-    const Vector2 popupSize = { totalSize.x, 200 };
+    const Vector2 popupSize = { totalSize.x, 150 };
     const Vector2 popupCenter = {
         (totalSize.x / 2.0f) - (popupSize.x / 2.0f),
         (totalSize.y / 2.0f) - (popupSize.y / 2.0f),

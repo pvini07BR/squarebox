@@ -101,7 +101,6 @@ bool game_settings_draw(struct nk_context* ctx) {
 		(GetScreenHeight() / 2.0f) - (size.y / 2.0f),
 	};
 
-	nk_style_push_style_item(ctx, &ctx->style.window.fixed_background, nk_style_item_color(nk_rgba(0, 0, 0, 128)));
 	nk_style_push_vec2(ctx, &ctx->style.window.padding, nk_vec2(padding, padding));
 
 	if (nk_begin(ctx, "Settings", nk_rect(screenCenter.x, screenCenter.y, size.x, size.y), NK_WINDOW_NO_SCROLLBAR)) {
@@ -165,7 +164,6 @@ bool game_settings_draw(struct nk_context* ctx) {
 	}
 	nk_end(ctx);
 
-	nk_style_pop_style_item(ctx);
 	nk_style_pop_vec2(ctx);
 
 	if (backPressed) {

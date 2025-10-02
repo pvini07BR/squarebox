@@ -2,7 +2,7 @@
 	<img src="https://github.com/pvini07BR/squarebox/blob/main/assets/logo.svg">
 </p>
 
-<img src="https://github.com/pvini07BR/squarebox/blob/main/assets/showcase.svg">
+<img src="https://github.com/pvini07BR/squarebox/blob/main/assets/showcase.png">
 
 # What is this?
 

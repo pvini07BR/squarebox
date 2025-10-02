@@ -9,9 +9,16 @@
 #define WORLD_NAME_LENGTH 32
 #define WORLD_VERSION 0
 
+typedef enum {
+    WORLD_GEN_PRESET_DEFAULT,
+    WORLD_GEN_PRESET_FLAT,
+    WORLD_GEN_PRESET_EMPTY,
+} WorldGenPreset;
+
 typedef struct {
     uint8_t version;
     char name[WORLD_NAME_LENGTH];
+    WorldGenPreset preset;
     int seed;
     Vector2 player_position;
     bool player_flying;

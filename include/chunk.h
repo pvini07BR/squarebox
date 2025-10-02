@@ -35,15 +35,14 @@ typedef struct {
 } ChunkNeighbors;
 
 typedef struct {
-	bool initialized;
-	unsigned int seed;
-	Vector2i position;
 	ChunkLayer layers[2];
+	Mesh liquidMesh;
     uint8_t light[CHUNK_AREA];
 	BlockTickList blockTickList;
 	ChunkNeighbors neighbors;
+	Vector2i position;
 	bool initializedLiquidMesh;
-	Mesh liquidMesh;
+	bool initialized;
 } Chunk;
 
 typedef struct {

@@ -14,6 +14,12 @@
 #include <string.h>
 #include <math.h>
 
+const char* presetComboboxItems[] = {
+    "Default",
+    "Flat",
+    "Empty"
+};
+
 typedef enum {
     POPUP_TYPE_NONE,
     POPUP_TYPE_DELETING,
@@ -414,7 +420,7 @@ WorldListReturnType world_manager_draw_list(struct nk_context* ctx) {
         (GetScreenHeight() / 2.0f) - (totalSize.y / 2.0f),
     };
 
-    const Vector2 popupSize = { totalSize.x, 150 };
+    const Vector2 popupSize = { totalSize.x, 250 };
     const Vector2 popupCenter = {
         (totalSize.x / 2.0f) - (popupSize.x / 2.0f),
         (totalSize.y / 2.0f) - (popupSize.y / 2.0f),
@@ -435,6 +441,13 @@ WorldListReturnType world_manager_draw_list(struct nk_context* ctx) {
                     sizeof(tempWorldInfo.name),
                     nk_filter_ascii
                 );
+
+                nk_layout_row_dynamic(ctx, 40, 3);
+                nk_label(ctx, "World Preset", NK_TEXT_LEFT);
+
+                nk_spacing(ctx, 1);
+
+                tempWorldInfo.preset = nk_propertyi(ctx, "", 0, tempWorldInfo.preset, 2, 1, 0.1f);
 
                 nk_layout_row_dynamic(ctx, 40, 4);
 

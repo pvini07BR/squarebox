@@ -70,58 +70,92 @@ void chunk_regenerate(Chunk* chunk) {
     for (int i = 0; i < CHUNK_AREA; i++) {
         chunk->layers[CHUNK_LAYER_BACKGROUND].blocks[i] = (BlockInstance){ 0, 0, NULL };
         chunk->layers[CHUNK_LAYER_FOREGROUND].blocks[i] = (BlockInstance){ 0, 0, NULL };
+        chunk->light[i] = 0;
     }
 
-    fnl_state terrainNoise = fnlCreateState();
-    terrainNoise.seed = get_world_info()->seed;
-    terrainNoise.frequency = 0.008f;
-    terrainNoise.noise_type = FNL_NOISE_OPENSIMPLEX2;
-    terrainNoise.fractal_type = FNL_FRACTAL_FBM;
+    if (get_world_info()->preset == WORLD_GEN_PRESET_DEFAULT) {
+        fnl_state terrainNoise = fnlCreateState();
+        terrainNoise.seed = get_world_info()->seed;
+        terrainNoise.frequency = 0.008f;
+        terrainNoise.noise_type = FNL_NOISE_OPENSIMPLEX2;
+        terrainNoise.fractal_type = FNL_FRACTAL_FBM;
+    
+        fnl_state detailNoise = fnlCreateState();
+        detailNoise.seed = get_world_info()->seed + 1337;
+        detailNoise.frequency = 0.025f;
+        detailNoise.noise_type = FNL_NOISE_OPENSIMPLEX2;
+        detailNoise.fractal_type = FNL_FRACTAL_FBM;
+    
+        for (int w = 0; w < 2; w++) {
+            for (int x = 0; x < CHUNK_WIDTH; x++) {
+                int gx = chunk->position.x * CHUNK_WIDTH + x;
+    
+                float base = fnlGetNoise2D(&terrainNoise, gx * 0.5f, 0.0f);
+                float detail = fnlGetNoise2D(&detailNoise, gx, 0.0f);
+                int surfaceY = (int)roundf(base * 32.0f + detail * 8.0f);
+    
+                for (int y = 0; y < CHUNK_WIDTH; y++) {
+                    int i = x + y * CHUNK_WIDTH;
+                    int gy = chunk->position.y * CHUNK_WIDTH + y;
+    
+                    BlockInstance newInst = { 0, 0, NULL };
+    
+                    if (gy == (surfaceY - 1)) {
+                        if (chance_at(FNL_NOISE_VALUE, 32.0f, gx, gy, 0.0f, w)) {
+                            newInst.id = BLOCK_GRASS;
+                        }
+                        else if (chance_at(FNL_NOISE_VALUE, 32.0f, gx, gy, -0.25f, w)) {
+                            newInst.id = BLOCK_FLOWER;
+                        }
+                        else if (chance_at(FNL_NOISE_VALUE, 32.0f, gx, gy, -0.4f, w)) {
+                            newInst.id = BLOCK_PEBBLES;
+                        }
+                    }
+                    else if (gy == surfaceY) {
+                        newInst.id = BLOCK_GRASS_BLOCK;
+                    }
+                    else if (gy > surfaceY && gy <= surfaceY + 4) {
+                        newInst.id = BLOCK_DIRT;
+                    }
+                    else if (gy > surfaceY + 4) {
+                        newInst.id = BLOCK_STONE;
+                    }
+    
+                    if (w == 0) chunk->layers[CHUNK_LAYER_FOREGROUND].blocks[i] = newInst;
+                    else chunk->layers[CHUNK_LAYER_BACKGROUND].blocks[i] = newInst;
+                }
+            }
+        }
+    } else if (get_world_info()->preset == WORLD_GEN_PRESET_FLAT) {
+        if (chunk->position.y < 0) return;
 
-    fnl_state detailNoise = fnlCreateState();
-    detailNoise.seed = get_world_info()->seed + 1337;
-    detailNoise.frequency = 0.025f;
-    detailNoise.noise_type = FNL_NOISE_OPENSIMPLEX2;
-    detailNoise.fractal_type = FNL_FRACTAL_FBM;
-
-    for (int w = 0; w < 2; w++) {
-        for (int x = 0; x < CHUNK_WIDTH; x++) {
-            int gx = chunk->position.x * CHUNK_WIDTH + x;
-
-            float base = fnlGetNoise2D(&terrainNoise, gx * 0.5f, 0.0f);
-            float detail = fnlGetNoise2D(&detailNoise, gx, 0.0f);
-            int surfaceY = (int)roundf(base * 32.0f + detail * 8.0f);
-
+        for (int w = 0; w < 2; w++) {
             for (int y = 0; y < CHUNK_WIDTH; y++) {
-                int i = x + y * CHUNK_WIDTH;
-                int gy = chunk->position.y * CHUNK_WIDTH + y;
-
-                BlockInstance newInst = { 0, 0, NULL };
-
-                if (gy == (surfaceY - 1)) {
-                    if (chance_at(FNL_NOISE_VALUE, 32.0f, gx, gy, 0.0f, w)) {
-                        newInst.id = BLOCK_GRASS;
+                for (int x = 0; x < CHUNK_WIDTH; x++) {
+                    BlockInstance newInst = { 0, 0, NULL };
+                    
+                    int gy = chunk->position.y * CHUNK_WIDTH + y;
+                    
+                    if (gy == CHUNK_WIDTH / 2) {
+                        newInst.id = BLOCK_GRASS_BLOCK;
+                    } else if (gy > (CHUNK_WIDTH / 2) && gy <= (CHUNK_WIDTH / 2) + 10) {
+                        newInst.id = BLOCK_DIRT;
+                    } else if (gy > (CHUNK_WIDTH / 2) + 10) {
+                        newInst.id = BLOCK_STONE;
                     }
-                    else if (chance_at(FNL_NOISE_VALUE, 32.0f, gx, gy, -0.25f, w)) {
-                        newInst.id = BLOCK_FLOWER;
-                    }
-                    else if (chance_at(FNL_NOISE_VALUE, 32.0f, gx, gy, -0.4f, w)) {
-                        newInst.id = BLOCK_PEBBLES;
-                    }
-                }
-                else if (gy == surfaceY) {
-                    newInst.id = BLOCK_GRASS_BLOCK;
-                }
-                else if (gy > surfaceY && gy <= surfaceY + 4) {
-                    newInst.id = BLOCK_DIRT;
-                }
-                else if (gy > surfaceY + 4) {
-                    newInst.id = BLOCK_STONE;
-                }
 
-                if (w == 0) chunk->layers[CHUNK_LAYER_FOREGROUND].blocks[i] = newInst;
-                else chunk->layers[CHUNK_LAYER_BACKGROUND].blocks[i] = newInst;
-                chunk->light[i] = 0;
+                    int i = x + y * CHUNK_WIDTH;
+                    
+                    if (w == 0) chunk->layers[CHUNK_LAYER_FOREGROUND].blocks[i] = newInst;
+                    else chunk->layers[CHUNK_LAYER_BACKGROUND].blocks[i] = newInst;
+                }
+            }
+        }
+    } else if (get_world_info()->preset == WORLD_GEN_PRESET_EMPTY) {
+        if (chunk->position.x == 0 && chunk->position.y == 0) {
+            for (int x = 0; x < CHUNK_WIDTH; x++) {
+                int i = x + 1 * CHUNK_WIDTH;
+                chunk->layers[CHUNK_LAYER_FOREGROUND].blocks[i] = (BlockInstance) { BLOCK_STONE, 0, NULL };
             }
         }
     }

@@ -6,7 +6,6 @@
 
 #include <raylib.h>
 #include <raymath.h>
-#include "thirdparty/raygui.h"
 
 #include "types.h"
 #include "chunk_manager.h"
@@ -94,76 +93,90 @@ bool load_game_settings() {
 	return true;
 }
 
-bool game_settings_draw() {
-	// Making UI in raygui is a pain.
-	bool backButtonPressed = false;
-	const float spacing = 50.0f;
-	const float line_vert_spacing = 40.0f;
-	const float button_width = 100.0f;
+bool game_settings_draw(struct nk_context* ctx) {
+	bool backPressed = false;
+	const float label_width = 300.0f;
+	const float element_width = 150.0f;
+	const float padding = 10.0f;
 
-	Label chunkViewSizeLabel = create_label("Chunk view size", GuiGetStyle(DEFAULT, TEXT_SIZE), GuiGetStyle(DEFAULT, TEXT_SPACING), GetFontDefault());
-	Label wallBrightnessLabel = create_label("Wall brightness", GuiGetStyle(DEFAULT, TEXT_SIZE), GuiGetStyle(DEFAULT, TEXT_SPACING), GetFontDefault());
-	Label smoothLightLabel = create_label("Smooth Lighting", GuiGetStyle(DEFAULT, TEXT_SIZE), GuiGetStyle(DEFAULT, TEXT_SPACING), GetFontDefault());
-	Label wallAOLabel = create_label("Wall Ambient Occlusion", GuiGetStyle(DEFAULT, TEXT_SIZE), GuiGetStyle(DEFAULT, TEXT_SPACING), GetFontDefault());
-	Label wallAOBrightnessLabel = create_label("Wall Ambient Occlusion Brightness", GuiGetStyle(DEFAULT, TEXT_SIZE), GuiGetStyle(DEFAULT, TEXT_SPACING), GetFontDefault());
-	
-	float sliderWidth = 100.0f + MeasureTextEx(GetFontDefault(), "x", GuiGetStyle(DEFAULT, TEXT_SIZE), 0.0f).x;
-	float totalWidth = wallAOBrightnessLabel.bounds.x + spacing + sliderWidth;
-	float totalHeight = (line_vert_spacing * 5.0f) + (line_vert_spacing + 20.0f) + 40.0f;
+	Vector2 size = { 620 + padding, 243 + padding };
+	Vector2 screenCenter = {
+		(GetScreenWidth() / 2.0f) - (size.x / 2.0f),
+		(GetScreenHeight() / 2.0f) - (size.y / 2.0f),
+	};
 
-	float centerX = (GetScreenWidth() / 2.0f) - (totalWidth / 2.0f);
-	float centerY = (GetScreenHeight() / 2.0f) - (totalHeight / 2.0f);
+	nk_style_push_style_item(ctx, &ctx->style.window.fixed_background, nk_style_item_color(nk_rgba(0, 0, 0, 128)));
+	nk_style_push_vec2(ctx, &ctx->style.window.padding, nk_vec2(padding, padding));
 
-	float originX = centerX;
-	float originY = centerY;
+	if (nk_begin(ctx, "Settings", nk_rect(screenCenter.x, screenCenter.y, size.x, size.y), NK_WINDOW_NO_SCROLLBAR)) {
+		nk_layout_row_begin(ctx, NK_STATIC, 30, 5);
+		{
+			nk_layout_row_push(ctx, label_width);
+			nk_label(ctx, "Chunk view size", NK_TEXT_LEFT);
+			nk_layout_row_push(ctx, element_width);
+			tempSettings.chunk_view_width = nk_propertyi(ctx, "Width:", 1, tempSettings.chunk_view_width, GAME_SETTINGS_MAX_CHUNK_VIEW, 1, 0.1f);
+			tempSettings.chunk_view_height = nk_propertyi(ctx, "Height:", 1, tempSettings.chunk_view_height, GAME_SETTINGS_MAX_CHUNK_VIEW, 1, 0.1f);
+			nk_spacing(ctx, 2);
 
-	float biggest = wallAOBrightnessLabel.bounds.x;
+			nk_layout_row_push(ctx, label_width);
+			nk_label(ctx, "Wall Brightness", NK_TEXT_LEFT);
+			nk_layout_row_push(ctx, element_width * 2.0f);
+			nk_slider_float(ctx, 0.0, &tempSettings.wall_brightness, 255.0f, 1.0f);
+			nk_spacing(ctx, 3);
 
-	GuiLabel((Rectangle) { originX, originY, chunkViewSizeLabel.bounds.x, chunkViewSizeLabel.bounds.y }, chunkViewSizeLabel.str);
-	originX += biggest + spacing;
-	if (GuiValueBox((Rectangle) { originX, originY, 50, 30 }, NULL, &tempSettings.chunk_view_width, 1, GAME_SETTINGS_MAX_CHUNK_VIEW, editing_chunk_view_width)) editing_chunk_view_width = !editing_chunk_view_width;
-	if (GuiValueBox((Rectangle) { originX += 65, originY, 50, 30 }, "x", &tempSettings.chunk_view_height, 1, GAME_SETTINGS_MAX_CHUNK_VIEW, editing_chunk_view_height)) editing_chunk_view_height = !editing_chunk_view_height;
-	originX = centerX; originY += line_vert_spacing;
-	GuiLabel((Rectangle) { originX, originY, wallBrightnessLabel.bounds.x, wallBrightnessLabel.bounds.y }, wallBrightnessLabel.str);
-	originX += biggest + spacing;
-	GuiSlider((Rectangle) { originX, originY, sliderWidth, 30 }, "0", "255", &tempSettings.wall_brightness, 0.0f, 255.0f);
-	originX = centerX; originY += line_vert_spacing;
-	GuiLabel((Rectangle) { originX, originY, smoothLightLabel.bounds.x, smoothLightLabel.bounds.y }, smoothLightLabel.str);
-	originX += biggest + spacing;
-	GuiCheckBox((Rectangle) { originX, originY, 30, 30 }, NULL, &tempSettings.smooth_lighting);
-	originX = centerX; originY += line_vert_spacing;
-	GuiLabel((Rectangle) { originX, originY, wallAOLabel.bounds.x, wallAOLabel.bounds.y }, wallAOLabel.str);
-	originX += biggest + spacing;
-	GuiCheckBox((Rectangle) { originX, originY, 30, 30 }, NULL, &tempSettings.wall_ao);
-	if (tempSettings.wall_ao) {
-		originX = centerX; originY += line_vert_spacing;
-		GuiLabel((Rectangle) { originX, originY, wallAOBrightnessLabel.bounds.x, wallAOBrightnessLabel.bounds.y }, wallAOBrightnessLabel.str);
-		originX += biggest + spacing;
-		GuiSlider((Rectangle) { originX, originY, sliderWidth, 30 }, "0", "255", &tempSettings.wall_ao_brightness, 0.0f, 255.0f);
+			nk_layout_row_push(ctx, label_width);
+			nk_label(ctx, "Smooth Lighting", NK_TEXT_LEFT);
+			nk_layout_row_push(ctx, element_width * 2.0f);
+			nk_checkbox_label(ctx, "", &tempSettings.smooth_lighting);
+			nk_spacing(ctx, 3);
+
+			nk_layout_row_push(ctx, label_width);
+			nk_label(ctx, "Wall Ambient Occlusion", NK_TEXT_LEFT);
+			nk_layout_row_push(ctx, element_width * 2.0f);
+			nk_checkbox_label(ctx, "", &tempSettings.wall_ao);
+			nk_spacing(ctx, 3);
+
+			if (tempSettings.wall_ao) {
+				nk_layout_row_push(ctx, label_width);
+				nk_label(ctx, "Wall AO Brightness", NK_TEXT_ALIGN_LEFT);
+				nk_layout_row_push(ctx, element_width * 2.0f);
+				nk_slider_float(ctx, 0.0, &tempSettings.wall_ao_brightness, 255.0f, 1.0f);
+				nk_spacing(ctx, 3);
+			}
+			else {
+				nk_spacing(ctx, 5);
+			}
+
+			nk_spacing(ctx, 5);
+
+			nk_layout_row_push(ctx, size.x / 5.0f);
+			nk_spacing(ctx, 1);
+			backPressed = nk_button_label(ctx, "Back");
+			if (nk_button_label(ctx, "Default")) {
+				tempSettings.chunk_view_width = 5;
+				tempSettings.chunk_view_height = 3;
+				tempSettings.wall_brightness = 128.0f;
+				tempSettings.wall_ao_brightness = 64.0f;
+				tempSettings.smooth_lighting = true;
+				tempSettings.wall_ao = true;
+			}
+			if (nk_button_label(ctx, "Apply")) {
+				game_settings_apply();
+			}
+			nk_spacing(ctx, 1);
+		}
+		nk_layout_row_end(ctx);
 	}
+	nk_end(ctx);
 
-	originX = centerX + (totalWidth / 2.0f) - ((button_width * 3.0f + spacing * 2.0f) / 2.0f);
-	originY += (line_vert_spacing + 20.0f);
+	nk_style_pop_style_item(ctx);
+	nk_style_pop_vec2(ctx);
 
-	backButtonPressed = GuiButton((Rectangle) { originX, originY, button_width, 40 }, "Back");
-	originX += button_width + spacing;
-	if (GuiButton((Rectangle) { originX, originY, button_width, 40 }, "Default")) {
-		tempSettings.chunk_view_width = 5;
-		tempSettings.chunk_view_height = 3;
-		tempSettings.wall_brightness = 128.0f;
-		tempSettings.wall_ao_brightness = 64.0f;
-		tempSettings.smooth_lighting = true;
-		tempSettings.wall_ao = true;
-	}
-	originX += button_width + spacing;
-	if (GuiButton((Rectangle) { originX, originY, button_width, 40 }, "Apply")) {
-		game_settings_apply();
-	}
-
-	if (backButtonPressed) {
+	if (backPressed) {
 		game_settings_to_temp();
+		return true;
 	}
-	return backButtonPressed;
+
 	return false;
 }
 

@@ -10,10 +10,10 @@
 #include <rlgl.h>
 #include <time.h>
 
-#define RAYGUI_IMPLEMENTATION
-#include "thirdparty/raygui.h"
-
 #define TICK_DELTA (1.0f / 20.0f)
+
+#define RAYLIB_NUKLEAR_IMPLEMENTATION
+#include "thirdparty/raylib-nuklear.h"
 
 const char* splashTexts[] = {
     "Made with Raylib!",
@@ -26,8 +26,20 @@ const char* splashTexts[] = {
 
 #define SPLASH_TEXT_COUNT (sizeof(splashTexts) / sizeof(splashTexts[0]))
 
-bool settings = false;
+typedef enum {
+	MENU_STATE_MAIN,
+	MENU_STATE_SETTINGS,
+    MENU_STATE_WORLDS,
+	MENU_STATE_PAUSED
+} MenuState;
+
+MenuState menuState = MENU_STATE_MAIN;
 bool paused = false;
+
+float bounce_wave(float x, float min, float max) {
+    float f = fabsf(sin(x));
+    return min + (max - min) * f;
+}
 
 int main() {
     SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT);
@@ -35,7 +47,10 @@ int main() {
     SetExitKey(KEY_NULL);
     SetTraceLogLevel(LOG_WARNING);
     rlDisableBackfaceCulling();
-    GuiSetStyle(DEFAULT, TEXT_SIZE, 24.0f);
+
+    int fontSize = 24;
+    struct nk_context* ctx = InitNuklear(fontSize);
+    ctx->style.window.fixed_background = nk_style_item_hide();
 
     load_game_settings();
 
@@ -48,44 +63,30 @@ int main() {
 
     game_init();
 
-    const float spacing = 50.0f;
-    const Vector2 buttonPadding = { 30.0f, 20.0f };
-
     Texture2D logo = LoadTexture(ASSETS_PATH "logo.png");
 
     Label splashLabel = create_label(splashTexts[GetRandomValue(0, (SPLASH_TEXT_COUNT - 1))], 32.0f, 2.0f, GetFontDefault());
 
-    Label playButtonLabel = create_label("Play", GuiGetStyle(DEFAULT, TEXT_SIZE), GuiGetStyle(DEFAULT, TEXT_SPACING), GetFontDefault());
-    Label settingsButtonLabel = create_label("Settings", GuiGetStyle(DEFAULT, TEXT_SIZE), GuiGetStyle(DEFAULT, TEXT_SPACING), GetFontDefault());
-    Label quitButtonLabel = create_label("Quit", GuiGetStyle(DEFAULT, TEXT_SIZE), GuiGetStyle(DEFAULT, TEXT_SPACING), GetFontDefault());
-
 	Label versionLabel = create_label("Version InDev", 24.0f, 2.0f, GetFontDefault());
 	Label creditsLabel = create_label("Made by pvini07BR", 24.0f, 2.0f, GetFontDefault());
-
-	Label pausedLabel = create_label("Paused", 72.0f, 5.0f, GetFontDefault());
-	Label resumeLabel = create_label("Resume", GuiGetStyle(DEFAULT, TEXT_SIZE), GuiGetStyle(DEFAULT, TEXT_SPACING), GetFontDefault());
-	Label saveAndQuitLabel = create_label("Save & Quit", GuiGetStyle(DEFAULT, TEXT_SIZE), GuiGetStyle(DEFAULT, TEXT_SPACING), GetFontDefault());
-
-    Vector2 bounds[] = {
-        Vector2Add(saveAndQuitLabel.bounds, buttonPadding),
-        Vector2Add(saveAndQuitLabel.bounds, buttonPadding),
-        Vector2Add(saveAndQuitLabel.bounds, buttonPadding)
-    };
-
-    Vector2 totalSize = { 0.0f, 0.0f };
-    for (size_t i = 0; i < 3; i++) {
-        totalSize.x = fmaxf(totalSize.x, bounds[i].x);
-        totalSize.y += bounds[i].y;
-		if (i < 2) totalSize.y += spacing;
-	}
 
     float accumulator = 0.0f;
     bool closeGame = false;
 
     while (!WindowShouldClose() && !closeGame) {
-        if (!game_is_demo_mode()) {
-            if (!game_is_ui_open() && IsKeyPressed(KEY_ESCAPE)) {
+        UpdateNuklear(ctx);
+
+        if (!game_is_ui_open() && IsKeyPressed(KEY_ESCAPE)) {
+            if (!game_is_demo_mode() && menuState == MENU_STATE_PAUSED) {
                 paused = !paused;
+            }
+            else if (menuState == MENU_STATE_SETTINGS) {
+                if (!game_is_demo_mode()) {
+                    menuState = MENU_STATE_PAUSED;
+                }
+                else {
+                    menuState = MENU_STATE_MAIN;
+                }
             }
         }
 
@@ -106,121 +107,100 @@ int main() {
 		game_set_draw_ui(!paused);
         game_draw();
 
-        if (game_is_demo_mode() || (!game_is_demo_mode() && paused)) {
-            if (!game_is_demo_mode() && paused) {
-				DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), (Color) { 0, 0, 0, 128 });
+        if (!game_is_demo_mode() && paused) {
+            DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), (Color) { 0, 0, 0, 128 });
+        }
+
+        if (menuState == MENU_STATE_MAIN || (menuState == MENU_STATE_PAUSED && paused)) {
+            Vector2 screenCenter = (Vector2){ GetScreenWidth() / 2.0f, GetScreenHeight() / 2.0f };
+
+            if (menuState == MENU_STATE_MAIN) {
+                Vector2 logoPos = { screenCenter.x - (logo.width / 2.0f), (GetScreenHeight() / 8.0f) - (logo.height / 2.0f)};
+                DrawTexture(logo, logoPos.x, logoPos.y, WHITE);
+
+                draw_label(
+                    &splashLabel,
+                    Vector2Add(logoPos, Vector2SubtractValue((Vector2) { logo.width, logo.height }, 15.0f)),
+                    -20.0f,
+                    bounce_wave(GetTime() * 6.0f, 0.9f, 1.0f),
+                    YELLOW,
+                    LABEL_ALIGN_CENTER,
+                    LABEL_ALIGN_CENTER
+                );
+
+                draw_label(
+                    &versionLabel,
+                    (Vector2) { 0.0f, GetScreenHeight() },
+                    0.0f,
+                    1.0f,
+                    WHITE,
+                    LABEL_ALIGN_BEGIN,
+                    LABEL_ALIGN_END
+                );
+
+                draw_label(
+                    &creditsLabel,
+                    (Vector2) { GetScreenWidth(), GetScreenHeight() },
+                    0.0f,
+                    1.0f,
+                    WHITE,
+                    LABEL_ALIGN_END,
+                    LABEL_ALIGN_END
+                );
             }
 
-            if (!settings) {
-			    Vector2 screenCenter = (Vector2){ GetScreenWidth() / 2.0f, GetScreenHeight() / 2.0f };
+            Vector2 menuSize = (Vector2){ 220, 225 };
 
-                if (game_is_demo_mode()) {
-                    Vector2 logoPos = { screenCenter.x - (logo.width / 2.0f), (GetScreenHeight() / 8.0f) - (logo.height / 2.0f)};
-                    DrawTexture(logo, logoPos.x, logoPos.y, WHITE);
-
-                    DrawTextPro(
-                        splashLabel.font,
-                        splashLabel.str,
-                        Vector2Add(logoPos, Vector2SubtractValue((Vector2) { logo.width, logo.height }, 15.0f)),
-                        (Vector2) { splashLabel.bounds.x / 2.0f, splashLabel.bounds.y / 2.0f },
-                        -20.0f,
-                        splashLabel.fontSize,
-                        splashLabel.spacing,
-                        YELLOW
-                    );
+            if (nk_begin(ctx, "Menu", nk_rect(screenCenter.x - (menuSize.x / 2.0f), screenCenter.y - (menuSize.y / 2.0f), menuSize.x, menuSize.y), NK_WINDOW_NO_SCROLLBAR)) {
+                nk_layout_row_dynamic(ctx, 40.0f, 1);
+                if (nk_button_label(ctx, menuState == MENU_STATE_MAIN ? "Play" : "Resume")) {
+                    if (menuState == MENU_STATE_MAIN) {
+                        if (world_manager_load_world_info("test_world")) {
+                            game_set_demo_mode(false);
+                            menuState = MENU_STATE_PAUSED;
+                        }
+                    }
+                    else if (menuState == MENU_STATE_PAUSED) {
+                        paused = false;
+                    }
+                }
+                nk_spacing(ctx, 1);
+                if (nk_button_label(ctx, "Settings")) {
+                    menuState = MENU_STATE_SETTINGS;
+                }
+                nk_spacing(ctx, 1);
+                if (nk_button_label(ctx, menuState == MENU_STATE_MAIN ? "Quit" : "Quit & Save")) {
+                    if (menuState == MENU_STATE_MAIN) {
+                        closeGame = true;
+                    }
+                    else if (menuState == MENU_STATE_PAUSED) {
+                        Player* player = game_get_player();
+                        if (player) {
+                            get_world_info()->player_position = player_get_position(player);
+                            get_world_info()->player_flying = player->entity.gravity_affected;
+                        }
+                        game_set_demo_mode(true);
+                        world_manager_save_world_info_and_unload();
+                        chunk_manager_relocate((Vector2i) { 0, 0 });
+                        paused = false;
+                        menuState = MENU_STATE_MAIN;
+                    }
+                }
+            }
+            nk_end(ctx);
+        }
+        else if (menuState == MENU_STATE_SETTINGS) {
+            if (game_settings_draw(ctx)) {
+                if (!game_is_demo_mode()) {
+                    menuState = MENU_STATE_PAUSED;
                 }
                 else {
-                    DrawTextPro(
-                        pausedLabel.font,
-                        pausedLabel.str,
-                        (Vector2) { GetScreenWidth() / 2.0f, GetScreenHeight() / 8.0f },
-                        (Vector2) { pausedLabel.bounds.x / 2.0f, pausedLabel.bounds.y / 2.0f },
-                        0.0f,
-                        pausedLabel.fontSize,
-						pausedLabel.spacing,
-						WHITE
-					);
-                }
-
-                screenCenter = Vector2Subtract(screenCenter, Vector2Scale(totalSize, 0.5f));
-
-                for (int i = 0; i < 4; i++) {
-                    Rectangle rect = { screenCenter.x + ((totalSize.x / 2.0f) - (bounds[i].x / 2.0f)), screenCenter.y, bounds[i].x, bounds[i].y};
-					
-                    const char* playButtonLabelText = game_is_demo_mode() ? playButtonLabel.str : resumeLabel.str;
-					const char* quitButtonLabelText = game_is_demo_mode() ? quitButtonLabel.str : "Save & Quit";
-
-                    switch (i) {
-                    case 0:
-                        if (GuiButton(rect, playButtonLabelText)) {
-                            if (game_is_demo_mode()) {
-                                if (world_manager_load_world_info("test_world")) {
-                                    game_set_demo_mode(false);
-                                    paused = false;
-                                }
-                            }
-                            else {
-                                paused = false;
-                            }
-                        }
-                        break;
-                    case 1:
-                        if (GuiButton(rect, settingsButtonLabel.str)) {
-                            settings = true;
-                        }
-                        break;
-                    case 2:
-                        if (GuiButton(rect, quitButtonLabelText)) {
-                            if (game_is_demo_mode()) {
-                                closeGame = true;
-                            }
-                            else {
-                                Player* player = game_get_player();
-                                if (player) {
-                                    get_world_info()->player_position = player_get_position(player);
-                                    get_world_info()->player_flying = player->entity.gravity_affected;
-                                }
-                                game_set_demo_mode(true);
-                                world_manager_save_world_info_and_unload();
-                                chunk_manager_relocate((Vector2i) { 0, 0 });
-                                paused = false;
-							}
-                        }
-                        break;
-                    }
-                    screenCenter.y += bounds[i].y + spacing;
-                }
-
-                if (game_is_demo_mode()) {
-                    DrawTextPro(
-                        versionLabel.font,
-                        versionLabel.str,
-                        (Vector2) { 0.0f, GetScreenHeight() },
-                        (Vector2) { 0.0f, creditsLabel.bounds.y },
-                        0.0f,
-                        versionLabel.fontSize,
-                        versionLabel.spacing,
-                        WHITE
-                    );
-
-                    DrawTextPro(
-                        creditsLabel.font,
-                        creditsLabel.str,
-                        (Vector2) { GetScreenWidth(), GetScreenHeight() },
-                        (Vector2) { creditsLabel.bounds.x, creditsLabel.bounds.y },
-                        0.0f,
-                        creditsLabel.fontSize,
-                        creditsLabel.spacing,
-                        WHITE
-                    );
-                }
-            }
-            else {
-                if (game_settings_draw()) {
-                    settings = false;
+                    menuState = MENU_STATE_MAIN;
                 }
             }
         }
+
+        DrawNuklear(ctx);
 
         EndDrawing();
     }
@@ -234,6 +214,8 @@ int main() {
     }
 
     game_free();
+
+    UnloadNuklear(ctx);
 
     CloseWindow();
 

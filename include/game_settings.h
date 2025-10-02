@@ -4,6 +4,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "thirdparty/raylib-nuklear.h"
+
 #define GAME_SETTINGS_FILE_NAME "settings.bin"
 #define GAME_SETTINGS_MAX_CHUNK_VIEW 16
 
@@ -16,7 +18,7 @@ typedef struct {
 	bool wall_ao;
 } GameSettings;
 
-// Had to make a separate struct so it can communicate properly with raygui
+// Had to make a separate struct so it can communicate properly with Nuklear
 typedef struct {
 	int chunk_view_width;
 	int chunk_view_height;
@@ -33,7 +35,7 @@ bool save_game_settings();
 bool load_game_settings();
 
 // Returns true if the back button has been pressed
-bool game_settings_draw();
+bool game_settings_draw(struct nk_context* ctx);
 void game_settings_apply();
 GameSettings* get_game_settings();
 

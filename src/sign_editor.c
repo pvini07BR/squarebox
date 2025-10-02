@@ -4,7 +4,6 @@
 #include <string.h>
 
 #include <raylib.h>
-#include <thirdparty/raygui.h>
 
 static bool open = false;
 static SignLines* lines = NULL;

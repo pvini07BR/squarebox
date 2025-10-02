@@ -47,6 +47,13 @@ typedef struct {
 	float spacing;
 } Label;
 
+typedef enum {
+	LABEL_ALIGN_BEGIN,
+	LABEL_ALIGN_CENTER,
+	LABEL_ALIGN_END
+} LabelAlignment;
+
 Label create_label(const char* str, float fontSize, float spacing, Font font);
+void draw_label(Label* label, Vector2 pos, float rotation, float scale, Color color, LabelAlignment horizontal_alignment, LabelAlignment vertical_alignment);
 
 #endif

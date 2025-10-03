@@ -182,8 +182,6 @@ bool game_settings_draw(struct nk_context* ctx) {
 }
 
 void game_settings_apply() {
-	temp_to_game_settings();
-
 	Player* player = game_get_player();
 	if (player) player->color = tempSettings.player_color;
 
@@ -201,6 +199,7 @@ void game_settings_apply() {
 		chunk_manager_update_lighting();
 	}
 
+	temp_to_game_settings();
 	save_game_settings();
 }
 

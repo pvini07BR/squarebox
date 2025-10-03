@@ -10,20 +10,26 @@
 #define GAME_SETTINGS_MAX_CHUNK_VIEW 16
 
 typedef struct {
+	Color player_color;
 	uint8_t chunk_view_width;
 	uint8_t chunk_view_height;
 	uint8_t wall_brightness;
 	uint8_t wall_ao_brightness;
+	bool vsync;
+	bool drawfps;
 	bool smooth_lighting;
 	bool wall_ao;
 } GameSettings;
 
 // Had to make a separate struct so it can communicate properly with Nuklear
 typedef struct {
-	int chunk_view_width;
-	int chunk_view_height;
 	float wall_brightness;
 	float wall_ao_brightness;
+	int chunk_view_width;
+	int chunk_view_height;
+	Color player_color;
+	bool vsync;
+	bool drawfps;
 	bool smooth_lighting;
 	bool wall_ao;
 } TempGameSettings;

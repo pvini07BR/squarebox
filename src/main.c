@@ -35,6 +35,7 @@ typedef enum {
 
 MenuState menuState = MENU_STATE_MAIN;
 bool paused = false;
+char fpsBuf[8];
 
 float bounce_wave(float x, float min, float max) {
     float f = fabs(sin(x));
@@ -53,7 +54,7 @@ void collect_game_info() {
 }
 
 int main() {
-    SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT);
+    SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(1280, 720, "squarebox");
     SetExitKey(KEY_NULL);
     SetTraceLogLevel(LOG_WARNING);
@@ -215,6 +216,11 @@ int main() {
         }
 
         DrawNuklear(ctx);
+
+        if (get_game_settings()->drawfps) {
+            sprintf(fpsBuf, "FPS: %d", GetFPS());
+            DrawText(fpsBuf, 0, 0, 24.0f, WHITE);
+        }
 
         EndDrawing();
     }

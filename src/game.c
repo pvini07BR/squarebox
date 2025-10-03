@@ -505,7 +505,7 @@ void game_set_demo_mode(bool demo) {
         chunk_manager_relocate(playerChunkPos);
 
         if (player == NULL) {
-            player = player_create(playerPosition);
+            player = player_create(playerPosition, get_game_settings()->player_color);
             if (player) {
 				player->entity.gravity_affected = !get_world_info()->player_flying;
                 entity_list_add(&player->entity);

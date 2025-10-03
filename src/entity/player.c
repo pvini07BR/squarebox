@@ -19,13 +19,14 @@ void player_update(Entity* entity, float deltaTime);
 void player_draw(Entity* entity);
 void player_destroy(Entity* entity);
 
-Player* player_create(Vector2 initialPosition) {
+Player* player_create(Vector2 initialPosition, Color color) {
 	Player* player = malloc(sizeof(Player));
 	if (!player) return NULL;
 
 	player->direction = 0;
 	player->rotation = 0.0f;
 	player->disable_input = false;
+	player->color = color;
 
 	player->entity.rect.x = initialPosition.x;
 	player->entity.rect.y = initialPosition.y;
@@ -119,7 +120,7 @@ void player_update(Entity* entity, float deltaTime) {
 			rotation_amount /= 2.0f;
 		}
 
-		if (!entity->grounded) {
+		if (!entity->grounded && !entity->on_climbable) {
 			player->rotation += rotation_amount * deltaTime * player->direction;
 		}
 		else {
@@ -137,6 +138,11 @@ void player_draw(Entity* entity) {
 	uint8_t light = chunk_manager_get_light((Vector2i) { TO_BLOCK_COORDS(playerCenter.x), TO_BLOCK_COORDS(playerCenter.y) });
 	if (light < 2) light = 2;
 
+	Color playerColor = player->color;
+	playerColor.r *= ((float)light / 15.0f);
+	playerColor.g *= ((float)light / 15.0f);
+	playerColor.b *= ((float)light / 15.0f);
+
 	rlPushMatrix();
 
 	rlTranslatef(
@@ -149,7 +155,7 @@ void player_draw(Entity* entity) {
 		player->entity.rect,
 		Vector2Scale((Vector2) { player->entity.rect.width, player->entity.rect.height }, 0.5f),
 		player->rotation,
-		(Color) { 255 * ((float)light / 15.0f), 0, 0, 255 }
+		playerColor
 	);
 	
 	rlPopMatrix();

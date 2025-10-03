@@ -64,6 +64,9 @@ int main() {
     struct nk_context* ctx = InitNuklear(fontSize);
 
     load_game_settings();
+    if (get_game_settings()->vsync) {
+		SetTargetFPS(GetMonitorRefreshRate(GetCurrentMonitor()));
+	}
 
     world_manager_init();
 

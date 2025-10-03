@@ -120,6 +120,8 @@ typedef enum {
 // It is used through a index on the static registry array
 // to obtain the necessary details.
 typedef struct {
+	// You NEED to define the variant generator, otherwise the game will crash!!!
+	// it is used to determine what model to be rendered for that block.
 	BlockVariantGenerator variant_generator;
 	BlockInteractionCallback interact_callback;
 	BlockStateResolver state_resolver;
@@ -142,7 +144,10 @@ typedef struct {
 	// for example, when setting the value to 5, the block will tick every 5th tick.
 	uint8_t tick_speed;
 
-	// Determines if this block has states that can be selected.
+	// Determines if this block has states that can be selected manually on the game.
+	// the array is an array of states. Depending on how a state is interpreted for a block,
+	// it can be an array of numbers or an array of bitwise modified numbers.
+	// See block_state_bitfields to see how uint8_t numbers becomes states with multiple members.
 	uint8_t selectable_state_count;
 	uint8_t selectable_states[4];
 } BlockRegistry;

@@ -99,8 +99,9 @@ typedef struct {
 	// ID Number in the Block Registry.
 	uint8_t id;
 	// Member variable used for block states.
-	// Its usage depends on what flag is set
-	// for a specific block.
+	// Its usage depends on what block it is.
+	// it can be used as a simple number, or use bitwise operations
+	// to achieve multiple states.
 	uint8_t state;
 	// Pointer to a external data. Set NULL if the block
 	// does not have an associated external data.

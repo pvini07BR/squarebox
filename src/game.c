@@ -240,7 +240,8 @@ void game_update(float deltaTime) {
         
     if (player) {
         Vector2 newTarget = Vector2Add(player_get_position(player), Vector2Scale(player_get_size(player), 0.5f));
-        camera.target = Vector2Lerp(camera.target, newTarget, 25.0f * GetFrameTime());
+        
+        camera.target = Vector2Lerp(camera.target, newTarget, Clamp(25.0f * GetFrameTime(), 0.0f, 1.0f));
     }
 
     if (IsKeyPressed(KEY_E) && !game_is_ui_open())

@@ -51,9 +51,9 @@ void player_update(Entity* entity, float deltaTime) {
 
 	if (player->disable_input) {
 		if (!entity->gravity_affected)
-			entity->velocity = Vector2Lerp(entity->velocity, Vector2Zero(), 5.0f * deltaTime);
+			entity->velocity = Vector2Lerp(entity->velocity, Vector2Zero(), Clamp(5.0f * deltaTime, 0.0f, 1.0f));
 		else {
-			entity->velocity.x = Lerp(player->entity.velocity.x, 0.0f, 20.0f * deltaTime);
+			entity->velocity.x = Lerp(player->entity.velocity.x, 0.0f, Clamp(20.0f * deltaTime, 0.0f, 1.0f));
 			if (player->entity.grounded) player->direction = 0;
 		}
 
@@ -71,7 +71,7 @@ void player_update(Entity* entity, float deltaTime) {
 	if (!entity->gravity_affected) {
 		player->direction = 0;
 		float nineties = roundf((player->rotation / 90.0f)) * 90.0f;
-		player->rotation = Lerp(player->rotation, nineties, 50.0f * deltaTime);
+		player->rotation = Lerp(player->rotation, nineties, Clamp(50.0f * deltaTime, 0.0f, 1.0f));
 
 		Vector2 dir = {
 			((IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_D)) - (IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_A))),
@@ -81,21 +81,21 @@ void player_update(Entity* entity, float deltaTime) {
 		if (dir.x != 0.0f || dir.y != 0.0f)
 			dir = Vector2Normalize(dir);
 
-		entity->velocity = Vector2Lerp(entity->velocity, Vector2Scale(dir, speed), 5.0f * deltaTime);
+		entity->velocity = Vector2Lerp(entity->velocity, Vector2Scale(dir, speed), Clamp(5.0f * deltaTime, 0.0f, 1.0f));
 	}
 	// Otherwise behave like a platformer player controller
 	else {
 		// Horizontal movement
 		if (IsKeyDown(KEY_A) || IsKeyDown(KEY_LEFT)) {
-			player->entity.velocity.x = Lerp(player->entity.velocity.x, -speed, 20.0f * deltaTime);
+			player->entity.velocity.x = Lerp(player->entity.velocity.x, -speed, Clamp(20.0f * deltaTime, 0.0f, 1.0f));
 			player->direction = -1;
 		}
 		else if (IsKeyDown(KEY_D) || IsKeyDown(KEY_RIGHT)) {
-			player->entity.velocity.x = Lerp(player->entity.velocity.x, speed, 20.0f * deltaTime);
+			player->entity.velocity.x = Lerp(player->entity.velocity.x, speed, Clamp(20.0f * deltaTime, 0.0f, 1.0f));
 			player->direction = 1;
 		}
 		else {
-			player->entity.velocity.x = Lerp(player->entity.velocity.x, 0.0f, 20.0f * deltaTime);
+			player->entity.velocity.x = Lerp(player->entity.velocity.x, 0.0f, Clamp(20.0f * deltaTime, 0.0f, 1.0f));
 			if (player->entity.grounded) player->direction = 0;
 		}
 
@@ -106,7 +106,7 @@ void player_update(Entity* entity, float deltaTime) {
 				if (entity->on_liquid) up_speed *= 0.5f;
 				else if (entity->on_climbable) up_speed *= 0.75f;
 
-				player->entity.velocity.y = Lerp(player->entity.velocity.y, up_speed, 20.0f * deltaTime);
+				player->entity.velocity.y = Lerp(player->entity.velocity.y, up_speed, Clamp(20.0f * deltaTime, 0.0f, 1.0f));
 			}
 			else if (entity->grounded) {
 				player->entity.velocity.y -= JUMP_FORCE;
@@ -125,7 +125,7 @@ void player_update(Entity* entity, float deltaTime) {
 		}
 		else {
 			float nineties = roundf((player->rotation / 90.0f)) * 90.0f;
-			player->rotation = Lerp(player->rotation, nineties, 50.0f * deltaTime);
+			player->rotation = Lerp(player->rotation, nineties, Clamp(50.0f * deltaTime, 0.0f, 1.0f));
 		}
 	}
 }

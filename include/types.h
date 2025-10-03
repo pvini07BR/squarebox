@@ -12,10 +12,78 @@
 #include <raylib.h>
 
 typedef enum {
+	BLOCK_MODEL_QUAD,
+	BLOCK_MODEL_SLAB,
+	BLOCK_MODEL_STAIRS,
+	BLOCK_MODEL_NUB,
+	BLOCK_MODEL_TORCH,
+	BLOCK_MODEL_TORCH_WALL_RIGHT,
+	BLOCK_MODEL_TORCH_WALL_LEFT,
+	BLOCK_MODEL_COUNT
+} BlockModelEnum;
+
+typedef enum {
+	ATLAS_GRASS_BLOCK,
+	ATLAS_DIRT_BLOCK,
+	ATLAS_SAND,
+	ATLAS_STONE,
+	ATLAS_COBBLESTONE,
+	ATLAS_WOODEN_PLANKS,
+	ATLAS_WOOD_LOG,
+	ATLAS_LEAVES,
+	ATLAS_GLASS,
+	ATLAS_LAMP,
+	ATLAS_CHEST,
+	ATLAS_WOOL,
+	ATLAS_ORANGE_WOOL,
+	ATLAS_MAGENTA_WOOL,
+	ATLAS_LIGHT_BLUE_WOOL,
+	ATLAS_YELLOW_WOOL,
+	ATLAS_LIME_WOOL,
+	ATLAS_PINK_WOOL,
+	ATLAS_GRAY_WOOL,
+	ATLAS_LIGHT_GRAY_WOOL,
+	ATLAS_CYAN_WOOL,
+	ATLAS_PURPLE_WOOL,
+	ATLAS_BLUE_WOOL,
+	ATLAS_BROWN_WOOL,
+	ATLAS_GREEN_WOOL,
+	ATLAS_RED_WOOL,
+	ATLAS_BLACK_WOOL,
+	ATLAS_GRASS,
+	ATLAS_FLOWER,
+	ATLAS_PEBBLES,
+	ATLAS_FENCE,
+	ATLAS_FENCE_RIGHT,
+	ATLAS_FENCE_LEFT,
+	ATLAS_FENCE_BOTH,
+	ATLAS_FENCE_UP,
+	ATLAS_FENCE_UP_RIGHT,
+	ATLAS_FENCE_UP_LEFT,
+	ATLAS_FENCE_UP_BOTH,
+	ATLAS_LADDERS,
+	ATLAS_TRAPDOOR,
+	ATLAS_SIGN,
+	ATLAS_SIGN_WALL,
+	ATLAS_TORCH,
+	ATLAS_WATER_BUCKET,
+	ATLAS_COUNT
+} TextureAtlasEnum;
+
+typedef enum {
 	CHUNK_LAYER_BACKGROUND,
 	CHUNK_LAYER_FOREGROUND,
 	CHUNK_LAYER_COUNT
 } ChunkLayerEnum;
+
+typedef enum {
+	BLOCK_COLLIDER_QUAD,
+	BLOCK_COLLIDER_SLAB,
+	BLOCK_COLLIDER_STAIRS,
+	BLOCK_COLLIDER_NUB,
+	BLOCK_COLLIDER_TRAPDOOR,
+	BLOCK_COLLIDER_COUNT
+} BlockColliderEnum;
 
 typedef struct {
 	unsigned int x;
@@ -38,6 +106,24 @@ typedef struct {
 	// does not have an associated external data.
 	void* data;
 } BlockInstance;
+
+typedef struct {
+	// Index in the atlas texture to use.
+	// See texture_atlas.c.
+	TextureAtlasEnum atlas_idx;
+	// Index of the model in the block models array.
+	// see block_models.c.
+	BlockModelEnum model_idx;
+	// Index of the collider in the block colliders array.
+	// see block_colliders.c.
+	BlockColliderEnum collider_idx;
+	// Determines what rotation the model should have in this block state.
+	// goes from 0 to 3, representing rotations in a anti-clockwise order
+	// by 90 degrees each.
+	uint8_t rotation;
+	// Locks the UV and does not let the texture rotate with the model.
+	bool uv_lock;
+} BlockVariant;
 
 typedef struct {
 	Font font;

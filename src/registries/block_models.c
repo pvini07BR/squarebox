@@ -93,7 +93,7 @@ void block_models_init() {
 	models[BLOCK_MODEL_TORCH].vertices[5] = (Vertex2D){ p3.x * TILE_SIZE, p3.y * TILE_SIZE, p3.x, p3.y };
 
 	// Torch on the wall model
-	models[BLOCK_MODEL_TORCH_WALL] = (BlockModel){
+	models[BLOCK_MODEL_TORCH_WALL_RIGHT] = (BlockModel){
 		.vertexCount = 6,
 		.vertices = malloc(sizeof(Vertex2D) * 6)
 	};
@@ -101,22 +101,47 @@ void block_models_init() {
 	Vector2 translation = (Vector2){ unit * 12, -(unit * 10) };
 
 	Vector2 new_p0 = Vector2Add(p0, translation);
-	Vector2 new_p1 = Vector2Add(p1, translation);;
-	Vector2 new_p2 = Vector2Add(p2, translation);;
-	Vector2 new_p3 = Vector2Add(p3, translation);;
+	Vector2 new_p1 = Vector2Add(p1, translation);
+	Vector2 new_p2 = Vector2Add(p2, translation);
+	Vector2 new_p3 = Vector2Add(p3, translation);
 
 	Vector2 rp0 = Vector2Add(Vector2Rotate(Vector2Subtract(new_p0, new_p2), -PI / 8.0f), new_p2);
 	Vector2 rp1 = Vector2Add(Vector2Rotate(Vector2Subtract(new_p1, new_p2), -PI / 8.0f), new_p2);
 	Vector2 rp2 = Vector2Add(Vector2Rotate(Vector2Subtract(new_p2, new_p2), -PI / 8.0f), new_p2);
 	Vector2 rp3 = Vector2Add(Vector2Rotate(Vector2Subtract(new_p3, new_p2), -PI / 8.0f), new_p2);
 
-	models[BLOCK_MODEL_TORCH_WALL].vertices[0] = (Vertex2D){ rp0.x * TILE_SIZE, rp0.y * TILE_SIZE, p0.x, p0.y };
-	models[BLOCK_MODEL_TORCH_WALL].vertices[1] = (Vertex2D){ rp1.x * TILE_SIZE, rp1.y * TILE_SIZE, p1.x, p1.y };
-	models[BLOCK_MODEL_TORCH_WALL].vertices[2] = (Vertex2D){ rp2.x * TILE_SIZE, rp2.y * TILE_SIZE, p2.x, p2.y };
+	models[BLOCK_MODEL_TORCH_WALL_RIGHT].vertices[0] = (Vertex2D){ rp0.x * TILE_SIZE, rp0.y * TILE_SIZE, p0.x, p0.y };
+	models[BLOCK_MODEL_TORCH_WALL_RIGHT].vertices[1] = (Vertex2D){ rp1.x * TILE_SIZE, rp1.y * TILE_SIZE, p1.x, p1.y };
+	models[BLOCK_MODEL_TORCH_WALL_RIGHT].vertices[2] = (Vertex2D){ rp2.x * TILE_SIZE, rp2.y * TILE_SIZE, p2.x, p2.y };
 
-	models[BLOCK_MODEL_TORCH_WALL].vertices[3] = (Vertex2D){ rp0.x * TILE_SIZE, rp0.y * TILE_SIZE, p0.x, p0.y };
-	models[BLOCK_MODEL_TORCH_WALL].vertices[4] = (Vertex2D){ rp2.x * TILE_SIZE, rp2.y * TILE_SIZE, p2.x, p2.y };
-	models[BLOCK_MODEL_TORCH_WALL].vertices[5] = (Vertex2D){ rp3.x * TILE_SIZE, rp3.y * TILE_SIZE, p3.x, p3.y };
+	models[BLOCK_MODEL_TORCH_WALL_RIGHT].vertices[3] = (Vertex2D){ rp0.x * TILE_SIZE, rp0.y * TILE_SIZE, p0.x, p0.y };
+	models[BLOCK_MODEL_TORCH_WALL_RIGHT].vertices[4] = (Vertex2D){ rp2.x * TILE_SIZE, rp2.y * TILE_SIZE, p2.x, p2.y };
+	models[BLOCK_MODEL_TORCH_WALL_RIGHT].vertices[5] = (Vertex2D){ rp3.x * TILE_SIZE, rp3.y * TILE_SIZE, p3.x, p3.y };
+
+	models[BLOCK_MODEL_TORCH_WALL_LEFT] = (BlockModel){
+		.vertexCount = 6,
+		.vertices = malloc(sizeof(Vertex2D) * 6)
+	};
+
+	translation = (Vector2){ unit * -28, -(unit * 10) };
+
+	new_p0 = Vector2Add(p0, translation);
+	new_p1 = Vector2Add(p1, translation);
+	new_p2 = Vector2Add(p2, translation);
+	new_p3 = Vector2Add(p3, translation);
+
+	rp0 = Vector2Add(Vector2Rotate(Vector2Subtract(new_p0, new_p1), PI / 8.0f), new_p2);
+	rp1 = Vector2Add(Vector2Rotate(Vector2Subtract(new_p1, new_p1), PI / 8.0f), new_p2);
+	rp2 = Vector2Add(Vector2Rotate(Vector2Subtract(new_p2, new_p1), PI / 8.0f), new_p2);
+	rp3 = Vector2Add(Vector2Rotate(Vector2Subtract(new_p3, new_p1), PI / 8.0f), new_p2);
+
+	models[BLOCK_MODEL_TORCH_WALL_LEFT].vertices[0] = (Vertex2D){ rp0.x * TILE_SIZE, rp0.y * TILE_SIZE, p0.x, p0.y };
+	models[BLOCK_MODEL_TORCH_WALL_LEFT].vertices[1] = (Vertex2D){ rp1.x * TILE_SIZE, rp1.y * TILE_SIZE, p1.x, p1.y };
+	models[BLOCK_MODEL_TORCH_WALL_LEFT].vertices[2] = (Vertex2D){ rp2.x * TILE_SIZE, rp2.y * TILE_SIZE, p2.x, p2.y };
+
+	models[BLOCK_MODEL_TORCH_WALL_LEFT].vertices[3] = (Vertex2D){ rp0.x * TILE_SIZE, rp0.y * TILE_SIZE, p0.x, p0.y };
+	models[BLOCK_MODEL_TORCH_WALL_LEFT].vertices[4] = (Vertex2D){ rp2.x * TILE_SIZE, rp2.y * TILE_SIZE, p2.x, p2.y };
+	models[BLOCK_MODEL_TORCH_WALL_LEFT].vertices[5] = (Vertex2D){ rp3.x * TILE_SIZE, rp3.y * TILE_SIZE, p3.x, p3.y };
 }
 
 int block_models_get_vertex_count(size_t model_idx)
@@ -125,127 +150,115 @@ int block_models_get_vertex_count(size_t model_idx)
 	return models[model_idx].vertexCount;
 }
 
-void block_models_build_mesh(Mesh* output, size_t modelIdx, size_t atlasIdx, bool flipUVH, bool flipUVV, bool flipModelH, bool flipModelV, int rotation)
+void block_models_build_mesh(Mesh* output, BlockVariant variant)
 {
     if (!output) return;
-    if (modelIdx >= BLOCK_MODEL_COUNT) return;
+    if (variant.model_idx >= BLOCK_MODEL_COUNT) return;
 
-	output->vertexCount = models[modelIdx].vertexCount;
+	output->vertexCount = models[variant.model_idx].vertexCount;
 	output->triangleCount = output->vertexCount / 3;
 	output->vertices = malloc(sizeof(float) * 3 * output->vertexCount);
 	output->texcoords = malloc(sizeof(float) * 2 * output->vertexCount);
 
-	bm_set_block_model(NULL, output, (Vector2u){0,0}, NULL, modelIdx, atlasIdx, flipUVH, flipUVV, flipModelH, flipModelV, rotation);
+	bm_set_block_model(NULL, output, (Vector2u){0,0}, NULL, variant);
 	UploadMesh(output, false);
 }
 
-void bm_set_block_model(size_t* offsets, Mesh* mesh, Vector2u position, Color colors[4],
-                       size_t modelIdx, size_t atlasIdx,
-                       bool flipUV_H, bool flipUV_V,
-                       bool flipModelH, bool flipModelV,
-                       uint8_t rotation)
+void bm_set_block_model(size_t* offsets, Mesh* mesh, Vector2u position, Color colors[4], BlockVariant variant)
 {
     if (position.x >= CHUNK_WIDTH || position.y >= CHUNK_WIDTH) return;
-    if (modelIdx >= BLOCK_MODEL_COUNT) return;
+    if (variant.model_idx >= BLOCK_MODEL_COUNT) return;
     if (!mesh) return;
 
-	size_t index = position.x + (position.y * CHUNK_WIDTH);
-	size_t vertexOffset = 0;
-	if (offsets) {
-		vertexOffset = offsets[index];
-	}
-	BlockModel* model = &models[modelIdx];
-	Rectangle uvRect = texture_atlas_get_uv(atlasIdx, flipUV_H, flipUV_V);
+    size_t index = position.x + (position.y * CHUNK_WIDTH);
+    size_t vertexOffset = 0;
+    if (offsets) {
+        vertexOffset = offsets[index];
+    }
+    BlockModel* model = &models[variant.model_idx];
+    Rectangle uvRect = texture_atlas_get_uv(variant.atlas_idx, false, false);
 
-	for (size_t v = 0; v < model->vertexCount; v++) {
-		Vertex2D* vert = &model->vertices[v];
+    for (size_t v = 0; v < model->vertexCount; v++) {
+        Vertex2D vert = model->vertices[v];
+        float vert_x = vert.x;
+        float vert_y = vert.y;
+        float vert_u = vert.u;
+        float vert_v = vert.v;
 
-		float vert_x = vert->x;
-		float vert_y = vert->y;
+        uint8_t rot = variant.rotation & 3;
+        switch (rot) {
+            case 0:
+                break;
+            case 1: {
+                float tmp = vert_x;
+                vert_x = TILE_SIZE - vert_y;
+                vert_y = tmp;
+                if (variant.uv_lock) {
+                    float old_v = vert_v;
+                    vert_u = 1.0f - old_v;
+                    vert_v = tmp / TILE_SIZE;
+                }
+                break;
+            }
+            case 2:
+                vert_x = TILE_SIZE - vert_x;
+                vert_y = TILE_SIZE - vert_y;
+                if (variant.uv_lock) {
+                    vert_u = 1.0f - vert_u;
+                    vert_v = 1.0f - vert_v;
+                }
+                break;
+            case 3: {
+                float tmp = vert_x;
+                vert_x = vert_y;
+                vert_y = TILE_SIZE - tmp;
+                if (variant.uv_lock) {
+                    float old_tmp = tmp;
+                    vert_u = vert_v;
+                    vert_v = 1.0f - (old_tmp / TILE_SIZE);
+                }
+                break;
+            }
+        }
 
-		float vert_u = vert->u;
-		float vert_v = vert->v;
+        mesh->vertices[(v + vertexOffset) * 3 + 0] = vert_x + (position.x * TILE_SIZE);
+        mesh->vertices[(v + vertexOffset) * 3 + 1] = vert_y + (position.y * TILE_SIZE);
+        mesh->vertices[(v + vertexOffset) * 3 + 2] = 0.0f;
 
-		if (flipModelH) {
-			vert_x = TILE_SIZE - vert_x;
-			if (modelIdx > BLOCK_MODEL_QUAD) vert_u = 1.0f - vert_u;
-		}
-		if (flipModelV) {
-			vert_y = TILE_SIZE - vert_y;
-			if (modelIdx > BLOCK_MODEL_QUAD) vert_v = 1.0f - vert_v;
-		}
+        mesh->texcoords[(v + vertexOffset) * 2 + 0] = uvRect.x + vert_u * uvRect.width;
+        mesh->texcoords[(v + vertexOffset) * 2 + 1] = uvRect.y + vert_v * uvRect.height;
 
-		uint8_t rot = rotation & 3;
-		switch (rot) {
-			case 0: break;
-			case 1: {
-				float tmp = vert_x;
-				vert_x = TILE_SIZE - vert_y;
-				vert_y = tmp;
-				if (modelIdx > BLOCK_MODEL_QUAD) {
-					vert_u = 1.0f - vert_v;
-					vert_v = tmp / TILE_SIZE;
-				}
-				break;
-			}
-			case 2:
-				vert_x = TILE_SIZE - vert_x;
-				vert_y = TILE_SIZE - vert_y;
-				if (modelIdx > BLOCK_MODEL_QUAD) {
-					vert_u = 1.0f - vert_u;
-					vert_v = 1.0f - vert_v;
-				}
-				break;
-			case 3: {
-				float tmp = vert_x;
-				vert_x = vert_y;
-				vert_y = TILE_SIZE - tmp;
-				if (modelIdx > BLOCK_MODEL_QUAD) {
-					vert_u = vert_v;
-					vert_v = 1.0f - tmp / TILE_SIZE;
-				}
-				break;
-			}
-		}
+        if (colors) {
+            if (variant.model_idx == BLOCK_MODEL_QUAD) {
+                int colorIdx = 0;
 
-		mesh->vertices[(v + vertexOffset) * 3 + 0] = vert_x + (position.x * TILE_SIZE);
-		mesh->vertices[(v + vertexOffset) * 3 + 1] = vert_y + (position.y * TILE_SIZE);
-		mesh->vertices[(v + vertexOffset) * 3 + 2] = 0.0f;
+                if (v == 0) colorIdx = 0;    // Top left
+                if (v == 1) colorIdx = 3;    // Bottom left
+                if (v == 2) colorIdx = 2;    // Bottom right
+                if (v == 3) colorIdx = 0;    // Top left
+                if (v == 4) colorIdx = 2;    // Bottom right
+                if (v == 5) colorIdx = 1;    // Top right
 
-		mesh->texcoords[(v + vertexOffset) * 2 + 0] = uvRect.x + vert_u * uvRect.width;
-		mesh->texcoords[(v + vertexOffset) * 2 + 1] = uvRect.y + vert_v * uvRect.height;
+                mesh->colors[(vertexOffset + v) * 4 + 0] = colors[colorIdx].r;
+                mesh->colors[(vertexOffset + v) * 4 + 1] = colors[colorIdx].g;
+                mesh->colors[(vertexOffset + v) * 4 + 2] = colors[colorIdx].b;
+                mesh->colors[(vertexOffset + v) * 4 + 3] = colors[colorIdx].a;
+            }
+            else {
+                Color average = (Color){
+                    .r = (colors[0].r + colors[1].r + colors[2].r + colors[3].r) / 4.0f,
+                    .g = (colors[0].g + colors[1].g + colors[2].g + colors[3].g) / 4.0f,
+                    .b = (colors[0].b + colors[1].b + colors[2].b + colors[3].b) / 4.0f,
+                    .a = (colors[0].a + colors[1].a + colors[2].a + colors[3].a) / 4.0f
+                };
 
-		if (colors) {
-			if (modelIdx == BLOCK_MODEL_QUAD) {
-				int colorIdx = 0;
-
-				if (v == 0) colorIdx = 0;    // Top left
-				if (v == 1) colorIdx = 3;    // Bottom left
-				if (v == 2) colorIdx = 2;    // Bottom right
-				if (v == 3) colorIdx = 0;    // Top left
-				if (v == 4) colorIdx = 2;    // Bottom right
-				if (v == 5) colorIdx = 1;    // Top right
-
-				mesh->colors[(vertexOffset + v) * 4 + 0] = colors[colorIdx].r;
-				mesh->colors[(vertexOffset + v) * 4 + 1] = colors[colorIdx].g;
-				mesh->colors[(vertexOffset + v) * 4 + 2] = colors[colorIdx].b;
-				mesh->colors[(vertexOffset + v) * 4 + 3] = colors[colorIdx].a;
-			}
-			else {
-				Color average = (Color){
-					.r = (colors[0].r + colors[1].r + colors[2].r + colors[3].r) / 4.0f,
-					.g = (colors[0].g + colors[1].g + colors[2].g + colors[3].g) / 4.0f,
-					.b = (colors[0].b + colors[1].b + colors[2].b + colors[3].b) / 4.0f,
-					.a = (colors[0].a + colors[1].a + colors[2].a + colors[3].a) / 4.0f
-				};
-
-				mesh->colors[(vertexOffset + v) * 4 + 0] = average.r;
-				mesh->colors[(vertexOffset + v) * 4 + 1] = average.g;
-				mesh->colors[(vertexOffset + v) * 4 + 2] = average.b;
-				mesh->colors[(vertexOffset + v) * 4 + 3] = average.a;
-			}
-		}
-	}
+                mesh->colors[(vertexOffset + v) * 4 + 0] = average.r;
+                mesh->colors[(vertexOffset + v) * 4 + 1] = average.g;
+                mesh->colors[(vertexOffset + v) * 4 + 2] = average.b;
+                mesh->colors[(vertexOffset + v) * 4 + 3] = average.a;
+            }
+        }
+    }
 }
 
 void block_models_free() {

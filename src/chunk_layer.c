@@ -30,7 +30,9 @@ void chunk_layer_genmesh(ChunkLayer* layer, ChunkLayerEnum layer_id, ChunkLayerE
     // Get total amount of vertices needed
     int vertexCount = 0;
     for (int i = 0; i < CHUNK_AREA; i++) {
-        BlockVariant bvar = br_get_block_variant(layer->blocks[i].id, layer->blocks[i].state);
+        BlockInstance block = layer->blocks[i];
+        BlockRegistry* brg = br_get_block_registry(block.id);
+        BlockVariant bvar = brg->variant_generator(block.state);
         layer->vertexOffsets[i] = vertexCount;
         vertexCount += block_models_get_vertex_count(bvar.model_idx);
     }
@@ -158,27 +160,17 @@ void chunk_layer_genmesh(ChunkLayer* layer, ChunkLayerEnum layer_id, ChunkLayerE
 
         srand(h);
 
+        /*
         bool flipUVH = (brg->flags & BLOCK_FLAG_FLIP_H) && (rand() % 2) ? true : false;
         bool flipUVV = (brg->flags & BLOCK_FLAG_FLIP_V) && (rand() % 2) ? true : false;
-
-        uint8_t variantIdx = block.state;
-        if (brg->variant_selector) {
-            variantIdx = brg->variant_selector(block.state);
-        }
-        BlockVariant bvar = br_get_block_variant(block.id, variantIdx);
+        */
 
         bm_set_block_model(
             layer->vertexOffsets,
             &layer->mesh,
             (Vector2u) { x, y },
             colors,
-            bvar.model_idx,
-            bvar.atlas_idx,
-            flipUVH,
-            flipUVV,
-            bvar.flipH,
-            bvar.flipV,
-            bvar.rotation
+            brg->variant_generator(block.state)
         );
     }
 

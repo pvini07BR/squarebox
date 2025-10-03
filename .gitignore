@@ -1,6 +1,7 @@
 /out
 bin/
 build/
+worlds/
 /.vs
 .idea/
 CMakeSettings.json

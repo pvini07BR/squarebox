@@ -1,6 +1,6 @@
 #include "entity/entity.h"
 #include "registries/block_registry.h"
-#include "registries/block_registry.h"
+#include "registries/block_colliders.h"
 #include "block_state_bitfields.h"
 #include "chunk_manager.h"
 #include "types.h"
@@ -159,11 +159,7 @@ static void resolve_solid_blocks(Entity* entity, float deltaTime) {
 			Rectangle collider_rects[MAX_RECTS_PER_COLLIDER];
 			size_t collider_count = 0;
 
-			uint8_t variantIdx = block.state;
-			if (reg->variant_selector) {
-				variantIdx = reg->variant_selector(block.state);
-			}
-			BlockVariant variant = br_get_block_variant(block.id, variantIdx);
+			BlockVariant variant = reg->variant_generator(block.state);
 			block_colliders_get_rects(variant.collider_idx, variant.rotation, &collider_count, collider_rects);
 
 			for (size_t i = 0; i < collider_count; i++) {
@@ -238,11 +234,7 @@ void resolve_area_blocks(Entity* entity) {
 				collider_count++;
 			}
 			else {
-				uint8_t variantIdx = block.state;
-				if (reg->variant_selector) {
-					variantIdx = reg->variant_selector(block.state);
-				}
-				BlockVariant variant = br_get_block_variant(block.id, variantIdx);
+				BlockVariant variant = reg->variant_generator(block.state);
 				block_colliders_get_rects(variant.collider_idx, variant.rotation, &collider_count, collider_rects);
 			}
 

@@ -36,7 +36,7 @@ Vector2i currentChunkPos;
 Rectangle blockPlacerRect;
 
 ChunkLayerEnum sel_layer = CHUNK_LAYER_FOREGROUND;
-int8_t blockStateIdx = 0;
+int8_t blockState = 0;
 
 bool loadedGhostMesh = false;
 Mesh ghostBlockMesh = { 0 };
@@ -143,10 +143,7 @@ void game_update(float deltaTime) {
                         (sel_layer == CHUNK_LAYER_FOREGROUND && (!blockIsSolid || playerAllowsPlacement));
 
                     if (canPlace) {
-                        uint8_t state = blockStateIdx;
-                        if (br->state_selector) {
-                            state = br->state_selector(blockStateIdx);
-                        }
+                        uint8_t state = blockState;
                         BlockInstance inst = {
                             .id = itr->blockId,
                             .state = state
@@ -258,22 +255,17 @@ void game_update(float deltaTime) {
     ItemSlot heldItem = inventory_get_item(0, hotbarIdx);
     ItemRegistry* heldItemReg = ir_get_item_registry(heldItem.item_id);
     BlockRegistry* heldBlockReg = br_get_block_registry(heldItemReg->blockId);
-    if (heldItemReg->blockId > 0 && heldBlockReg->flags & BLOCK_FLAG_STATE_SELECTABLE) {
+    if (heldBlockReg->selectable_state_count > 0) {
         bool reload = false;
 
         if (lastItemId != heldItem.item_id) reload = true;
 
         if (IsKeyPressed(KEY_Z) || IsKeyPressed(KEY_X)) {
-            if (IsKeyPressed(KEY_Z)) blockStateIdx--;
-            if (IsKeyPressed(KEY_X)) blockStateIdx++;
+            if (IsKeyPressed(KEY_Z)) blockState--;
+            if (IsKeyPressed(KEY_X)) blockState++;
 
-            if (heldBlockReg->state_selector) {
-                if (blockStateIdx < 0) blockStateIdx = heldBlockReg->state_count - 1;
-                if (blockStateIdx >= heldBlockReg->state_count) blockStateIdx = 0;
-            } else {
-                if (blockStateIdx < 0) blockStateIdx = heldBlockReg->variant_count - 1;
-                if (blockStateIdx >= heldBlockReg->variant_count) blockStateIdx = 0;
-            }
+            if (blockState < 0) blockState = heldBlockReg->selectable_state_count - 1;
+            if (blockState >= heldBlockReg->selectable_state_count) blockState = 0;
 
             reload = true;
         }
@@ -287,17 +279,12 @@ void game_update(float deltaTime) {
         }
         
         if (loadedGhostMesh == false) {
-            uint8_t variant_idx = blockStateIdx;
-            if (heldBlockReg->state_selector && heldBlockReg->variant_selector) {
-                uint8_t state = heldBlockReg->state_selector(blockStateIdx);
-                variant_idx = heldBlockReg->variant_selector(state);
-            }
-            BlockVariant bvar = br_get_block_variant(heldItemReg->blockId, variant_idx);
-            block_models_build_mesh(&ghostBlockMesh, bvar.model_idx, bvar.atlas_idx, false, false, bvar.flipH, bvar.flipV, bvar.rotation);
+            BlockVariant bvar = heldBlockReg->variant_generator(blockState);
+            block_models_build_mesh(&ghostBlockMesh, bvar);
             loadedGhostMesh = true;
         }
     } else {
-        blockStateIdx = 0;
+        blockState = 0;
         if (loadedGhostMesh == true) {
             UnloadMesh(ghostBlockMesh);
             ghostBlockMesh = (Mesh){ 0 };

@@ -8,14 +8,7 @@
 
 #include <raylib.h>
 
-typedef enum {
-	BLOCK_COLLIDER_QUAD,
-	BLOCK_COLLIDER_SLAB,
-	BLOCK_COLLIDER_STAIRS,
-	BLOCK_COLLIDER_NUB,
-	BLOCK_COLLIDER_TRAPDOOR,
-	BLOCK_COLLIDER_COUNT
-} BlockColliderEnum;
+#include "types.h"
 
 typedef struct {
 	size_t collider_count;

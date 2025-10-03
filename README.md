@@ -33,6 +33,7 @@ But here is a list of all the features this game currently has, and what I plan 
 - ✅ Lighting system
 - 🟩 World generation (there's only a generic noise world gen and it does not have any trees yet)
 - 🟩 World saving (working on chunk saving first)
+- ⬜ Particles
 - ⬜ Waterlogged blocks
 - ⬜ Structure generation
 - ⬜ Moving structures (so you can make elevators)

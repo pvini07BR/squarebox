@@ -345,8 +345,9 @@ void item_registry_init() {
 	};
 
 	for (int i = 0; i < ITEM_COUNT; i++) {
-		itemRegistry[i].mesh = (Mesh){ 0 };
-		block_models_build_mesh(&itemRegistry[i].mesh, itemRegistry[i].model_idx, itemRegistry[i].atlas_idx, false, false, false, false, 0);
+		ItemRegistry* irg = &itemRegistry[i];
+		irg->mesh = (Mesh){ 0 };
+		block_models_build_mesh(&irg->mesh, (BlockVariant) { .atlas_idx = irg->atlas_idx, irg->model_idx });
 	}
 }
 

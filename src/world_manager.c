@@ -408,7 +408,7 @@ WorldListReturnType world_manager_draw_list(struct nk_context* ctx) {
     WorldListReturnType returnType = WORLD_RETURN_NONE;
 
     if (!creatingWorld) {
-        const Vector2 totalSize = { 620, 243 };
+        const Vector2 totalSize = { 620, 620 };
     
         const Vector2 screenCenter = {
             (GetScreenWidth() / 2.0f) - (totalSize.x / 2.0f),

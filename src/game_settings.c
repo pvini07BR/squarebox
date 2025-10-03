@@ -101,7 +101,7 @@ bool load_game_settings() {
 bool game_settings_draw(struct nk_context* ctx) {
 	bool backPressed = false;
 
-	Vector2 size = { 700, 495 };
+	Vector2 size = { 770, 495 };
 	Vector2 screenCenter = {
 		(GetScreenWidth() / 2.0f) - (size.x / 2.0f),
 		(GetScreenHeight() / 2.0f) - (size.y / 2.0f),

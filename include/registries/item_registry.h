@@ -6,6 +6,10 @@
 
 #include <raylib.h>
 
+#include "texture_atlas.h"
+#include "registries/block_models.h"
+#include "registries/block_registry.h"
+
 typedef enum {
 	ITEM_NONE,
 	ITEM_GRASS_BLOCK,
@@ -64,12 +68,12 @@ typedef enum {
 
 typedef struct {
 	const char* name;
-	size_t atlas_idx;
-	size_t model_idx;
+	TextureAtlasEnum atlas_idx;
+	BlockModelEnum model_idx;
 	Mesh mesh;
 	
-	// Set 0 if this item isn't going to place any blocks.
-	uint8_t blockId;
+	// Set to BLOCK_AIR if this item isn't going to place any blocks.
+	BlockEnum blockId;
 	ItemPlacingFlags placingFlags;
 } ItemRegistry;
 

@@ -9,6 +9,7 @@
 #include "block_models.h"
 #include "block_functions.h"
 #include "block_colliders.h"
+#include "texture_atlas.h"
 
 #define MAX_BLOCK_VARIANTS 8
 
@@ -123,7 +124,7 @@ typedef enum {
 typedef struct {
 	// Index in the atlas texture to use.
 	// See texture_atlas.c.
-	size_t atlas_idx;
+	TextureAtlasEnum atlas_idx;
 	// Index of the model in the block models array.
 	// see block_models.c.
 	BlockModelEnum model_idx;

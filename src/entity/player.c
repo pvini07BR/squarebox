@@ -109,7 +109,7 @@ void player_update(Entity* entity, float deltaTime) {
 				player->entity.velocity.y = Lerp(player->entity.velocity.y, up_speed, Clamp(20.0f * deltaTime, 0.0f, 1.0f));
 			}
 			else if (entity->grounded) {
-				player->entity.velocity.y -= JUMP_FORCE;
+				player->entity.velocity.y = -JUMP_FORCE;
 			}
 		}
 

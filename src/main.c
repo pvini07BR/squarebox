@@ -69,6 +69,9 @@ int main() {
 	}
 
     world_manager_init();
+    
+    game_init();
+    
     #ifdef LOAD_WORLD
     if (world_manager_load_world_info(TextFormat("worlds/%s", LOAD_WORLD))) {
         game_set_demo_mode(false);
@@ -76,8 +79,6 @@ int main() {
         menuState = MENU_STATE_PAUSED;
     }
     #endif
-
-    game_init();
 
     Texture2D logo = LoadTexture(ASSETS_PATH "logo.png");
 

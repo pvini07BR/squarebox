@@ -44,7 +44,7 @@ static bool ray_vs_rect(const Vector2 ray_origin, const Vector2 ray_dir, const R
 	*contact_normal = Vector2Zero();
 	*contact_point = Vector2Zero();
 
-	Vector2 invdir = Vector2Divide(Vector2One(), ray_dir);
+	Vector2 invdir = Vector2Divide(Vector2One(), ray_dir);	
 
 	Vector2 t_near = Vector2Multiply(Vector2Subtract(rect_pos, ray_origin), invdir);
 	Vector2 t_far = Vector2Multiply(Vector2Subtract(Vector2Add(rect_pos, rect_size), ray_origin), invdir);
@@ -71,7 +71,7 @@ static bool ray_vs_rect(const Vector2 ray_origin, const Vector2 ray_dir, const R
 
 	if (t_hit_far < 0) return false;
 
-	*contact_point = Vector2Scale(Vector2Add(ray_origin, ray_dir), *t_hit_near);
+	*contact_point = Vector2Add(ray_origin, Vector2Scale(ray_dir, *t_hit_near));
 
 	if (t_near.x > t_near.y) {
 		if (invdir.x < 0) *contact_normal = (Vector2){ 1.0f, 0.0f };
@@ -117,13 +117,23 @@ static bool entity_vs_rect(const Entity* entity, const Rectangle* staticRect, co
 	}
 }
 
-static bool resolve_entity_vs_rect(Entity* entity, Rectangle* staticRect, const float deltaTime, Vector2* contact_normal_output) {
-	Vector2 contact_point;
+static bool resolve_entity_vs_rect(Entity* entity, Rectangle* staticRect, const float deltaTime) {
+	Vector2 contact_point, contact_normal;
 	float contact_time = 0.0f;
-	if (entity_vs_rect(entity, staticRect, deltaTime, &contact_point, contact_normal_output, &contact_time)) {
-		Vector2 thing = Vector2Scale((Vector2) { fabsf(entity->velocity.x), fabsf(entity->velocity.y) }, 1.0f - contact_time);
-		Vector2 addValue = Vector2Multiply(*contact_normal_output, thing);
-		entity->velocity = Vector2Add(entity->velocity, addValue);
+	if (entity_vs_rect(entity, staticRect, deltaTime, &contact_point, &contact_normal, &contact_time)) {
+		if (contact_normal.y < 0.0f) entity->grounded = true;
+		if (entity->grounded && contact_normal.x != 0.0f) {
+			float y_diff = (entity->rect.y + entity->rect.height) - staticRect->y;
+			if (y_diff > 0.0f && y_diff < (entity->rect.height * 0.6f)) {
+				entity->rect.y -= y_diff + 0.01f;
+			}
+		}
+		
+		Vector2 abs = (Vector2) { fabsf(entity->velocity.x), fabsf(entity->velocity.y) };
+		Vector2 norm = Vector2Multiply(contact_normal, abs);
+		Vector2 inv = Vector2Scale(norm, 1.0f - contact_time);
+		entity->velocity = Vector2Add(entity->velocity, inv);
+
 		return true;
 	}
 	return false;
@@ -182,19 +192,7 @@ static void resolve_solid_blocks(Entity* entity, float deltaTime) {
 
 	for (size_t i = 0; i < rect_count; i++) {
 		Rectangle* rect = &rects[i].rect;
-		Vector2 contact_normal;
-		if (resolve_entity_vs_rect(entity, rect, deltaTime, &contact_normal)) {
-			if (contact_normal.y < 0.0f) {
-				if (!entity->grounded) entity->grounded = true;
-			}
-
-			if (entity->grounded && contact_normal.x != 0.0f) {
-				float y_diff = (entity->rect.y + entity->rect.height) - rect->y;
-				if (y_diff > 0.0f && y_diff < (entity->rect.height * 0.6f)) {
-					entity->rect.y -= y_diff + 0.01f;
-				}
-			}
-		}
+		resolve_entity_vs_rect(entity, rect, deltaTime);
 	}
 }
 

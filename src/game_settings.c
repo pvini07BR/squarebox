@@ -158,6 +158,8 @@ bool game_settings_draw(struct nk_context* ctx) {
 		nk_spacing(ctx, 1);
 		if (nk_button_label(ctx, "Default")) {
 			tempSettings.player_color = (Color){ 255, 0, 0, 255 };
+			tempSettings.vsync = true;
+			tempSettings.drawfps = false;
 			tempSettings.chunk_view_width = 5;
 			tempSettings.chunk_view_height = 3;
 			tempSettings.wall_brightness = 128.0f;

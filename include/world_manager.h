@@ -17,11 +17,11 @@ typedef enum {
 } WorldGenPreset;
 
 typedef struct {
-    Vector2 player_position;
-    ItemSlot hotbar_items[10];
     char name[WORLD_NAME_LENGTH];
-    int seed;
+    ItemSlot hotbar_items[10];
+    Vector2 player_position;
     WorldGenPreset preset;
+    int seed;
     uint8_t version;
     bool player_flying;
 } WorldInfo;
@@ -32,6 +32,12 @@ typedef struct {
     WorldInfo info;
     bool selected;
 } WorldListEntry;
+
+typedef enum {
+    CHUNK_LOAD_SUCCESS,
+    CHUNK_LOAD_ERROR_NOT_FOUND,
+    CHUNK_LOAD_ERROR_FATAL
+} ChunkLoadStatus;
 
 typedef enum {
     WORLD_RETURN_NONE,
@@ -52,7 +58,7 @@ WorldInfo* get_world_info();
 bool world_manager_is_world_loaded();
 
 bool world_manager_save_chunk(Chunk* chunk);
-bool world_manager_load_chunk(Chunk* chunk);
+ChunkLoadStatus world_manager_load_chunk(Chunk* chunk);
 
 bool world_manager_load_world_list();
 WorldListReturnType world_manager_draw_list(struct nk_context* ctx);

@@ -486,11 +486,13 @@ void game_set_demo_mode(bool demo) {
             (int)floorf(playerPosition.y / (CHUNK_WIDTH * TILE_SIZE))
 		};
 
+        demo_mode = demo;
+
+        chunk_manager_relocate(playerChunkPos);
         chunk_manager_set_view(
             get_game_settings()->chunk_view_width,
             get_game_settings()->chunk_view_height
 		);
-        chunk_manager_relocate(playerChunkPos);
 
         if (player == NULL) {
             player = player_create(playerPosition, get_game_settings()->player_color);
@@ -509,7 +511,6 @@ void game_set_demo_mode(bool demo) {
         // Switching from normal to demo mode
         player = NULL;
         entity_list_clear();
-        chunk_manager_set_view(5, 3);
         chunk_manager_clear(true);
         camera.target = (Vector2){ 0, 0 };
         camera.zoom = 1.0f;
@@ -517,9 +518,9 @@ void game_set_demo_mode(bool demo) {
         hotbarIdx = 0;
         debug_info = false;
 		inventory_clear();
-	}
 
-    demo_mode = demo;
+        demo_mode = demo;
+	}
 }
 
 bool game_is_demo_mode() {

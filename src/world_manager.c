@@ -142,7 +142,7 @@ bool world_manager_load_world_info(const char* worldDir) {
 
     FILE* fptr = fopen(TextFormat("%s/worldinfo.bin", tmp), "rb");
     if (!fptr) {
-        TraceLog(LOG_ERROR, "Could not read world info (%s/worldinfo.bin): %s", tmp, strerror(errno));
+        TraceLog(LOG_ERROR, "Could not load world info (%s/worldinfo.bin): %s", tmp, strerror(errno));
         free(tmp);
         return false;
     }
@@ -150,7 +150,9 @@ bool world_manager_load_world_info(const char* worldDir) {
 	fclose(fptr);
 
     if (worldInfo.version != WORLD_VERSION) {
-        TraceLog(LOG_WARNING, "The world (%s) has been created with a different version.\nThere is no world version conversion, so be careful with crashes and data corruption and loss!\nWorld version: %d\nCurrent version: %d", tmp, worldInfo.version, WORLD_VERSION);
+        TraceLog(LOG_ERROR, "Refused to load the world info because it is saved in another version.\nWorld version: %d\nCurrent version: %d", tmp, worldInfo.version, WORLD_VERSION);
+        free(tmp);
+        return false;
     }
 
 	currentWorldDir = tmp;
@@ -222,21 +224,23 @@ bool world_manager_save_chunk(Chunk* chunk) {
     return true;
 }
 
-bool world_manager_load_chunk(Chunk* chunk) {
+ChunkLoadStatus world_manager_load_chunk(Chunk* chunk) {
     if (!chunk || !currentWorldDir) return false;
 
     FILE* fptr = fopen(TextFormat("%s/chunks/%d_%d.bin", currentWorldDir, chunk->position.x, chunk->position.y), "rb");
     if (!fptr) {
         if (errno != ENOENT) {
             TraceLog(LOG_ERROR, "Could not read chunk at position (%d, %d): %s", chunk->position.x, chunk->position.y, strerror(errno));
+            return CHUNK_LOAD_ERROR_FATAL;
         }
-        return false;
+        return CHUNK_LOAD_ERROR_NOT_FOUND;
     }
 
     uint8_t version;
     fread(&version, sizeof(uint8_t), 1, fptr);
     if (version != WORLD_VERSION) {
-        TraceLog(LOG_WARNING, "The chunk at (%d, %d) is being loaded with a different version. Be careful with data corruption and loss!\nChunk version: %d\nCurrent version: %d", chunk->position.x, chunk->position.y, version, WORLD_VERSION);
+        TraceLog(LOG_ERROR, "Refused to load chunk (%d, %d) because its saved in a different version.\nChunk version: %d\nCurrent version: %d", chunk->position.x, chunk->position.y, version, WORLD_VERSION);
+        return CHUNK_LOAD_ERROR_FATAL;
     }
 
     for (int l = 0; l < CHUNK_LAYER_COUNT; l++) {
@@ -276,7 +280,7 @@ bool world_manager_load_chunk(Chunk* chunk) {
 
     fclose(fptr);
 
-    return true;
+    return CHUNK_LOAD_SUCCESS;
 }
 
 bool world_manager_save_world_info_and_unload() {

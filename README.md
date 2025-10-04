@@ -92,7 +92,7 @@ Any other compilers or operating systems is not confirmed nor garanteed to work,
 
 # Debugging Features
 
-In the .vscode folder, there is a settings file for debugging the game on Visual Studio Code. Just press F5 and it will launch the executable and debug it (assuming you already compiled the binary).
+In the .vscode folder, there is a settings file for debugging the game on Visual Studio Code. Just press F5 and it will compile and launch the executable and debug it.
 
 There is also the LOAD_WORLD define macro you can set to directly load into that specified world without going through the menu. This is useful for debugging anything on the game itself.
 

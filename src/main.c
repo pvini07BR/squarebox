@@ -71,7 +71,7 @@ int main() {
     world_manager_init();
     
     game_init();
-    
+
     #ifdef LOAD_WORLD
     if (world_manager_load_world_info(TextFormat("worlds/%s", LOAD_WORLD))) {
         game_set_demo_mode(false);
@@ -197,6 +197,7 @@ int main() {
                         game_set_demo_mode(true);
                         world_manager_save_world_info_and_unload();
                         chunk_manager_relocate((Vector2i) { 0, 0 });
+                        chunk_manager_set_view(5, 3);
                         paused = false;
                         menuState = MENU_STATE_MAIN;
                     }

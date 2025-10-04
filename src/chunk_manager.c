@@ -1,5 +1,6 @@
 ﻿#include "chunk_manager.h"
 #include "chunk_layer.h"
+#include "game.h"
 #include "registries/block_registry.h"
 #include "chunk.h"
 #include "types.h"
@@ -96,7 +97,7 @@ void chunk_manager_relocate(Vector2i newCenter) {
     for (size_t i = 0; i < count; i++) {
         Chunk* old = &chunks[i];
         if (old->initialized) {
-            world_manager_save_chunk(old);
+            if (!game_is_demo_mode()) world_manager_save_chunk(old);
             chunk_free(old);
         }
     }
@@ -108,9 +109,17 @@ void chunk_manager_relocate(Vector2i newCenter) {
             int chunk_x = min_x + x;
             int chunk_y = min_y + y;
 
+            memset(&new_chunks[i], 0, sizeof(Chunk));
             chunk_init(&new_chunks[i], (Vector2i) { chunk_x, chunk_y });
-            if (!world_manager_load_chunk(&new_chunks[i])) {
+            if (game_is_demo_mode()) {
                 chunk_regenerate(&new_chunks[i]);
+            } else {
+                ChunkLoadStatus status = world_manager_load_chunk(&new_chunks[i]);
+                if (status == CHUNK_LOAD_ERROR_NOT_FOUND) {
+                    chunk_regenerate(&new_chunks[i]);
+                } else if (status == CHUNK_LOAD_ERROR_FATAL) {
+                    chunk_free(&new_chunks[i]);
+                }
             }
 			chunk_update_tick_list(&new_chunks[i]);
             occupied[i] = true;
@@ -198,7 +207,7 @@ void chunk_manager_set_view(uint8_t new_view_width, uint8_t new_view_height) {
     for (size_t i = 0; i < old_count; i++) {
         Chunk* old = &chunks[i];
         if (old->initialized) {
-            world_manager_save_chunk(old);
+            if (!game_is_demo_mode()) world_manager_save_chunk(old);
             chunk_free(old);
             old->initialized = false;
         }
@@ -213,8 +222,15 @@ void chunk_manager_set_view(uint8_t new_view_width, uint8_t new_view_height) {
 
             memset(&new_chunks[i], 0, sizeof(Chunk));
             chunk_init(&new_chunks[i], (Vector2i) { chunk_x, chunk_y });
-            if (!world_manager_load_chunk(&new_chunks[i])) {
+            if (game_is_demo_mode()) {
                 chunk_regenerate(&new_chunks[i]);
+            } else {
+                ChunkLoadStatus status = world_manager_load_chunk(&new_chunks[i]);
+                if (status == CHUNK_LOAD_ERROR_NOT_FOUND) {
+                    chunk_regenerate(&new_chunks[i]);
+                } else if (status == CHUNK_LOAD_ERROR_FATAL) {
+                    chunk_free(&new_chunks[i]);
+                }
             }
 			chunk_update_tick_list(&new_chunks[i]);
             occupied[i] = true;
@@ -343,7 +359,7 @@ void chunk_manager_free() {
     if (chunks) {
         for (size_t c = 0; c < chunk_count; c++) {
             if (chunks[c].initialized) {
-                world_manager_save_chunk(&chunks[c]);
+                if (!game_is_demo_mode()) world_manager_save_chunk(&chunks[c]);
                 chunk_free(&chunks[c]);
             }
         }

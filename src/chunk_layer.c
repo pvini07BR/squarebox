@@ -160,17 +160,17 @@ void chunk_layer_genmesh(ChunkLayer* layer, ChunkLayerEnum layer_id, ChunkLayerE
 
         srand(h);
 
-        /*
         bool flipUVH = (brg->flags & BLOCK_FLAG_FLIP_H) && (rand() % 2) ? true : false;
         bool flipUVV = (brg->flags & BLOCK_FLAG_FLIP_V) && (rand() % 2) ? true : false;
-        */
 
         bm_set_block_model(
             layer->vertexOffsets,
             &layer->mesh,
             (Vector2u) { x, y },
             colors,
-            brg->variant_generator(block.state)
+            brg->variant_generator(block.state),
+            flipUVH,
+            flipUVV
         );
     }
 

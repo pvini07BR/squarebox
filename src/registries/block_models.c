@@ -160,11 +160,11 @@ void block_models_build_mesh(Mesh* output, BlockVariant variant)
 	output->vertices = malloc(sizeof(float) * 3 * output->vertexCount);
 	output->texcoords = malloc(sizeof(float) * 2 * output->vertexCount);
 
-	bm_set_block_model(NULL, output, (Vector2u){0,0}, NULL, variant);
+	bm_set_block_model(NULL, output, (Vector2u){0,0}, NULL, variant, false, false);
 	UploadMesh(output, false);
 }
 
-void bm_set_block_model(size_t* offsets, Mesh* mesh, Vector2u position, Color colors[4], BlockVariant variant)
+void bm_set_block_model(size_t* offsets, Mesh* mesh, Vector2u position, Color colors[4], BlockVariant variant, bool flipUVH, bool flipUVV)
 {
     if (position.x >= CHUNK_WIDTH || position.y >= CHUNK_WIDTH) return;
     if (variant.model_idx >= BLOCK_MODEL_COUNT) return;
@@ -176,7 +176,7 @@ void bm_set_block_model(size_t* offsets, Mesh* mesh, Vector2u position, Color co
         vertexOffset = offsets[index];
     }
     BlockModel* model = &models[variant.model_idx];
-    Rectangle uvRect = texture_atlas_get_uv(variant.atlas_idx, false, false);
+    Rectangle uvRect = texture_atlas_get_uv(variant.atlas_idx, flipUVH, flipUVV);
 
     for (size_t v = 0; v < model->vertexCount; v++) {
         Vertex2D vert = model->vertices[v];

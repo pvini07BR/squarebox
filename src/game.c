@@ -134,13 +134,19 @@ void game_update(float deltaTime) {
 
 					bool blockIsSolid = (br->flags & BLOCK_FLAG_SOLID) != 0;
                     bool playerAllowsPlacement = true;
-                    if (blockIsSolid && player) {
-						playerAllowsPlacement = !CheckCollisionRecs(blockPlacerRect, player->entity.rect);
+                    if (player) {
+                        float distance = Vector2Distance(player_get_position(player), mouseWorldPos);
+                        if (distance < 10.0f * TILE_SIZE) {
+                            if (blockIsSolid) playerAllowsPlacement = !CheckCollisionRecs(blockPlacerRect, player->entity.rect);
+                        } else {
+                            playerAllowsPlacement = false;
+                        }
                     }
 
                     bool canPlace =
                         (sel_layer == CHUNK_LAYER_BACKGROUND) ||
                         (sel_layer == CHUNK_LAYER_FOREGROUND && (!blockIsSolid || playerAllowsPlacement));
+
 
                     if (canPlace) {
                         uint8_t state = blockState;

@@ -4,6 +4,7 @@
 #include "texture_atlas.h"
 #include "types.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 
 static BlockModel models[BLOCK_MODEL_COUNT];

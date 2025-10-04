@@ -238,7 +238,7 @@ static inline BlockVariant variant_wooden_fence(uint8_t state) {
 	};
 }
 
-QUICK_BLOCK(ladders, ATLAS_FENCE)
+QUICK_BLOCK(ladders, ATLAS_LADDERS)
 
 static inline BlockVariant variant_trapdoor(uint8_t state) {
 	TrapdoorState* trapState = (TrapdoorState*)&state;

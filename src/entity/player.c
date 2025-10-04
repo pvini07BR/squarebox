@@ -110,6 +110,7 @@ void player_update(Entity* entity, float deltaTime) {
 			}
 			else if (entity->grounded) {
 				player->entity.velocity.y = -JUMP_FORCE;
+				if (player->direction == 0) player->rotation = 0.0f;
 			}
 		}
 

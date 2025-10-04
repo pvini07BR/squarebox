@@ -1,4 +1,5 @@
 ﻿#include "chunk_manager.h"
+#include "chunk_layer.h"
 #include "registries/block_registry.h"
 #include "chunk.h"
 #include "types.h"

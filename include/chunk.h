@@ -36,9 +36,9 @@ typedef struct {
 
 typedef struct {
 	ChunkLayer layers[2];
-	Mesh liquidMesh;
-    uint8_t light[CHUNK_AREA];
 	BlockTickList blockTickList;
+    uint8_t light[CHUNK_AREA];
+	Mesh liquidMesh;
 	ChunkNeighbors neighbors;
 	Vector2i position;
 	bool initializedLiquidMesh;

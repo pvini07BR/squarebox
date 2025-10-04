@@ -92,6 +92,18 @@ Then, simply ``cd build`` and run ``make``. Then run the compiled executable wit
 This project has only been tested on Windows with MSVC and Linux with GCC.
 Any other compilers or operating systems is not confirmed nor garanteed to work, but you can try anyway.
 
+# Debugging Features
+
+In the .vscode folder, there is a settings file for debugging the game on Visual Studio Code. Just press F5 and it will launch the executable and debug it (assuming you already compiled the binary).
+
+There is also the LOAD_WORLD define macro you can set to directly load into that specified world without going through the menu. This is useful for debugging anything on the game itself.
+
+To set this macro, you run the command:
+
+```cmake -B build -DLOAD_WORLD="worldname"```
+
+``worldname`` is the name of the world you want to load into. If the world does not exist or fails to load, it will display an error on the console and throw you to the main menu.
+
 # Credits
 
 All arts and programming has been done by me, pvini07BR.

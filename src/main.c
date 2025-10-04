@@ -69,6 +69,13 @@ int main() {
 	}
 
     world_manager_init();
+    #ifdef LOAD_WORLD
+    if (world_manager_load_world_info(TextFormat("worlds/%s", LOAD_WORLD))) {
+        game_set_demo_mode(false);
+        game_set_draw_ui(true);
+        menuState = MENU_STATE_PAUSED;
+    }
+    #endif
 
     game_init();
 
@@ -81,6 +88,7 @@ int main() {
 
     float accumulator = 0.0f;
     bool closeGame = false;
+
 
     while (!WindowShouldClose() && !closeGame) {
         if (IsKeyPressed(KEY_F11)) ToggleBorderlessWindowed();

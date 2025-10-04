@@ -42,3 +42,7 @@ if (MSVC)
 else()
     target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra)
 endif()
+
+if(DEFINED LOAD_WORLD)
+    add_compile_definitions(LOAD_WORLD="${LOAD_WORLD}")
+endif()

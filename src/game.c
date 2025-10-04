@@ -36,7 +36,8 @@ Vector2i currentChunkPos;
 Rectangle blockPlacerRect;
 
 ChunkLayerEnum sel_layer = CHUNK_LAYER_FOREGROUND;
-int8_t blockState = 0;
+int8_t blockStateIdx = 0;
+uint8_t blockState = 0;
 
 bool loadedGhostMesh = false;
 Mesh ghostBlockMesh = { 0 };
@@ -268,11 +269,13 @@ void game_update(float deltaTime) {
         if (lastItemId != heldItem.item_id) reload = true;
 
         if (IsKeyPressed(KEY_Z) || IsKeyPressed(KEY_X)) {
-            if (IsKeyPressed(KEY_Z)) blockState--;
-            if (IsKeyPressed(KEY_X)) blockState++;
+            if (IsKeyPressed(KEY_Z)) blockStateIdx--;
+            if (IsKeyPressed(KEY_X)) blockStateIdx++;
 
-            if (blockState < 0) blockState = heldBlockReg->selectable_state_count - 1;
-            if (blockState >= heldBlockReg->selectable_state_count) blockState = 0;
+            if (blockStateIdx < 0) blockStateIdx = heldBlockReg->selectable_state_count - 1;
+            if (blockStateIdx >= heldBlockReg->selectable_state_count) blockStateIdx = 0;
+
+            blockState = heldBlockReg->selectable_states[blockStateIdx];
 
             reload = true;
         }
@@ -291,6 +294,7 @@ void game_update(float deltaTime) {
             loadedGhostMesh = true;
         }
     } else {
+        blockStateIdx = 0;
         blockState = 0;
         if (loadedGhostMesh == true) {
             UnloadMesh(ghostBlockMesh);

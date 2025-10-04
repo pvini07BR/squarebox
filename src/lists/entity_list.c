@@ -1,5 +1,6 @@
 #include "lists/entity_list.h"
 #include <stdint.h>
+#include <stdio.h>
 
 static Entity* entities[MAX_ENTITY_COUNT];
 static size_t entity_count = 0;
@@ -24,7 +25,7 @@ bool entity_list_remove_at(size_t idx) {
 void entity_list_update(float deltaTime) {
 	for (size_t i = 0; i < entity_count; i++) {
 		Entity* e = entities[i];
-		
+
 		if (e->update) e->update(e, deltaTime);
 		entity_update(e, deltaTime);
 	}

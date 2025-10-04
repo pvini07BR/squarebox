@@ -125,7 +125,7 @@ static bool resolve_entity_vs_rect(Entity* entity, Rectangle* staticRect, const 
 		if (entity->grounded && contact_normal.x != 0.0f) {
 			float y_diff = (entity->rect.y + entity->rect.height) - staticRect->y;
 			if (y_diff > 0.0f && y_diff < (entity->rect.height * 0.6f)) {
-				entity->rect.y -= y_diff + 0.01f;
+				entity->rect.y = (staticRect->y - entity->rect.height) - 0.01f;
 			}
 		}
 		
@@ -284,9 +284,26 @@ void entity_update(Entity* entity, float deltaTime) {
 	if (entity->collides) {
 		resolve_solid_blocks(entity, deltaTime);
 	}
+	
+	Vector2 nextPos = {
+		entity->rect.x + entity->velocity.x * deltaTime,
+		entity->rect.y + entity->velocity.y * deltaTime,
+	};
 
-	entity->rect.x += entity->velocity.x * deltaTime;
-	entity->rect.y += entity->velocity.y * deltaTime;
+	Vector2i blockPos = {
+		(int)floorf((float)nextPos.x / (float)TILE_SIZE),
+		(int)floorf((float)nextPos.y / (float)TILE_SIZE)
+	};
+
+	Vector2i chunkPos = {
+		(int)floorf((float)blockPos.x / (float)CHUNK_WIDTH),
+		(int)floorf((float)blockPos.y / (float)CHUNK_WIDTH)
+	};
+
+	if (chunk_manager_get_chunk(chunkPos) != NULL) {
+		entity->rect.x = nextPos.x;
+		entity->rect.y = nextPos.y;
+	}
 }
 
 void entity_debug_draw(Entity* entity) {

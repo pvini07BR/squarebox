@@ -107,10 +107,10 @@ bool load_game_settings() {
 bool game_settings_draw(mu_Context* ctx) {
 	bool backPressed = false;
 
-	if (mu_begin_window_ex(ctx, "Settings", mu_rect(0, 0, 500, 0), MU_OPT_NOTITLE | MU_OPT_NOSCROLL)) {
+	if (mu_begin_window_ex(ctx, "Game Settings", mu_rect(0, 0, 500, 0), MU_OPT_NOSCROLL | MU_OPT_NOCLOSE)) {
 		mu_Container* win = mu_get_current_container(ctx);
 
-		win->rect.h = win->content_size.y + (ctx->style->padding * 2);
+		win->rect.h = win->content_size.y + (ctx->style->padding * 2) + 25;
 
 		win->rect.x = (GetScreenWidth() / 2.0f) - (win->rect.w / 2.0f);
 		win->rect.y = (GetScreenHeight() / 2.0f) - (win->rect.h / 2.0f);

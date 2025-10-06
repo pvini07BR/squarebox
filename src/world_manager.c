@@ -475,7 +475,7 @@ WorldListReturnType world_manager_draw_list(mu_Context* ctx) {
     WorldListReturnType returnType = WORLD_RETURN_NONE;
 
     if (!creatingWorld) {
-        if (mu_begin_window_ex(ctx, "World List", mu_rect(0, 0, 500, 500), MU_OPT_NOTITLE | MU_OPT_NOSCROLL)) {
+        if (mu_begin_window_ex(ctx, "Select a World", mu_rect(0, 0, 500, 500), MU_OPT_NOSCROLL | MU_OPT_NOCLOSE)) {
             mu_Container* win = mu_get_current_container(ctx);
 
             win->rect.x = (GetScreenWidth() / 2.0f) - (win->rect.w / 2.0f);
@@ -519,10 +519,10 @@ WorldListReturnType world_manager_draw_list(mu_Context* ctx) {
         }
     } else {
 
-        if (mu_begin_window_ex(ctx, "World Creator", mu_rect(0, 0, 400, 0), MU_OPT_NOTITLE | MU_OPT_NOSCROLL)) {
+        if (mu_begin_window_ex(ctx, "Create New World", mu_rect(0, 0, 400, 0), MU_OPT_NOSCROLL | MU_OPT_NOCLOSE)) {
             mu_Container* win = mu_get_current_container(ctx);
 
-            win->rect.h = win->content_size.y + (ctx->style->padding * 2);
+            win->rect.h = win->content_size.y + (ctx->style->padding * 2) + 25;
 
             win->rect.x = (GetScreenWidth() / 2.0f) - (win->rect.w / 2.0f);
             win->rect.y = (GetScreenHeight() / 2.0f) - (win->rect.h / 2.0f);

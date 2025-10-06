@@ -21,6 +21,7 @@ typedef struct Entity {
 
 	bool grounded;
 	bool on_slippery;
+	bool on_bouncy;
 
 	bool on_liquid;
 	bool on_climbable;

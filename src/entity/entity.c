@@ -125,6 +125,7 @@ static bool resolve_entity_vs_rect(Entity* entity, Rectangle* staticRect, const 
 	if (entity_vs_rect(entity, staticRect, deltaTime, &contact_point, &contact_normal, &contact_time)) {
 		if (contact_normal.y < 0.0f) {
 			entity->grounded = true;
+			if (bounce) entity->on_bouncy = true;
 		}
 
 		if (entity->grounded && contact_normal.x != 0.0f) {
@@ -138,12 +139,15 @@ static bool resolve_entity_vs_rect(Entity* entity, Rectangle* staticRect, const 
 		Vector2 norm = Vector2Multiply(contact_normal, abs);
 		Vector2 inv = Vector2Scale(norm, 1.0f - contact_time);
 
-		entity->velocity.x += inv.x;
-		if (bounce && contact_normal.y < 0.0f && fabsf(entity->velocity.y) > (TILE_SIZE * 3.0f)) {
-			entity->velocity.y = -entity->velocity.y * 0.8f;
+		float velBounceThreshold = (TILE_SIZE * 3.0f);
+		float velLength = Vector2Length(entity->velocity);
+
+		if (bounce && ((entity->gravity_affected && entity->velocity.y > velBounceThreshold) || (!entity->gravity_affected && velLength > velBounceThreshold))) {
+			entity->velocity = Vector2Scale(Vector2Reflect(entity->velocity, contact_normal), 0.8f);
 		}
-		else
-			entity->velocity.y += inv.y;
+		else {
+			entity->velocity = Vector2Add(entity->velocity, inv);
+		}
 
 		return true;
 	}
@@ -272,6 +276,7 @@ void entity_update(Entity* entity, float deltaTime) {
 	entity->on_liquid = false;
 	entity->grounded = false;
 	entity->on_slippery = false;
+	entity->on_bouncy = false;
 	entity->on_climbable = false;
 
 	resolve_area_blocks(entity);

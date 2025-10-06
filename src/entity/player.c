@@ -55,7 +55,12 @@ void player_update(Entity* entity, float deltaTime) {
 	}
 
 	if (entity->gravity_affected && entity->on_slippery) {
+		player->last_on_slippery = true;
 		frictionFactor = 1.0f;
+	}
+
+	if (entity->grounded && !entity->on_slippery && !entity->on_bouncy) {
+		player->last_on_slippery = false;
 	}
 
 	if (player->disable_input) {
@@ -63,7 +68,6 @@ void player_update(Entity* entity, float deltaTime) {
 			entity->velocity = Vector2Lerp(entity->velocity, Vector2Zero(), Clamp(frictionFactor * deltaTime, 0.0f, 1.0f));
 		else {
 			if (entity->grounded || !player->last_on_slippery) player->entity.velocity.x = Lerp(player->entity.velocity.x, 0.0f, Clamp(frictionFactor * deltaTime, 0.0f, 1.0f));
-			if (entity->grounded && player->last_on_slippery) player->last_on_slippery = false;
 		}
 
 		return;
@@ -102,7 +106,6 @@ void player_update(Entity* entity, float deltaTime) {
 		}
 		else {
 			if (entity->grounded || !player->last_on_slippery) player->entity.velocity.x = Lerp(player->entity.velocity.x, 0.0f, Clamp(frictionFactor * deltaTime, 0.0f, 1.0f));
-			if (entity->grounded && player->last_on_slippery) player->last_on_slippery = false;
 		}
 
 		// Jumping or swimming
@@ -112,10 +115,9 @@ void player_update(Entity* entity, float deltaTime) {
 				if (entity->on_liquid) up_speed *= 0.5f;
 				else if (entity->on_climbable) up_speed *= 0.75f;
 
-				player->entity.velocity.y = Lerp(player->entity.velocity.y, up_speed, Clamp(frictionFactor * deltaTime, 0.0f, 1.0f));
+				player->entity.velocity.y = Lerp(player->entity.velocity.y, up_speed, Clamp(20.0f * deltaTime, 0.0f, 1.0f));
 			}
 			else if (entity->grounded) {
-				if (entity->on_slippery) player->last_on_slippery = true;
 				player->entity.velocity.y = -JUMP_FORCE;
 			}
 		}

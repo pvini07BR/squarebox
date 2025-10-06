@@ -106,7 +106,5 @@ To set this macro, you run the command:
 
 All arts and programming has been done by me, pvini07BR.
 
-This game has been made using the [Raylib](https://www.raylib.com) library, made by raysan5.
-
-Using [Nuklear](https://github.com/Immediate-Mode-UI/Nuklear/) for the UI of this game,
-and [raylib-nuklear](https://github.com/RobLoach/raylib-nuklear) to implement it for Raylib.
+- This game has been made using the [Raylib](https://www.raylib.com) library, made by raysan5.
+- Using [microui](https://github.com/rxi/microui) for the UI of this game, and [microui-raylib](https://github.com/marionauta/microui-raylib) to implement it for Raylib.

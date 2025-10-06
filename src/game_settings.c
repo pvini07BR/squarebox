@@ -184,7 +184,7 @@ bool game_settings_draw(mu_Context* ctx) {
 
 		mu_layout_row(ctx, 0, NULL, 30);
 
-		mu_layout_width(ctx, (win->rect.w / 3) - (ctx->style->padding / 2.0f));
+		mu_layout_width(ctx, (win->rect.w / 3.0f) - (ctx->style->padding / 2.0f));
 
 		backPressed = mu_button(ctx, "Back");
 		if (mu_button(ctx, "Default")) {

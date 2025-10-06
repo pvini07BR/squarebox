@@ -761,7 +761,14 @@ int mu_checkbox(mu_Context *ctx, const char *label, int *state) {
   /* draw */
   mu_draw_control_frame(ctx, id, box, MU_COLOR_BASE, 0);
   if (*state) {
-    mu_draw_icon(ctx, MU_ICON_CHECK, box, ctx->style->colors[MU_COLOR_TEXT]);
+    //mu_draw_icon(ctx, MU_ICON_CHECK, box, ctx->style->colors[MU_COLOR_TEXT]);
+    mu_Rect checkedRect = mu_rect(
+      box.x + (ctx->style->padding / 2),
+      box.y + (ctx->style->padding / 2),
+      box.w - ctx->style->padding,
+      box.h - ctx->style->padding
+    );
+    mu_draw_rect(ctx, checkedRect, ctx->style->colors[MU_COLOR_TEXT]);
   }
   r = mu_rect(r.x + box.w, r.y, r.w - box.w, r.h);
   mu_draw_control_text(ctx, label, r, MU_COLOR_TEXT, 0);
@@ -942,7 +949,7 @@ static int header(mu_Context *ctx, const char *label, int istreenode, int opt) {
   /* update pool ref */
   if (idx >= 0) {
     if (active) { mu_pool_update(ctx, ctx->treenode_pool, idx); }
-           else { memset(&ctx->treenode_pool[idx], 0, sizeof(mu_PoolItem)); }
+    else { memset(&ctx->treenode_pool[idx], 0, sizeof(mu_PoolItem)); }
   } else if (active) {
     mu_pool_init(ctx, ctx->treenode_pool, MU_TREENODEPOOL_SIZE, id);
   }

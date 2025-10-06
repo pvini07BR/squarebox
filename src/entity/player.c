@@ -36,6 +36,8 @@ Player* player_create(Vector2 initialPosition, Color color) {
 	player->entity.velocity = Vector2Zero();
 	player->entity.collides = true;
 	player->entity.gravity_affected = true;
+	player->entity.on_slippery = false;
+	player->entity.on_bouncy = false;
 
 	player->entity.parent = player;
 	player->entity.update = player_update;

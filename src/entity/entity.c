@@ -142,7 +142,7 @@ static bool resolve_entity_vs_rect(Entity* entity, Rectangle* staticRect, const 
 		float velBounceThreshold = (TILE_SIZE * 3.0f);
 		float velLength = Vector2Length(entity->velocity);
 
-		if (bounce && ((entity->gravity_affected && entity->velocity.y > velBounceThreshold) || (!entity->gravity_affected && velLength > velBounceThreshold))) {
+		if (bounce && ((entity->gravity_affected && entity->velocity.y > velBounceThreshold && contact_normal.y < 0.0f) || (!entity->gravity_affected && velLength > velBounceThreshold))) {
 			entity->velocity = Vector2Scale(Vector2Reflect(entity->velocity, contact_normal), 0.8f);
 		}
 		else {

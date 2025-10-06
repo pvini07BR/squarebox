@@ -23,9 +23,9 @@ Player* player_create(Vector2 initialPosition, Color color) {
 	Player* player = malloc(sizeof(Player));
 	if (!player) return NULL;
 
-	player->direction = 0;
 	player->rotation = 0.0f;
 	player->disable_input = false;
+	player->last_on_slippery = false;
 	player->color = color;
 
 	player->entity.rect.x = initialPosition.x;
@@ -49,12 +49,21 @@ void player_update(Entity* entity, float deltaTime) {
 	if (!entity) return;
 	Player* player = (Player*)entity->parent;
 
+	float frictionFactor = 20.0f;
+	if (!entity->gravity_affected) {
+		frictionFactor = 5.0f;
+	}
+
+	if (entity->gravity_affected && entity->on_slippery) {
+		frictionFactor = 1.0f;
+	}
+
 	if (player->disable_input) {
 		if (!entity->gravity_affected)
-			entity->velocity = Vector2Lerp(entity->velocity, Vector2Zero(), Clamp(5.0f * deltaTime, 0.0f, 1.0f));
+			entity->velocity = Vector2Lerp(entity->velocity, Vector2Zero(), Clamp(frictionFactor * deltaTime, 0.0f, 1.0f));
 		else {
-			entity->velocity.x = Lerp(player->entity.velocity.x, 0.0f, Clamp(20.0f * deltaTime, 0.0f, 1.0f));
-			if (player->entity.grounded) player->direction = 0;
+			if (entity->grounded || !player->last_on_slippery) player->entity.velocity.x = Lerp(player->entity.velocity.x, 0.0f, Clamp(frictionFactor * deltaTime, 0.0f, 1.0f));
+			if (entity->grounded && player->last_on_slippery) player->last_on_slippery = false;
 		}
 
 		return;
@@ -66,10 +75,9 @@ void player_update(Entity* entity, float deltaTime) {
 
 	if (IsKeyDown(KEY_LEFT_SHIFT)) speed /= 4.0f;
 	else if (IsKeyDown(KEY_LEFT_CONTROL)) speed *= 2.5f;
-
+		
 	// If not gravity affected, then start floating
 	if (!entity->gravity_affected) {
-		player->direction = 0;
 		float nineties = roundf((player->rotation / 90.0f)) * 90.0f;
 		player->rotation = Lerp(player->rotation, nineties, Clamp(50.0f * deltaTime, 0.0f, 1.0f));
 
@@ -81,22 +89,20 @@ void player_update(Entity* entity, float deltaTime) {
 		if (dir.x != 0.0f || dir.y != 0.0f)
 			dir = Vector2Normalize(dir);
 
-		entity->velocity = Vector2Lerp(entity->velocity, Vector2Scale(dir, speed), Clamp(5.0f * deltaTime, 0.0f, 1.0f));
+		entity->velocity = Vector2Lerp(entity->velocity, Vector2Scale(dir, speed), Clamp(frictionFactor * deltaTime, 0.0f, 1.0f));
 	}
 	// Otherwise behave like a platformer player controller
 	else {
 		// Horizontal movement
 		if (IsKeyDown(KEY_A) || IsKeyDown(KEY_LEFT)) {
-			player->entity.velocity.x = Lerp(player->entity.velocity.x, -speed, Clamp(20.0f * deltaTime, 0.0f, 1.0f));
-			player->direction = -1;
+			player->entity.velocity.x = Lerp(player->entity.velocity.x, -speed, Clamp(frictionFactor * deltaTime, 0.0f, 1.0f));
 		}
 		else if (IsKeyDown(KEY_D) || IsKeyDown(KEY_RIGHT)) {
-			player->entity.velocity.x = Lerp(player->entity.velocity.x, speed, Clamp(20.0f * deltaTime, 0.0f, 1.0f));
-			player->direction = 1;
+			player->entity.velocity.x = Lerp(player->entity.velocity.x, speed, Clamp(frictionFactor * deltaTime, 0.0f, 1.0f));
 		}
 		else {
-			player->entity.velocity.x = Lerp(player->entity.velocity.x, 0.0f, Clamp(20.0f * deltaTime, 0.0f, 1.0f));
-			if (player->entity.grounded) player->direction = 0;
+			if (entity->grounded || !player->last_on_slippery) player->entity.velocity.x = Lerp(player->entity.velocity.x, 0.0f, Clamp(frictionFactor * deltaTime, 0.0f, 1.0f));
+			if (entity->grounded && player->last_on_slippery) player->last_on_slippery = false;
 		}
 
 		// Jumping or swimming
@@ -106,11 +112,11 @@ void player_update(Entity* entity, float deltaTime) {
 				if (entity->on_liquid) up_speed *= 0.5f;
 				else if (entity->on_climbable) up_speed *= 0.75f;
 
-				player->entity.velocity.y = Lerp(player->entity.velocity.y, up_speed, Clamp(20.0f * deltaTime, 0.0f, 1.0f));
+				player->entity.velocity.y = Lerp(player->entity.velocity.y, up_speed, Clamp(frictionFactor * deltaTime, 0.0f, 1.0f));
 			}
 			else if (entity->grounded) {
+				if (entity->on_slippery) player->last_on_slippery = true;
 				player->entity.velocity.y = -JUMP_FORCE;
-				if (player->direction == 0) player->rotation = 0.0f;
 			}
 		}
 
@@ -121,8 +127,11 @@ void player_update(Entity* entity, float deltaTime) {
 			rotation_amount /= 2.0f;
 		}
 
-		if (!entity->grounded && !entity->on_climbable) {
-			player->rotation += rotation_amount * deltaTime * player->direction;
+		if (!entity->grounded && !entity->on_climbable && fabsf(entity->velocity.x) > 0.1f) {
+			if (entity->velocity.x < 0.0f)
+				player->rotation -= rotation_amount * deltaTime;
+			else if (entity->velocity.x > 0.0f)
+				player->rotation += rotation_amount * deltaTime;
 		}
 		else {
 			float nineties = roundf((player->rotation / 90.0f)) * 90.0f;

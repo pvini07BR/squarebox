@@ -20,6 +20,8 @@ typedef struct Entity {
 	bool gravity_affected;
 
 	bool grounded;
+	bool on_slippery;
+
 	bool on_liquid;
 	bool on_climbable;
 } Entity;

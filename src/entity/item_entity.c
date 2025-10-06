@@ -45,8 +45,13 @@ void item_entity_update(Entity* entity, float deltaTime) {
 	if (ie->timer < 1.0f) ie->timer += deltaTime;
 	if (ie->timer > 1.0f) ie->timer = 1.0f;
 
+	float frictionFactor = 20.0f;
+	if (entity->grounded && entity->on_slippery) {
+		frictionFactor = 1.0f;
+	}
+
 	if (entity->grounded) {
-		entity->velocity.x = Lerp(entity->velocity.x, 0.0f, 20.0f * deltaTime);
+		entity->velocity.x = Lerp(entity->velocity.x, 0.0f, Clamp(frictionFactor * deltaTime, 0.0f, 1.0f));
 	}
 
 	Player* player = game_get_player();

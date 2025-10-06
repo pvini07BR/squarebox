@@ -25,6 +25,8 @@ typedef enum {
 	BLOCK_GLASS,
 	BLOCK_LAMP,
 	BLOCK_CHEST,
+	BLOCK_BOUNCY_BLOCK,
+	BLOCK_ICE,
 	BLOCK_WOOL,
 	BLOCK_ORANGE_WOOL,
 	BLOCK_MAGENTA_WOOL,
@@ -94,6 +96,15 @@ typedef enum {
 	// other blocks, and will render only if it is in the
 	// block layer.
 	BLOCK_FLAG_LIQUID = (1 << 8),
+
+	// Tells if the block is bouncy.
+	// whenever a entity lands on the block, it will bounce
+	// away the vertical velocity with some loss.
+	BLOCK_FLAG_BOUNCY = (1 << 9),
+
+	// Tells if the block is slippery.
+	// it will make entities have less friction.
+	BLOCK_FLAG_SLIPPERY = (1 << 10)
 } BlockFlag;
 
 typedef enum {
@@ -205,6 +216,8 @@ QUICK_BLOCK(leaves, ATLAS_LEAVES)
 QUICK_BLOCK(glass, ATLAS_GLASS)
 QUICK_BLOCK(lamp, ATLAS_LAMP)
 QUICK_BLOCK(chest, ATLAS_CHEST)
+QUICK_BLOCK(bouncy_block, ATLAS_BOUNCY_BLOCK)
+QUICK_BLOCK(ice, ATLAS_ICE)
 QUICK_BLOCK(wool, ATLAS_WOOL)
 QUICK_BLOCK(orange_wool, ATLAS_ORANGE_WOOL)
 QUICK_BLOCK(magenta_wool, ATLAS_MAGENTA_WOOL)

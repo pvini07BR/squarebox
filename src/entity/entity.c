@@ -20,6 +20,8 @@
 typedef struct {
 	Rectangle rect;
 	float t;
+	bool bouncy;
+	bool slippery;
 } RectPair;
 
 int compare_rects(const void* a, const void* b) {
@@ -117,22 +119,31 @@ static bool entity_vs_rect(const Entity* entity, const Rectangle* staticRect, co
 	}
 }
 
-static bool resolve_entity_vs_rect(Entity* entity, Rectangle* staticRect, const float deltaTime) {
+static bool resolve_entity_vs_rect(Entity* entity, Rectangle* staticRect, const float deltaTime, bool bounce) {
 	Vector2 contact_point, contact_normal;
 	float contact_time = 0.0f;
 	if (entity_vs_rect(entity, staticRect, deltaTime, &contact_point, &contact_normal, &contact_time)) {
-		if (contact_normal.y < 0.0f) entity->grounded = true;
+		if (contact_normal.y < 0.0f) {
+			entity->grounded = true;
+		}
+
 		if (entity->grounded && contact_normal.x != 0.0f) {
 			float y_diff = (entity->rect.y + entity->rect.height) - staticRect->y;
 			if (y_diff > 0.0f && y_diff < (entity->rect.height * 0.6f)) {
 				entity->rect.y = (staticRect->y - entity->rect.height) - 0.01f;
 			}
 		}
-		
-		Vector2 abs = (Vector2) { fabsf(entity->velocity.x), fabsf(entity->velocity.y) };
+
+		Vector2 abs = (Vector2){ fabsf(entity->velocity.x), fabsf(entity->velocity.y) };
 		Vector2 norm = Vector2Multiply(contact_normal, abs);
 		Vector2 inv = Vector2Scale(norm, 1.0f - contact_time);
-		entity->velocity = Vector2Add(entity->velocity, inv);
+
+		entity->velocity.x += inv.x;
+		if (bounce && contact_normal.y < 0.0f && fabsf(entity->velocity.y) > (TILE_SIZE * 3.0f)) {
+			entity->velocity.y = -entity->velocity.y * 0.8f;
+		}
+		else
+			entity->velocity.y += inv.y;
 
 		return true;
 	}
@@ -182,6 +193,8 @@ static void resolve_solid_blocks(Entity* entity, float deltaTime) {
 				if (entity_vs_rect(entity, &rect, deltaTime, &cp, &cn, &t)) {
 					rects[rect_count].rect = rect;
 					rects[rect_count].t = t;
+					rects[rect_count].bouncy = (reg->flags & BLOCK_FLAG_BOUNCY);
+					rects[rect_count].slippery = (reg->flags & BLOCK_FLAG_SLIPPERY);
 					rect_count++;
 				}
 			}
@@ -192,7 +205,8 @@ static void resolve_solid_blocks(Entity* entity, float deltaTime) {
 
 	for (size_t i = 0; i < rect_count; i++) {
 		Rectangle* rect = &rects[i].rect;
-		resolve_entity_vs_rect(entity, rect, deltaTime);
+		if (!entity->on_slippery && rects[i].slippery) entity->on_slippery = true;
+		resolve_entity_vs_rect(entity, rect, deltaTime, rects[i].bouncy);
 	}
 }
 
@@ -257,6 +271,7 @@ void entity_update(Entity* entity, float deltaTime) {
 
 	entity->on_liquid = false;
 	entity->grounded = false;
+	entity->on_slippery = false;
 	entity->on_climbable = false;
 
 	resolve_area_blocks(entity);

@@ -102,6 +102,18 @@ void block_registry_init() {
         .destroy_callback = on_chest_destroy
     };
 
+    blockRegistry[BLOCK_BOUNCY_BLOCK] = (BlockRegistry){
+        .variant_generator = variant_bouncy_block,
+        .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FULL_BLOCK | BLOCK_FLAG_BOUNCY,
+        .lightLevel = BLOCK_LIGHT_NONE
+    };
+
+    blockRegistry[BLOCK_ICE] = (BlockRegistry){
+        .variant_generator = variant_ice,
+        .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FULL_BLOCK | BLOCK_FLAG_SLIPPERY,
+        .lightLevel = BLOCK_LIGHT_TRANSPARENT
+    };
+
     blockRegistry[BLOCK_WOOL] = (BlockRegistry){
         .variant_generator = variant_wool,
         .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FULL_BLOCK,

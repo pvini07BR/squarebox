@@ -8,9 +8,9 @@
 typedef struct {
 	Entity entity;
 	Color color;
-	int direction;
 	float rotation;
 	bool disable_input;
+	bool last_on_slippery;
 } Player;
 
 Player* player_create(Vector2 initialPosition, Color color);

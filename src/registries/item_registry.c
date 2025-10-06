@@ -98,6 +98,20 @@ void item_registry_init() {
 		.blockId = BLOCK_CHEST
 	};
 
+	itemRegistry[ITEM_BOUNCY_BLOCK] = (ItemRegistry){
+		.name = "Bouncy Block",
+		.atlas_idx = ATLAS_BOUNCY_BLOCK,
+		.model_idx = BLOCK_MODEL_QUAD,
+		.blockId = BLOCK_BOUNCY_BLOCK
+	};
+
+	itemRegistry[ITEM_ICE] = (ItemRegistry){
+		.name = "Ice",
+		.atlas_idx = ATLAS_ICE,
+		.model_idx = BLOCK_MODEL_QUAD,
+		.blockId = BLOCK_ICE
+	};
+
 	itemRegistry[ITEM_WOOL] = (ItemRegistry){
 		.name = "Wool",
 		.atlas_idx = ATLAS_WOOL,

@@ -542,7 +542,7 @@ WorldListReturnType world_manager_draw_list(mu_Context* ctx) {
 
             mu_layout_row(ctx, 2, (int[2]) { -(win->rect.w - 160), -1 }, 30);
             mu_label(ctx, "World Name");
-            mu_textbox(ctx, &tempWorldInfo.name, sizeof(tempWorldInfo.name));
+            mu_textbox(ctx, tempWorldInfo.name, sizeof(tempWorldInfo.name));
 
             mu_label(ctx, "World Preset");
             combobox(ctx, 3, presetComboboxItems, (int*)& tempWorldInfo.preset);

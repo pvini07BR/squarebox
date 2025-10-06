@@ -7,6 +7,7 @@
 
 #include "types.h"
 
+#include "item_container.h"
 #include "chunk.h"
 
 void chunk_manager_init(Vector2i center, uint8_t cvw, uint8_t cvh);
@@ -24,7 +25,7 @@ uint8_t chunk_manager_get_view_width();
 uint8_t chunk_manager_get_view_height();
 
 // Returns true when a interaction occurred, false when not.
-bool chunk_manager_interact(Vector2i position, ChunkLayerEnum layer);
+bool chunk_manager_interact(Vector2i position, ChunkLayerEnum layer, ItemSlot holdingItem);
 
 // This version of set block checks for surroundings before placing anything,
 // and does not set a blockId to zero when its already zero.

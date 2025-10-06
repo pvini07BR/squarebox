@@ -16,3 +16,11 @@ uint8_t get_trapdoor_state(uint8_t rotation, bool open) {
 	s->open = open;
 	return value;
 }
+
+uint8_t get_frame_block_state(uint8_t rotation, uint8_t blockIdx) {
+	uint8_t value = 0;
+	FrameBlockState* s = (FrameBlockState*)&value;
+	s->rotation = rotation;
+	s->blockIdx = blockIdx;
+	return value;
+}

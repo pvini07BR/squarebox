@@ -128,7 +128,7 @@ void game_update(float deltaTime) {
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
             chunk_manager_set_block_safe(mouseBlockPos, (BlockInstance) { 0, 0, NULL }, sel_layer);
         else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {
-            if (!chunk_manager_interact(mouseBlockPos, sel_layer)) {
+            if (!chunk_manager_interact(mouseBlockPos, sel_layer, inventory_get_item(0, hotbarIdx))) {
                 ItemRegistry* itr = ir_get_item_registry(inventory_get_item(0, hotbarIdx).item_id);
                 if (itr->blockId > 0 && !(itr->placingFlags & (sel_layer == CHUNK_LAYER_BACKGROUND ? ITEM_PLACE_FLAG_NOT_WALL : ITEM_PLACE_FLAG_NOT_BLOCK))) {
                     BlockRegistry* br = br_get_block_registry(itr->blockId);

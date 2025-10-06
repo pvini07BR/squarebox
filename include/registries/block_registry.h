@@ -53,16 +53,9 @@ typedef enum {
 	BLOCK_TORCH,
 	BLOCK_WATER_SOURCE,
 	BLOCK_WATER_FLOWING,
-	BLOCK_DIRT_SLAB,
-	BLOCK_STONE_SLAB,
-	BLOCK_COBBLESTONE_SLAB,
-	BLOCK_WOODEN_PLANKS_SLAB,
-	BLOCK_STONE_STAIRS,
-	BLOCK_COBBLESTONE_STAIRS,
-	BLOCK_WOODEN_PLANKS_STAIRS,
-	BLOCK_STONE_NUB,
-	BLOCK_COBBLESTONE_NUB,
-	BLOCK_WOODEN_PLANKS_NUB,
+	BLOCK_SLAB_FRAME,
+	BLOCK_STAIRS_FRAME,
+	BLOCK_NUB_FRAME,
 	BLOCK_COUNT
 } BlockEnum;
 
@@ -179,17 +172,6 @@ void block_registry_free();
 		}; \
 	}
 
-#define QUICK_ROTATABLE_VARIANT(name, atlas, model, collider, uvlock) \
-    static inline BlockVariant variant_##name(uint8_t state) { \
-		return (BlockVariant) {\
-			.atlas_idx=(atlas), \
-			.model_idx=(model), \
-			.collider_idx=(collider), \
-			.rotation=state, \
-			.uv_lock=(uvlock) \
-		}; \
-	}
-
 #define QUICK_BLOCK(name, atlas) QUICK_VARIANT(name, atlas, BLOCK_MODEL_QUAD, BLOCK_COLLIDER_QUAD, 0, false)
 #define QUICK_SLAB(name, atlas) QUICK_ROTATABLE_VARIANT(name, atlas, BLOCK_MODEL_SLAB, BLOCK_COLLIDER_SLAB, true)
 #define QUICK_STAIRS(name, atlas) QUICK_ROTATABLE_VARIANT(name, atlas, BLOCK_MODEL_STAIRS, BLOCK_COLLIDER_STAIRS, true)
@@ -285,17 +267,55 @@ static inline BlockVariant variant_torch(uint8_t state) {
 	};
 }
 
-QUICK_SLAB(dirt_slab, ATLAS_DIRT_BLOCK)
-QUICK_SLAB(stone_slab, ATLAS_STONE)
-QUICK_SLAB(cobblestone_slab, ATLAS_COBBLESTONE)
-QUICK_SLAB(wooden_planks_slab, ATLAS_WOODEN_PLANKS)
+static inline BlockVariant variant_slab_frame(uint8_t state) {
+	FrameBlockState* s = (FrameBlockState*)&state;
 
-QUICK_STAIRS(stone_stairs, ATLAS_STONE)
-QUICK_STAIRS(cobblestone_stairs, ATLAS_COBBLESTONE)
-QUICK_STAIRS(wooden_planks_stairs, ATLAS_WOODEN_PLANKS)
+	TextureAtlasEnum atlas = ATLAS_SLAB_FRAME;
+	if (s->blockIdx > 0) {
+		atlas = br_get_block_registry(s->blockIdx)->variant_generator(0).atlas_idx;
+	}
 
-QUICK_NUB(stone_nub, ATLAS_STONE)
-QUICK_NUB(cobblestone_nub, ATLAS_COBBLESTONE)
-QUICK_NUB(wooden_planks_nub, ATLAS_WOODEN_PLANKS)
+	return (BlockVariant) {
+		.atlas_idx = atlas,
+		.model_idx = BLOCK_MODEL_SLAB,
+		.collider_idx = BLOCK_COLLIDER_SLAB,
+		.rotation = s->rotation,
+		.uv_lock = s->blockIdx > 0
+	};
+}
+
+static inline BlockVariant variant_stairs_frame(uint8_t state) {
+	FrameBlockState* s = (FrameBlockState*)&state;
+
+	TextureAtlasEnum atlas = ATLAS_STAIRS_FRAME;
+	if (s->blockIdx > 0) {
+		atlas = br_get_block_registry(s->blockIdx)->variant_generator(0).atlas_idx;
+	}
+
+	return (BlockVariant) {
+		.atlas_idx = atlas,
+		.model_idx = BLOCK_MODEL_STAIRS,
+		.collider_idx = BLOCK_COLLIDER_STAIRS,
+		.rotation = s->rotation,
+		.uv_lock = s->blockIdx > 0
+	};
+}
+
+static inline BlockVariant variant_nub_frame(uint8_t state) {
+	FrameBlockState* s = (FrameBlockState*)&state;
+
+	TextureAtlasEnum atlas = ATLAS_NUB_FRAME;
+	if (s->blockIdx > 0) {
+		atlas = br_get_block_registry(s->blockIdx)->variant_generator(0).atlas_idx;
+	}
+
+	return (BlockVariant) {
+		.atlas_idx = atlas,
+		.model_idx = BLOCK_MODEL_NUB,
+		.collider_idx = BLOCK_COLLIDER_NUB,
+		.rotation = s->rotation,
+		.uv_lock = s->blockIdx > 0
+	};
+}
 
 #endif

@@ -1,5 +1,6 @@
 #include "sign_editor.h"
 #include "texture_atlas.h"
+#include "types.h"
 
 #include <string.h>
 
@@ -66,7 +67,7 @@ void sign_editor_draw() {
 
 	DrawTexturePro(
 		texture_atlas_get(),
-		texture_atlas_get_rect(41, false, false),
+		texture_atlas_get_rect(ATLAS_SIGN_WALL, false, false),
 		(Rectangle) { center.x, center.y, signSize, signSize },
 		(Vector2) { signSize / 2.0f, signSize / 2.0f },
 		0.0f,

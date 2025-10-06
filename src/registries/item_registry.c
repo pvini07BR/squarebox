@@ -288,74 +288,25 @@ void item_registry_init() {
 		.placingFlags = ITEM_PLACE_FLAG_NOT_WALL
 	};
 
-	itemRegistry[ITEM_DIRT_SLAB] = (ItemRegistry){
-		.name = "Dirt Slab",
-		.atlas_idx = ATLAS_DIRT_BLOCK,
+	itemRegistry[ITEM_SLAB_FRAME] = (ItemRegistry){
+		.name = "Slab Frame",
+		.atlas_idx = ATLAS_SLAB_FRAME,
 		.model_idx = BLOCK_MODEL_SLAB,
-		.blockId = BLOCK_DIRT_SLAB
+		.blockId = BLOCK_SLAB_FRAME
 	};
 
-	itemRegistry[ITEM_STONE_SLAB] = (ItemRegistry){
-		.name = "Stone Slab",
-		.atlas_idx = ATLAS_STONE,
-		.model_idx = BLOCK_MODEL_SLAB,
-		.blockId = BLOCK_STONE_SLAB
-	};
-
-	itemRegistry[ITEM_COBBLESTONE_SLAB] = (ItemRegistry){
-		.name = "Cobblestone Slab",
-		.atlas_idx = ATLAS_COBBLESTONE,
-		.model_idx = BLOCK_MODEL_SLAB,
-		.blockId = BLOCK_COBBLESTONE_SLAB
-	};
-
-	itemRegistry[ITEM_WOODEN_PLANKS_SLAB] = (ItemRegistry){
-		.name = "Wooden Planks Slab",
-		.atlas_idx = ATLAS_WOODEN_PLANKS,
-		.model_idx = BLOCK_MODEL_SLAB,
-		.blockId = BLOCK_WOODEN_PLANKS_SLAB
-	};
-
-	itemRegistry[ITEM_STONE_STAIRS] = (ItemRegistry){
-		.name = "Stone Stairs",
-		.atlas_idx = ATLAS_STONE,
+	itemRegistry[ITEM_STAIRS_FRAME] = (ItemRegistry){
+		.name = "Stairs Frame",
+		.atlas_idx = ATLAS_STAIRS_FRAME,
 		.model_idx = BLOCK_MODEL_STAIRS,
-		.blockId = BLOCK_STONE_STAIRS
+		.blockId = BLOCK_STAIRS_FRAME
 	};
 
-	itemRegistry[ITEM_COBBLESTONE_STAIRS] = (ItemRegistry){
-		.name = "Cobblestone Stairs",
-		.atlas_idx = ATLAS_COBBLESTONE,
-		.model_idx = BLOCK_MODEL_STAIRS,
-		.blockId = BLOCK_COBBLESTONE_STAIRS
-	};
-
-	itemRegistry[ITEM_WOODEN_PLANKS_STAIRS] = (ItemRegistry){
-		.name = "Wooden Planks Stairs",
-		.atlas_idx = ATLAS_WOODEN_PLANKS,
-		.model_idx = BLOCK_MODEL_STAIRS,
-		.blockId = BLOCK_WOODEN_PLANKS_STAIRS
-	};
-
-	itemRegistry[ITEM_STONE_NUB] = (ItemRegistry){
-		.name = "Stone Nub",
-		.atlas_idx = ATLAS_STONE,
+	itemRegistry[ITEM_NUB_FRAME] = (ItemRegistry){
+		.name = "Nub Frame",
+		.atlas_idx = ATLAS_NUB_FRAME,
 		.model_idx = BLOCK_MODEL_NUB,
-		.blockId = BLOCK_STONE_NUB
-	};
-
-	itemRegistry[ITEM_COBBLESTONE_NUB] = (ItemRegistry){
-		.name = "Cobblestone Nub",
-		.atlas_idx = ATLAS_COBBLESTONE,
-		.model_idx = BLOCK_MODEL_NUB,
-		.blockId = BLOCK_COBBLESTONE_NUB
-	};
-
-	itemRegistry[ITEM_WOODEN_PLANKS_NUB] = (ItemRegistry){
-		.name = "Wooden Planks Nub",
-		.atlas_idx = ATLAS_WOODEN_PLANKS,
-		.model_idx = BLOCK_MODEL_NUB,
-		.blockId = BLOCK_WOODEN_PLANKS_NUB
+		.blockId = BLOCK_NUB_FRAME
 	};
 
 	for (int i = 0; i < ITEM_COUNT; i++) {

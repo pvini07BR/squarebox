@@ -380,7 +380,7 @@ uint8_t chunk_manager_get_view_height()
     return chunk_view_height;
 }
 
-bool chunk_manager_interact(Vector2i position, ChunkLayerEnum layer) {
+bool chunk_manager_interact(Vector2i position, ChunkLayerEnum layer, ItemSlot holdingItem) {
     if (!initialized) return false;
 
     Vector2i chunkPos = {
@@ -408,7 +408,8 @@ bool chunk_manager_interact(Vector2i position, ChunkLayerEnum layer) {
                 .chunk = chunk,
                 .position = relPos,
                 .idx = relPos.x + (relPos.y * CHUNK_WIDTH)
-            }
+            },
+            holdingItem
         );
         if (val) {
             chunk_manager_update_lighting();

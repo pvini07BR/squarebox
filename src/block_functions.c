@@ -4,6 +4,7 @@
 #include "sign_editor.h"
 #include "raylib.h"
 #include "registries/block_registry.h"
+#include "registries/item_registry.h"
 #include "block_state_bitfields.h"
 #include "chunk.h"
 #include "types.h"
@@ -84,7 +85,7 @@ bool chest_solver(BlockExtraResult result, BlockExtraResult other, BlockExtraRes
     return true;
 }
 
-bool on_chest_interact(BlockExtraResult result) {
+bool on_chest_interact(BlockExtraResult result, ItemSlot holdingItem) {
     if (result.block->data != NULL) {
         item_container_open(result.block->data);
         return true;
@@ -143,18 +144,33 @@ void on_sign_destroy(BlockExtraResult result) {
     }
 }
 
-bool trapdoor_interact(BlockExtraResult result) {
+bool trapdoor_interact(BlockExtraResult result, ItemSlot holdingItem) {
     TrapdoorState* state = (TrapdoorState*) & result.block->state;
     state->open = !state->open;
     return true;
 }
 
-bool sign_interact(BlockExtraResult result) {
+bool sign_interact(BlockExtraResult result, ItemSlot holdingItem) {
     if (result.block->data != NULL) {
         SignLines* lines = result.block->data;
         sign_editor_open(lines);
         return true;
     }
+    return false;
+}
+
+bool frame_block_interact(BlockExtraResult result, ItemSlot holdingItem) {
+    FrameBlockState* s = (FrameBlockState*)&result.block->state;
+    if (s->blockIdx <= 0) {
+        ItemRegistry* irg = ir_get_item_registry(holdingItem.item_id);
+        BlockRegistry* brg = br_get_block_registry(irg->blockId);
+
+        if (irg->blockId > 0 && irg->blockId != BLOCK_SLAB_FRAME && (brg->flags & BLOCK_FLAG_SOLID) && (brg->flags & BLOCK_FLAG_FULL_BLOCK)) {
+            s->blockIdx = irg->blockId;
+            return true;
+        }
+    }
+
     return false;
 }
 

@@ -15,7 +15,13 @@ typedef struct {
 	bool open : 1;
 } TrapdoorState;
 
+typedef struct {
+	uint8_t rotation : 3;
+	uint8_t blockIdx : 5;
+} FrameBlockState;
+
 uint8_t get_flowing_liquid_state(uint8_t level, bool falling);
 uint8_t get_trapdoor_state(uint8_t rotation, bool open);
+uint8_t get_frame_block_state(uint8_t rotation, uint8_t blockIdx);
 
 #endif

@@ -291,94 +291,46 @@ void block_registry_init() {
         .tick_speed = 3
     };
 
-    blockRegistry[BLOCK_DIRT_SLAB] = (BlockRegistry){
-        .variant_generator = variant_dirt_slab,
+    blockRegistry[BLOCK_SLAB_FRAME] = (BlockRegistry){
+        .variant_generator = variant_slab_frame,
         .selectable_state_count = 4,
-        .selectable_states = { 0, 1, 2, 3 },
-        .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FLIP_H | BLOCK_FLAG_FLIP_V,
-        .lightLevel = BLOCK_LIGHT_NONE,
-        .state_resolver = NULL
-    };
-
-    blockRegistry[BLOCK_STONE_SLAB] = (BlockRegistry){
-        .variant_generator = variant_stone_slab,
-        .selectable_state_count = 4,
-        .selectable_states = { 0, 1, 2, 3 },
-        .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FLIP_H,
-        .lightLevel = BLOCK_LIGHT_NONE,
-        .state_resolver = NULL
-    };
-
-    blockRegistry[BLOCK_COBBLESTONE_SLAB] = (BlockRegistry){
-        .variant_generator = variant_cobblestone_slab,
-        .selectable_state_count = 4,
-        .selectable_states = { 0, 1, 2, 3 },
+        .selectable_states = {
+            get_frame_block_state(0, 0),
+            get_frame_block_state(1, 0),
+            get_frame_block_state(2, 0),
+            get_frame_block_state(3, 0)
+        },
         .flags = BLOCK_FLAG_SOLID,
         .lightLevel = BLOCK_LIGHT_NONE,
-        .state_resolver = NULL
+        .interact_callback = frame_block_interact
     };
 
-    blockRegistry[BLOCK_WOODEN_PLANKS_SLAB] = (BlockRegistry){
-        .variant_generator = variant_wooden_planks_slab,
+    blockRegistry[BLOCK_STAIRS_FRAME] = (BlockRegistry){
+        .variant_generator = variant_stairs_frame,
         .selectable_state_count = 4,
-        .selectable_states = { 0, 1, 2, 3 },
+        .selectable_states = {
+            get_frame_block_state(0, 0),
+            get_frame_block_state(1, 0),
+            get_frame_block_state(2, 0),
+            get_frame_block_state(3, 0)
+        },
         .flags = BLOCK_FLAG_SOLID,
         .lightLevel = BLOCK_LIGHT_NONE,
-        .state_resolver = NULL
+        .interact_callback = frame_block_interact
     };
 
-    blockRegistry[BLOCK_STONE_STAIRS] = (BlockRegistry){
-        .variant_generator = variant_stone_stairs,
+    blockRegistry[BLOCK_NUB_FRAME] = (BlockRegistry){
+        .variant_generator = variant_nub_frame,
         .selectable_state_count = 4,
-        .selectable_states = { 0, 1, 2, 3 },
-        .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FLIP_H,
-        .lightLevel = BLOCK_LIGHT_NONE,
-        .state_resolver = NULL
-    };
-
-    blockRegistry[BLOCK_COBBLESTONE_STAIRS] = (BlockRegistry){
-        .variant_generator = variant_cobblestone_stairs,
-        .selectable_state_count = 4,
-        .selectable_states = { 0, 1, 2, 3 },
+        .selectable_states = {
+            get_frame_block_state(0, 0),
+            get_frame_block_state(1, 0),
+            get_frame_block_state(2, 0),
+            get_frame_block_state(3, 0)
+        },
         .flags = BLOCK_FLAG_SOLID,
         .lightLevel = BLOCK_LIGHT_NONE,
-        .state_resolver = NULL
-    };
-
-    blockRegistry[BLOCK_WOODEN_PLANKS_STAIRS] = (BlockRegistry){
-        .variant_generator = variant_wooden_planks_stairs,
-        .selectable_state_count = 4,
-        .selectable_states = { 0, 1, 2, 3 },
-        .flags = BLOCK_FLAG_SOLID,
-        .lightLevel = BLOCK_LIGHT_NONE,
-        .state_resolver = NULL
-    };
-
-    blockRegistry[BLOCK_STONE_NUB] = (BlockRegistry){
-        .variant_generator = variant_stone_nub,
-        .selectable_state_count = 4,
-        .selectable_states = { 0, 1, 2, 3 },
-        .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FLIP_H,
-        .lightLevel = BLOCK_LIGHT_NONE,
-        .state_resolver = NULL
-    };
-
-    blockRegistry[BLOCK_COBBLESTONE_NUB] = (BlockRegistry){
-        .variant_generator = variant_cobblestone_nub,
-        .selectable_state_count = 4,
-        .selectable_states = { 0, 1, 2, 3 },
-        .flags = BLOCK_FLAG_SOLID,
-        .lightLevel = BLOCK_LIGHT_NONE,
-        .state_resolver = NULL
-    };
-
-    blockRegistry[BLOCK_WOODEN_PLANKS_NUB] = (BlockRegistry){
-        .variant_generator = variant_wooden_planks_nub,
-        .selectable_state_count = 4,
-        .selectable_states = { 0, 1, 2, 3 },
-        .flags = BLOCK_FLAG_SOLID,
-        .lightLevel = BLOCK_LIGHT_NONE,
-        .state_resolver = NULL
+        .interact_callback = frame_block_interact
     };
 }
 

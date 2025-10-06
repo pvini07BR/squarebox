@@ -31,8 +31,8 @@ But here is a list of all the features this game currently has, and what I plan 
 - ✅ Item entities (that's the only kind of entity in the game besides the player)
 - ✅ Liquids (only water is added)
 - ✅ Lighting system
+- ✅ World saving (beware that the world and chunk file formats may change)
 - 🟩 World generation (there's only a generic noise world gen and it does not have any trees yet)
-- 🟩 World saving (working on chunk saving first)
 - ⬜ Particles
 - ⬜ Waterlogged blocks
 - ⬜ Structure generation

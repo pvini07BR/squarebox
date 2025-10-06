@@ -72,6 +72,28 @@ int valuebox(mu_Context* ctx, int* value) {
     return res;
 }
 
+int world_entry(mu_Context* ctx, WorldListEntry* entry) {
+    mu_Id id = mu_get_id(ctx, entry, sizeof(WorldListEntry));
+    mu_Rect rect = mu_layout_next(ctx);
+    mu_update_control(ctx, id, rect, 0);
+
+    int res = 0;
+    if (ctx->mouse_pressed == MU_MOUSE_LEFT && ctx->focus == id) {
+        selectedEntry = entry;
+        res |= MU_RES_CHANGE;
+    }
+
+    if (selectedEntry == entry) {
+        mu_draw_control_frame(ctx, id, rect, MU_COLOR_BUTTON, 0);
+    }
+    else {
+        mu_draw_control_frame(ctx, id, rect, MU_COLOR_BASE, 0);
+    }
+    mu_draw_control_text(ctx, entry->info.name, rect, MU_COLOR_TEXT, 0);
+
+    return res;
+}
+
 char* formatted_string(const char* fmt, ...) {
     if (fmt == NULL) return NULL;
 
@@ -465,9 +487,7 @@ WorldListReturnType world_manager_draw_list(mu_Context* ctx) {
 
             if (worldList) {
                 for (size_t i = 0; i < worldListCount; i++) {
-                    WorldListEntry* entry = &worldList[i];
-
-                    mu_text(ctx, entry->worldDir);
+                    world_entry(ctx, &worldList[i]);
                 }
             }
             
@@ -477,7 +497,16 @@ WorldListReturnType world_manager_draw_list(mu_Context* ctx) {
             mu_layout_next(ctx);
 
             mu_layout_row(ctx, 2, (int[2]){ -250, -1 }, 30);
-            mu_button(ctx, "Play");
+            if (selectedEntry) {
+                if (mu_button(ctx, "Play")) {
+                    if (world_manager_load_world_info(selectedEntry->worldDir)) {
+                        returnType = WORLD_RETURN_OPEN_WORLD;
+                    }
+                }
+            }
+            else {
+                mu_layout_next(ctx);
+            }
             if (mu_button(ctx, "Create New World")) {
                 tempWorldInfo.seed = gen_random_int();
                 creatingWorld = true;

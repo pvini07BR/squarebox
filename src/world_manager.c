@@ -31,6 +31,47 @@ bool creatingWorld = false;
 
 WorldInfo tempWorldInfo;
 
+int combobox(mu_Context* ctx, int item_count, const char* items[], int* item_idx) {
+    mu_Id id = mu_get_id(ctx, items, sizeof(const char*) * item_count);
+    mu_Rect rect = mu_layout_next(ctx);
+    mu_update_control(ctx, id, rect, 0);
+
+    int res = 0;
+    if (ctx->mouse_pressed == MU_MOUSE_LEFT && ctx->focus == id) {
+        mu_open_popup(ctx, "combobox");
+    }
+
+    if (mu_begin_popup(ctx, "combobox")) {
+        for (int i = 0; i < item_count; i++) {
+            if (mu_button(ctx, items[i])) {
+                *item_idx = i;
+                res |= MU_RES_CHANGE;
+            }
+        }
+        mu_end_popup(ctx);
+    }
+
+    mu_draw_control_frame(ctx, id, rect, MU_COLOR_BASE, 0);
+    mu_draw_control_text(ctx, items[*item_idx], rect, MU_COLOR_TEXT, 0);
+
+    return res;
+}
+
+int valuebox(mu_Context* ctx, int* value) {
+    mu_Id id = mu_get_id(ctx, value, sizeof(value));
+    mu_Rect rect = mu_layout_next(ctx);
+    mu_update_control(ctx, id, rect, 0);
+
+    int res = 0;
+
+    mu_draw_control_frame(ctx, id, rect, MU_COLOR_BASE, 0);
+    char buf[MU_MAX_FMT + 1];
+    sprintf(buf, "%d", *value);
+    mu_draw_control_text(ctx, buf, rect, MU_COLOR_TEXT, 0);
+
+    return res;
+}
+
 char* formatted_string(const char* fmt, ...) {
     if (fmt == NULL) return NULL;
 
@@ -408,117 +449,87 @@ bool world_manager_load_world_list() {
     return true;
 }
 
-WorldListReturnType world_manager_draw_list(struct nk_context* ctx) {
+WorldListReturnType world_manager_draw_list(mu_Context* ctx) {
     WorldListReturnType returnType = WORLD_RETURN_NONE;
 
     if (!creatingWorld) {
-        const Vector2 totalSize = { 620, 620 };
-    
-        const Vector2 screenCenter = {
-            (GetScreenWidth() / 2.0f) - (totalSize.x / 2.0f),
-            (GetScreenHeight() / 2.0f) - (totalSize.y / 2.0f),
-        };
+        if (mu_begin_window_ex(ctx, "World List", mu_rect(0, 0, 500, 500), MU_OPT_NOTITLE | MU_OPT_NOSCROLL)) {
+            mu_Container* win = mu_get_current_container(ctx);
 
-        if (nk_begin(ctx, "World List", nk_rect(screenCenter.x, screenCenter.y, totalSize.x, totalSize.y - 70), 0)) {            
-            nk_layout_row_dynamic(ctx, 30, 1);
+            win->rect.x = (GetScreenWidth() / 2.0f) - (win->rect.w / 2.0f);
+            win->rect.y = (GetScreenHeight() / 2.0f) - (win->rect.h / 2.0f);
+
+            mu_layout_row(ctx, 1, (int[1]){ -1 }, -69);
+            mu_begin_panel(ctx, "World List");
+            mu_layout_row(ctx, 1, (int[]) { -1 }, 30);
+
             if (worldList) {
                 for (size_t i = 0; i < worldListCount; i++) {
                     WorldListEntry* entry = &worldList[i];
-    
-                    if (nk_select_text(ctx, entry->info.name, WORLD_NAME_LENGTH, NK_TEXT_LEFT, entry->selected)) {
-                        if (selectedEntry) selectedEntry->selected = false;
-                        selectedEntry = entry;
-                        selectedEntry->selected = true;
-                    }
+
+                    mu_text(ctx, entry->worldDir);
                 }
             }
-            nk_end(ctx);
+            
+            mu_end_panel(ctx);
 
-            if (nk_begin(ctx, "World List Buttons", nk_rect(screenCenter.x, screenCenter.y + totalSize.y - 70, totalSize.x, 70), NK_WINDOW_NO_SCROLLBAR)) {
-                nk_layout_row_dynamic(ctx, 30, 2);
+            mu_layout_height(ctx, ctx->style->padding);
+            mu_layout_next(ctx);
 
-                if (selectedEntry) {
-                    if (nk_button_label(ctx, "Play")) {
-                        if (world_manager_load_world_info(selectedEntry->worldDir)) {
-                            returnType = WORLD_RETURN_OPEN_WORLD;
-                        }
-                    }
-                } else {
-                    nk_spacing(ctx, 1);
-                }
-                if (nk_button_label(ctx, "Create New World")) {
-                    tempWorldInfo.seed = gen_random_int();
-                    creatingWorld = true;
-                }
-                
-                nk_layout_row_dynamic(ctx, 30, 2);
-
-                if (nk_button_label(ctx, "Back")) {
-                    returnType = WORLD_RETURN_CLOSE;
-                }
-
-                if (nk_button_label(ctx, "Refresh")) {
-                    if (selectedEntry) selectedEntry->selected = false;
-                    selectedEntry = NULL;
-                    world_manager_load_world_list();
-                }
+            mu_layout_row(ctx, 2, (int[2]){ -250, -1 }, 30);
+            mu_button(ctx, "Play");
+            if (mu_button(ctx, "Create New World")) {
+                tempWorldInfo.seed = gen_random_int();
+                creatingWorld = true;
             }
-            nk_end(ctx);
+            mu_layout_row(ctx, 2, (int[2]) { -250, -1 }, 30);
+            if (mu_button(ctx, "Back")) returnType = WORLD_RETURN_CLOSE;
+            if (mu_button(ctx, "Refresh")) world_manager_load_world_list();
+
+            mu_end_window(ctx);
         }
     } else {
-        const Vector2 popupSize = { 610, 190 };
 
-        const Vector2 popupCenter = {
-            (GetScreenWidth() / 2.0f) - (popupSize.x / 2.0f),
-            (GetScreenHeight() / 2.0f) - (popupSize.y / 2.0f),
-        };
+        if (mu_begin_window_ex(ctx, "World Creator", mu_rect(0, 0, 400, 0), MU_OPT_NOTITLE | MU_OPT_NOSCROLL)) {
+            mu_Container* win = mu_get_current_container(ctx);
 
-        if (nk_begin(ctx, "World Creator", nk_rect(popupCenter.x, popupCenter.y, popupSize.x, popupSize.y), 0)) {
-            nk_layout_row_dynamic(ctx, 40, 3);
-            nk_label(ctx, "World Name", NK_TEXT_LEFT);
+            win->rect.h = win->content_size.y + (ctx->style->padding * 2);
 
-            nk_spacing(ctx, 1);
+            win->rect.x = (GetScreenWidth() / 2.0f) - (win->rect.w / 2.0f);
+            win->rect.y = (GetScreenHeight() / 2.0f) - (win->rect.h / 2.0f);
 
-            nk_edit_string_zero_terminated(
-                ctx,
-                NK_EDIT_BOX | NK_EDIT_AUTO_SELECT,
-                tempWorldInfo.name,
-                sizeof(tempWorldInfo.name),
-                nk_filter_ascii
-            );
+            mu_layout_row(ctx, 2, (int[2]) { -(win->rect.w - 160), -1 }, 30);
+            mu_label(ctx, "World Name");
+            mu_textbox(ctx, &tempWorldInfo.name, sizeof(tempWorldInfo.name));
 
-            nk_layout_row_dynamic(ctx, 40, 3);
-            nk_label(ctx, "World Preset", NK_TEXT_LEFT);
-
-            nk_spacing(ctx, 1);
-
-            nk_combobox(ctx, presetComboboxItems, 3, (int*)&tempWorldInfo.preset, 30, nk_vec2(popupSize.x / 3.0f - 8.0f, 128));
-
-            nk_layout_row_dynamic(ctx, 40, 4);
-
-            nk_label(ctx, "Seed", NK_TEXT_LEFT);
-
-            nk_spacing(ctx, 1);
-
-            if (nk_button_label(ctx, "Random")) {
+            mu_label(ctx, "World Preset");
+            combobox(ctx, 3, presetComboboxItems, (int*)& tempWorldInfo.preset);
+            
+            mu_layout_row(ctx, 3, (int[3]) { -(win->rect.w - 160), -(win->rect.w - 260), -1 }, 30);
+            mu_label(ctx, "Seed");
+            if (mu_button(ctx, "Random")) {
                 tempWorldInfo.seed = gen_random_int();
             }
-            tempWorldInfo.seed = nk_propertyi(ctx, "", INT32_MIN, tempWorldInfo.seed, INT32_MAX, 1, 10.0f);
+            valuebox(ctx, &tempWorldInfo.seed);
 
-            nk_layout_row_dynamic(ctx, 40, 2);
-            if (nk_button_label(ctx, "Back")) {
+            mu_layout_height(ctx, ctx->style->padding);
+            mu_layout_next(ctx);
+
+            mu_layout_row(ctx, 2, (int[2]) { -(win->rect.w / 2), -1 }, 30);
+            if (mu_button(ctx, "Back")) {
                 memset(&tempWorldInfo, 0, sizeof(WorldInfo));
                 creatingWorld = false;
             }
-            if (nk_button_label(ctx, "Create")) {
+            if (mu_button(ctx, "Create")) {
                 if (world_manager_create_world(tempWorldInfo)) {
                     world_manager_load_world_list();
                     memset(&tempWorldInfo, 0, sizeof(WorldInfo));
                     creatingWorld = false;
                 }
             }
+
+            mu_end_window(ctx);
         }
-        nk_end(ctx);
     }
 
     if (returnType != WORLD_RETURN_NONE) {

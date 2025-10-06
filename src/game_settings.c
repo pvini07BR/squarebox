@@ -25,7 +25,10 @@ static GameSettings settings = {
 static TempGameSettings tempSettings;
 
 void game_settings_to_temp() {
-	tempSettings.player_color = settings.player_color;
+	tempSettings.player_color[0] = settings.player_color.r;
+	tempSettings.player_color[1] = settings.player_color.g;
+	tempSettings.player_color[2] = settings.player_color.b;
+
 	tempSettings.vsync = settings.vsync;
 	tempSettings.drawfps = settings.drawfps;
 	tempSettings.chunk_view_width = settings.chunk_view_width;
@@ -37,7 +40,10 @@ void game_settings_to_temp() {
 }
 
 void temp_to_game_settings() {
-	settings.player_color = tempSettings.player_color;
+	settings.player_color.r = tempSettings.player_color[0];
+	settings.player_color.g = tempSettings.player_color[1];
+	settings.player_color.b = tempSettings.player_color[2];
+
 	settings.vsync = tempSettings.vsync;
 	settings.drawfps = tempSettings.drawfps;
 	settings.chunk_view_width = (uint8_t)Clamp(tempSettings.chunk_view_width, 1, GAME_SETTINGS_MAX_CHUNK_VIEW);
@@ -98,66 +104,91 @@ bool load_game_settings() {
 	return true;
 }
 
-bool game_settings_draw(struct nk_context* ctx) {
+bool game_settings_draw(mu_Context* ctx) {
 	bool backPressed = false;
 
-	Vector2 size = { 770, 495 };
-	Vector2 screenCenter = {
-		(GetScreenWidth() / 2.0f) - (size.x / 2.0f),
-		(GetScreenHeight() / 2.0f) - (size.y / 2.0f),
-	};
+	if (mu_begin_window_ex(ctx, "Settings", mu_rect(0, 0, 500, 0), MU_OPT_NOTITLE | MU_OPT_NOSCROLL)) {
+		mu_Container* win = mu_get_current_container(ctx);
 
-	if (nk_begin(ctx, "Settings", nk_rect(screenCenter.x, screenCenter.y, size.x, size.y), NK_WINDOW_NO_SCROLLBAR)) {
-		nk_layout_row_dynamic(ctx, 175, 3);
-		nk_label(ctx, "Player Color", NK_TEXT_LEFT);
-		nk_spacing(ctx, 1);
-		tempSettings.player_color = ColorFromNuklearF(nk_color_picker(ctx, ColorToNuklearF(tempSettings.player_color), NK_RGB));
+		win->rect.h = win->content_size.y + (ctx->style->padding * 2);
 
-		nk_layout_row_dynamic(ctx, 30, 3);
-		nk_label(ctx, "VSync", NK_TEXT_LEFT);
-		nk_spacing(ctx, 1);
-		nk_checkbox_label(ctx, "", &tempSettings.vsync);
+		win->rect.x = (GetScreenWidth() / 2.0f) - (win->rect.w / 2.0f);
+		win->rect.y = (GetScreenHeight() / 2.0f) - (win->rect.h / 2.0f);
 
-		nk_label(ctx, "Always Show FPS", NK_TEXT_LEFT);
-		nk_spacing(ctx, 1);
-		nk_checkbox_label(ctx, "", &tempSettings.drawfps);
+		if (mu_header_ex(ctx, "Player Color", MU_OPT_EXPANDED)) {
+			mu_layout_height(ctx, ctx->style->padding);
+			mu_layout_next(ctx);
 
-		nk_layout_row_dynamic(ctx, 30, 4);
-		nk_label(ctx, "Chunk view size", NK_TEXT_LEFT);
-		nk_spacing(ctx, 1);
-		tempSettings.chunk_view_width = nk_propertyi(ctx, "Width:", 1, tempSettings.chunk_view_width, GAME_SETTINGS_MAX_CHUNK_VIEW, 1, 0.1f);
-		tempSettings.chunk_view_height = nk_propertyi(ctx, "Height:", 1, tempSettings.chunk_view_height, GAME_SETTINGS_MAX_CHUNK_VIEW, 1, 0.1f);
+			mu_layout_row(ctx, 2, (int[]) { -78, -1 }, 74);
 
-		nk_layout_row_dynamic(ctx, 30, 3);
-		nk_label(ctx, "Wall Brightness", NK_TEXT_LEFT);
-		nk_spacing(ctx, 1);
-		nk_slider_float(ctx, 0.0, &tempSettings.wall_brightness, 255.0f, 1.0f);
+			mu_layout_begin_column(ctx);
+			mu_layout_row(ctx, 2, (int[]) { 80, -1 }, 74 / 3);
+			mu_label(ctx, "Red:");   mu_slider(ctx, &tempSettings.player_color[0], 0, 255);
+			mu_label(ctx, "Green:"); mu_slider(ctx, &tempSettings.player_color[1], 0, 255);
+			mu_label(ctx, "Blue:");  mu_slider(ctx, &tempSettings.player_color[2], 0, 255);
+			mu_layout_end_column(ctx);
 
-		nk_label(ctx, "Smooth Lighting", NK_TEXT_LEFT);
-		nk_spacing(ctx, 1);
-		nk_checkbox_label(ctx, "", &tempSettings.smooth_lighting);
-
-		nk_label(ctx, "Wall Ambient Occlusion", NK_TEXT_LEFT);
-		nk_spacing(ctx, 1);
-		nk_checkbox_label(ctx, "", &tempSettings.wall_ao);
-
-		if (tempSettings.wall_ao) {
-			nk_label(ctx, "Wall AO Brightness", NK_TEXT_ALIGN_LEFT);
-			nk_spacing(ctx, 1);
-			nk_slider_float(ctx, 0.0, &tempSettings.wall_ao_brightness, 255.0f, 1.0f);
-		}
-		else {
-			nk_spacing(ctx, 2);
+			mu_Rect r = mu_layout_next(ctx);
+			mu_draw_rect(ctx, r, mu_color(tempSettings.player_color[0], tempSettings.player_color[1], tempSettings.player_color[2], 255));
 		}
 
-		nk_spacing(ctx, 2);
+		mu_layout_height(ctx, ctx->style->padding);
+		mu_layout_next(ctx);
 
-		nk_layout_row_dynamic(ctx, 30, 7);
-		nk_spacing(ctx, 1);
-		backPressed = nk_button_label(ctx, "Back");
-		nk_spacing(ctx, 1);
-		if (nk_button_label(ctx, "Default")) {
-			tempSettings.player_color = (Color){ 255, 0, 0, 255 };
+		if (mu_header_ex(ctx, "Settings", MU_OPT_EXPANDED)) {
+			mu_layout_height(ctx, ctx->style->padding);
+			mu_layout_next(ctx);
+
+			mu_layout_row(ctx, 2, (int[2]) { -32, -1 }, 30);
+
+			mu_label(ctx, "VSync");
+			mu_checkbox(ctx, "", &tempSettings.vsync);
+
+			mu_label(ctx, "Always Show FPS");
+			mu_checkbox(ctx, "", &tempSettings.drawfps);
+
+			mu_layout_row(ctx, 2, (int[2]) { -272, -1 }, 30);
+			mu_label(ctx, "Chunk view size");
+			mu_layout_begin_column(ctx);
+			mu_layout_row(ctx, 2, (int[]) { 80, -1 }, 0);
+			mu_label(ctx, "Width:");  mu_slider_ex(ctx, &tempSettings.chunk_view_width, 1, GAME_SETTINGS_MAX_CHUNK_VIEW, 1.0f, "%.0f", 0);
+			mu_label(ctx, "Height:"); mu_slider_ex(ctx, &tempSettings.chunk_view_height, 1, GAME_SETTINGS_MAX_CHUNK_VIEW, 1.0f, "%.0f", 0);
+			mu_layout_end_column(ctx);
+
+			mu_label(ctx, "Wall Brightness");
+			mu_slider_ex(ctx, &tempSettings.wall_brightness, 0, 255, 1, "%.0f", 0);
+
+			mu_layout_row(ctx, 2, (int[2]) { -32, -1 }, 30);
+
+			mu_label(ctx, "Smooth Lighting");
+			mu_checkbox(ctx, "", &tempSettings.smooth_lighting);
+
+			mu_label(ctx, "Wall Ambient Occlusion");
+			mu_checkbox(ctx, "", &tempSettings.wall_ao);
+
+			if (tempSettings.wall_ao) {
+				mu_layout_row(ctx, 2, (int[2]) { -272, -1 }, 30);
+				mu_label(ctx, "Wall AO Brightness");
+				mu_slider_ex(ctx, &tempSettings.wall_ao_brightness, 0, 255, 1, "%.0f", 0);
+			}
+			else {
+				mu_layout_next(ctx);
+			}
+		}
+
+		mu_layout_height(ctx, ctx->style->padding);
+		mu_layout_next(ctx);
+
+		mu_layout_row(ctx, 0, NULL, 30);
+
+		mu_layout_width(ctx, (win->rect.w / 3) - (ctx->style->padding / 2.0f));
+
+		backPressed = mu_button(ctx, "Back");
+		if (mu_button(ctx, "Default")) {
+			tempSettings.player_color[0] = 255.0f;
+			tempSettings.player_color[1] = 0.0f;
+			tempSettings.player_color[2] = 0.0f;
+
 			tempSettings.vsync = true;
 			tempSettings.drawfps = false;
 			tempSettings.chunk_view_width = 5;
@@ -167,13 +198,12 @@ bool game_settings_draw(struct nk_context* ctx) {
 			tempSettings.smooth_lighting = true;
 			tempSettings.wall_ao = true;
 		}
-		nk_spacing(ctx, 1);
-		if (nk_button_label(ctx, "Apply")) {
+		if (mu_button(ctx, "Apply")) {
 			game_settings_apply();
 		}
-		nk_spacing(ctx, 1);
+
+		mu_end_window(ctx);
 	}
-	nk_end(ctx);
 
 	if (backPressed) {
 		game_settings_to_temp();
@@ -185,7 +215,11 @@ bool game_settings_draw(struct nk_context* ctx) {
 
 void game_settings_apply() {
 	Player* player = game_get_player();
-	if (player) player->color = tempSettings.player_color;
+	if (player) {
+		player->color.r = tempSettings.player_color[0];
+		player->color.g = tempSettings.player_color[1];
+		player->color.b = tempSettings.player_color[2];
+	}
 
 	if (tempSettings.vsync) {
 		SetTargetFPS(GetMonitorRefreshRate(GetCurrentMonitor()));

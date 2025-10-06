@@ -3,9 +3,10 @@
 
 #include "item_container.h"
 #include "chunk.h"
+
 #include <raylib.h>
 
-#include "thirdparty/raylib-nuklear.h"
+#include "thirdparty/microui.h"
 
 #define WORLD_NAME_LENGTH 32
 #define WORLD_VERSION 0
@@ -61,6 +62,6 @@ bool world_manager_save_chunk(Chunk* chunk);
 ChunkLoadStatus world_manager_load_chunk(Chunk* chunk);
 
 bool world_manager_load_world_list();
-WorldListReturnType world_manager_draw_list(struct nk_context* ctx);
+WorldListReturnType world_manager_draw_list(mu_Context* ctx);
 
 #endif

@@ -4,6 +4,7 @@
 #include "chunk_manager.h"
 #include "game.h"
 
+#include <stdlib.h>
 #include <limits.h>
 
 #include <raylib.h>
@@ -12,8 +13,8 @@
 
 #define TICK_DELTA (1.0f / 20.0f)
 
-#define RAYLIB_NUKLEAR_IMPLEMENTATION
-#include "thirdparty/raylib-nuklear.h"
+#include "thirdparty/microui.h"
+#include "thirdparty/murl.h"
 
 const char* splashTexts[] = {
     "Made with Raylib!",
@@ -60,8 +61,11 @@ int main() {
     SetTraceLogLevel(LOG_WARNING);
     rlDisableBackfaceCulling();
 
-    int fontSize = 24;
-    struct nk_context* ctx = InitNuklear(fontSize);
+    mu_Context* ctx = malloc(sizeof(mu_Context));
+    mu_init(ctx);
+    
+    Font font = LoadFontEx(ASSETS_PATH "nokiafc22.ttf", 20, NULL, 0);
+    murl_setup_font_ex(ctx, &font);
 
     load_game_settings();
     if (get_game_settings()->vsync) {
@@ -90,8 +94,9 @@ int main() {
     float accumulator = 0.0f;
     bool closeGame = false;
 
-
     while (!WindowShouldClose() && !closeGame) {
+        murl_handle_input(ctx);
+
         if (IsKeyPressed(KEY_F11)) ToggleBorderlessWindowed();
 
         if (!game_is_ui_open() && IsKeyPressed(KEY_ESCAPE)) {
@@ -125,7 +130,8 @@ int main() {
 
         game_draw();
 
-        UpdateNuklear(ctx);
+        mu_begin(ctx);
+
         if (!game_is_demo_mode() && paused) {
             DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), (Color) { 0, 0, 0, 128 });
         }
@@ -168,13 +174,21 @@ int main() {
                 );
             }
 
-            Vector2 menuSize = (Vector2){ 220, 225 };
+            ctx->style->colors[MU_COLOR_WINDOWBG].a = 0;
+            ctx->style->colors[MU_COLOR_BORDER].a = 0;
 
-            nk_style_push_style_item(ctx, &ctx->style.window.fixed_background, nk_style_item_hide());
+            if (mu_begin_window_ex(ctx, "Menu", mu_rect(0, 0, 0, 0), MU_OPT_NOTITLE | MU_OPT_NOSCROLL)) {
+                mu_Container* win = mu_get_current_container(ctx);
 
-            if (nk_begin(ctx, "Menu", nk_rect(screenCenter.x - (menuSize.x / 2.0f), screenCenter.y - (menuSize.y / 2.0f), menuSize.x, menuSize.y), NK_WINDOW_NO_SCROLLBAR)) {
-                nk_layout_row_dynamic(ctx, 40.0f, 1);
-                if (nk_button_label(ctx, menuState == MENU_STATE_MAIN ? "Play" : "Resume")) {
+                win->rect.w = win->content_size.x + (ctx->style->padding * 2);
+                win->rect.h = win->content_size.y + (ctx->style->padding * 2);
+
+                win->rect.x = (GetScreenWidth() / 2.0f) - (win->rect.w / 2.0f);
+                win->rect.y = (GetScreenHeight() / 2.0f) - (win->rect.h / 2.0f);
+
+                mu_layout_row(ctx, 1, (int[1]) { 300 }, 50);
+
+                if (mu_button(ctx, menuState == MENU_STATE_MAIN ? "Play" : "Resume")) {
                     if (menuState == MENU_STATE_MAIN) {
                         menuState = MENU_STATE_WORLDS;
                     }
@@ -183,12 +197,16 @@ int main() {
                         paused = false;
                     }
                 }
-                nk_spacing(ctx, 1);
-                if (nk_button_label(ctx, "Settings")) {
+
+                mu_layout_next(ctx);
+
+                if (mu_button(ctx, "Settings")) {
                     menuState = MENU_STATE_SETTINGS;
                 }
-                nk_spacing(ctx, 1);
-                if (nk_button_label(ctx, menuState == MENU_STATE_MAIN ? "Quit" : "Quit & Save")) {
+
+                mu_layout_next(ctx);
+
+                if (mu_button(ctx, menuState == MENU_STATE_MAIN ? "Quit" : "Quit & Save")) {
                     if (menuState == MENU_STATE_MAIN) {
                         closeGame = true;
                     }
@@ -202,10 +220,12 @@ int main() {
                         menuState = MENU_STATE_MAIN;
                     }
                 }
-            }
-            nk_end(ctx);
 
-            nk_style_pop_style_item(ctx);
+                mu_end_window(ctx);
+            }
+
+            ctx->style->colors[MU_COLOR_WINDOWBG].a = 255;
+            ctx->style->colors[MU_COLOR_BORDER].a = 255;
         }
         else if (menuState == MENU_STATE_SETTINGS) {
             if (game_settings_draw(ctx)) {
@@ -228,7 +248,9 @@ int main() {
             }
         }
 
-        DrawNuklear(ctx);
+        mu_end(ctx);
+
+        murl_render(ctx);
 
         if (get_game_settings()->drawfps) {
             sprintf(fpsBuf, "FPS: %d", GetFPS());
@@ -246,9 +268,9 @@ int main() {
     game_free();
     world_manager_free();
 
-    UnloadNuklear(ctx);
-
     CloseWindow();
+
+    free(ctx);
 
     return 0;
 }

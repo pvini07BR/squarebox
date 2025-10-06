@@ -10,6 +10,7 @@
 #include "chunk_manager.h"
 #include "game.h"
 #include "entity/player.h"
+#include "thirdparty/microui.h"
 
 static GameSettings settings = {
 	.player_color = { 255, 0, 0, 255 },
@@ -125,9 +126,9 @@ bool game_settings_draw(mu_Context* ctx) {
 
 			mu_layout_begin_column(ctx);
 			mu_layout_row(ctx, 2, (int[]) { 80, -1 }, 74 / 3);
-			mu_label(ctx, "Red:");   mu_slider(ctx, &tempSettings.player_color[0], 0, 255);
-			mu_label(ctx, "Green:"); mu_slider(ctx, &tempSettings.player_color[1], 0, 255);
-			mu_label(ctx, "Blue:");  mu_slider(ctx, &tempSettings.player_color[2], 0, 255);
+			mu_label(ctx, "Red:");   mu_slider_ex(ctx, &tempSettings.player_color[0], 0, 255, 1, "%.0f", MU_OPT_ALIGNCENTER);
+			mu_label(ctx, "Green:"); mu_slider_ex(ctx, &tempSettings.player_color[1], 0, 255, 1, "%.0f", MU_OPT_ALIGNCENTER);
+			mu_label(ctx, "Blue:");  mu_slider_ex(ctx, &tempSettings.player_color[2], 0, 255, 1, "%.0f", MU_OPT_ALIGNCENTER);
 			mu_layout_end_column(ctx);
 
 			mu_Rect r = mu_layout_next(ctx);
@@ -158,7 +159,7 @@ bool game_settings_draw(mu_Context* ctx) {
 			mu_layout_end_column(ctx);
 
 			mu_label(ctx, "Wall Brightness");
-			mu_slider_ex(ctx, &tempSettings.wall_brightness, 0, 255, 1, "%.0f", 0);
+			mu_slider_ex(ctx, &tempSettings.wall_brightness, 0, 255, 1, "%.0f", MU_OPT_ALIGNCENTER);
 
 			mu_layout_row(ctx, 2, (int[2]) { -32, -1 }, 30);
 
@@ -171,7 +172,7 @@ bool game_settings_draw(mu_Context* ctx) {
 			if (tempSettings.wall_ao) {
 				mu_layout_row(ctx, 2, (int[2]) { -272, -1 }, 30);
 				mu_label(ctx, "Wall AO Brightness");
-				mu_slider_ex(ctx, &tempSettings.wall_ao_brightness, 0, 255, 1, "%.0f", 0);
+				mu_slider_ex(ctx, &tempSettings.wall_ao_brightness, 0, 255, 1, "%.0f", MU_OPT_ALIGNCENTER);
 			}
 			else {
 				mu_layout_next(ctx);

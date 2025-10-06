@@ -36,12 +36,22 @@ int combobox(mu_Context* ctx, int item_count, const char* items[], int* item_idx
     mu_Rect rect = mu_layout_next(ctx);
     mu_update_control(ctx, id, rect, 0);
 
+    int biggest_width = 0;
+    for (int i = 0; i < item_count; i++) {
+        int width = ctx->text_width(ctx->style->font, items[i], strlen(items[i]));
+        if (width > biggest_width) {
+            biggest_width = width;
+        }
+    }
+
     int res = 0;
     if (ctx->mouse_pressed == MU_MOUSE_LEFT && ctx->focus == id) {
         mu_open_popup(ctx, "combobox");
     }
 
     if (mu_begin_popup(ctx, "combobox")) {
+        mu_layout_row(ctx, 1, (int[1]) { biggest_width + 20 }, 30);
+
         for (int i = 0; i < item_count; i++) {
             if (mu_button(ctx, items[i])) {
                 *item_idx = i;
@@ -475,6 +485,8 @@ WorldListReturnType world_manager_draw_list(mu_Context* ctx) {
     WorldListReturnType returnType = WORLD_RETURN_NONE;
 
     if (!creatingWorld) {
+        if (IsKeyPressed(KEY_ESCAPE)) return WORLD_RETURN_CLOSE;
+
         if (mu_begin_window_ex(ctx, "Select a World", mu_rect(0, 0, 500, 500), MU_OPT_NOSCROLL | MU_OPT_NOCLOSE)) {
             mu_Container* win = mu_get_current_container(ctx);
 
@@ -518,6 +530,7 @@ WorldListReturnType world_manager_draw_list(mu_Context* ctx) {
             mu_end_window(ctx);
         }
     } else {
+        if (IsKeyPressed(KEY_ESCAPE)) creatingWorld = false;
 
         if (mu_begin_window_ex(ctx, "Create New World", mu_rect(0, 0, 400, 0), MU_OPT_NOSCROLL | MU_OPT_NOCLOSE)) {
             mu_Container* win = mu_get_current_container(ctx);

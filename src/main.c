@@ -95,22 +95,12 @@ int main() {
     bool closeGame = false;
 
     while (!WindowShouldClose() && !closeGame) {
-        murl_handle_input(ctx);
-
         if (IsKeyPressed(KEY_F11)) ToggleBorderlessWindowed();
 
         if (!game_is_ui_open() && IsKeyPressed(KEY_ESCAPE)) {
             if (!game_is_demo_mode() && menuState == MENU_STATE_PAUSED) {
                 game_set_draw_ui(paused);
                 paused = !paused;
-            }
-            else if (menuState == MENU_STATE_SETTINGS) {
-                if (!game_is_demo_mode()) {
-                    menuState = MENU_STATE_PAUSED;
-                }
-                else {
-                    menuState = MENU_STATE_MAIN;
-                }
             }
         }
 
@@ -129,6 +119,8 @@ int main() {
         ClearBackground(BLACK);
 
         game_draw();
+
+        murl_handle_input(ctx);
 
         mu_begin(ctx);
 

@@ -125,6 +125,8 @@ typedef struct {
 	uint8_t rotation;
 	// Locks the UV and does not let the texture rotate with the model.
 	bool uv_lock;
+	// Color tint that will be applied to the block.
+	Color tint;
 } BlockVariant;
 
 typedef struct {

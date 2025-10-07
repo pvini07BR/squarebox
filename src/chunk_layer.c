@@ -143,6 +143,8 @@ void chunk_layer_genmesh(ChunkLayer* layer, ChunkLayerEnum layer_id, ChunkLayerE
             }
         }
 
+        BlockVariant bvar = brg->variant_generator(block.state);
+
         Color colors[4];
         for (int i = 0; i < 4; i++) {
             colors[i] = (Color){
@@ -151,6 +153,10 @@ void chunk_layer_genmesh(ChunkLayer* layer, ChunkLayerEnum layer_id, ChunkLayerE
                 .b = cornerValues[i],
                 .a = 255
             };
+
+            colors[i].r = (unsigned char)((colors[i].r / 255.0f) * (bvar.tint.r / 255.0f) * 255);
+            colors[i].g = (unsigned char)((colors[i].g / 255.0f) * (bvar.tint.g / 255.0f) * 255);
+            colors[i].b = (unsigned char)((colors[i].b / 255.0f) * (bvar.tint.b / 255.0f) * 255);
         }
 
         unsigned int h = chunk_pos_seed;
@@ -168,7 +174,7 @@ void chunk_layer_genmesh(ChunkLayer* layer, ChunkLayerEnum layer_id, ChunkLayerE
             &layer->mesh,
             (Vector2u) { x, y },
             colors,
-            brg->variant_generator(block.state),
+            bvar,
             flipUVH,
             flipUVV
         );

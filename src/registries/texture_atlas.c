@@ -269,7 +269,7 @@ Vector2 texture_atlas_get_uv(TextureAtlasEnum atlas, uint8_t variantIdx, Vector2
     int idx = entries[atlas].offset + variantIdx;
     float p = idx * unit;
 
-    if (flipH) relativePoint.x = 1.0f - relativePoint.x;
+    if (flipH) relativePoint.x = 1.0f - (relativePoint.x + 0.00001f);
     if (flipV) relativePoint.y = 1.0f - relativePoint.y;
 
     return (Vector2) {

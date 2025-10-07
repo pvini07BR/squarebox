@@ -169,7 +169,8 @@ void block_registry_free();
 			.model_idx=(model), \
 			.collider_idx=(collider), \
 			.rotation=(rot), \
-			.uv_lock=(uvlock) \
+			.uv_lock=(uvlock), \
+			.tint=WHITE \
 		}; \
 	}
 
@@ -189,7 +190,8 @@ static inline BlockVariant variant_wood_log(uint8_t state) {
 		.model_idx=BLOCK_MODEL_QUAD,
 		.collider_idx=BLOCK_COLLIDER_QUAD,
 		.rotation=state == 1,
-		.uv_lock=false
+		.uv_lock=false,
+		.tint = WHITE
 	};
 }
 
@@ -226,7 +228,8 @@ static inline BlockVariant variant_wooden_fence(uint8_t state) {
 		.model_idx=BLOCK_MODEL_QUAD,
 		.collider_idx=BLOCK_COLLIDER_QUAD,
 		.rotation=0,
-		.uv_lock=false
+		.uv_lock=false,
+		.tint = WHITE
 	};
 }
 
@@ -252,7 +255,8 @@ static inline BlockVariant variant_sign(uint8_t state) {
 		.model_idx=BLOCK_MODEL_QUAD,
 		.collider_idx=BLOCK_COLLIDER_QUAD,
 		.rotation=0,
-		.uv_lock=false
+		.uv_lock=false,
+		.tint = WHITE
 	};
 }
 
@@ -262,7 +266,8 @@ static inline BlockVariant variant_torch(uint8_t state) {
 		.model_idx = BLOCK_MODEL_TORCH + (state % 3),
 		.collider_idx=BLOCK_COLLIDER_QUAD,
 		.rotation = 0,
-		.uv_lock=true
+		.uv_lock=true,
+		.tint = WHITE
 	};
 }
 
@@ -280,7 +285,8 @@ static inline BlockVariant variant_slab_frame(uint8_t state) {
 		.model_idx = BLOCK_MODEL_SLAB,
 		.collider_idx = BLOCK_COLLIDER_SLAB,
 		.rotation = s->rotation,
-		.uv_lock = s->blockIdx > 0
+		.uv_lock = s->blockIdx > 0,
+		.tint = WHITE
 	};
 }
 
@@ -298,7 +304,8 @@ static inline BlockVariant variant_stairs_frame(uint8_t state) {
 		.model_idx = BLOCK_MODEL_STAIRS,
 		.collider_idx = BLOCK_COLLIDER_STAIRS,
 		.rotation = s->rotation,
-		.uv_lock = s->blockIdx > 0
+		.uv_lock = s->blockIdx > 0,
+		.tint = WHITE
 	};
 }
 
@@ -316,7 +323,8 @@ static inline BlockVariant variant_nub_frame(uint8_t state) {
 		.model_idx = BLOCK_MODEL_NUB,
 		.collider_idx = BLOCK_COLLIDER_NUB,
 		.rotation = s->rotation,
-		.uv_lock = s->blockIdx > 0
+		.uv_lock = s->blockIdx > 0,
+		.tint = WHITE
 	};
 }
 

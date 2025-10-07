@@ -65,8 +65,8 @@ void block_registry_init() {
 
     blockRegistry[BLOCK_WOOD_LOG] = (BlockRegistry){
         .variant_generator = variant_wood_log,
-        .selectable_state_count = 2,
-        .selectable_states = { 0, 1 },
+        .selectable_state_count = 3,
+        .selectable_states = { 0, 1, 2 },
         .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FULL_BLOCK,
         .lightLevel = BLOCK_LIGHT_NONE,
         .state_resolver = NULL

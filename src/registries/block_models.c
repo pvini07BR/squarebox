@@ -1,7 +1,7 @@
 #include "registries/block_models.h"
 #include "raylib.h"
 #include "raymath.h"
-#include "texture_atlas.h"
+#include "registries/texture_atlas.h"
 #include "types.h"
 
 #include <stdio.h>

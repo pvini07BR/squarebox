@@ -2,7 +2,7 @@
 #include "game_settings.h"
 #include "registries/block_models.h"
 #include "registries/block_registry.h"
-#include "texture_atlas.h"
+#include "registries/texture_atlas.h"
 #include "types.h"
 
 #include <raylib.h>

@@ -2,7 +2,7 @@
 #include "item_container.h"
 #include "world_manager.h"
 #include "chunk_manager.h"
-#include "texture_atlas.h"
+#include "registries/texture_atlas.h"
 #include "game.h"
 
 #include <stdlib.h>

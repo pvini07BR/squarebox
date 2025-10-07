@@ -1,5 +1,5 @@
 #include "sign_editor.h"
-#include "texture_atlas.h"
+#include "registries/texture_atlas.h"
 #include "types.h"
 
 #include <string.h>

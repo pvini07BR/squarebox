@@ -13,7 +13,7 @@
 #include "chunk_manager.h"
 #include "item_container.h"
 #include "sign_editor.h"
-#include "texture_atlas.h"
+#include "registries/texture_atlas.h"
 #include "types.h"
 
 #include <stdlib.h>

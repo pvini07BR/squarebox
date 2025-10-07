@@ -185,10 +185,10 @@ QUICK_BLOCK(wooden_planks, ATLAS_WOODEN_PLANKS)
 static inline BlockVariant variant_wood_log(uint8_t state) {
 	return (BlockVariant) {
 		.atlas_idx=ATLAS_WOOD_LOG,
-		.atlas_variant = 0,
+		.atlas_variant = state == 2,
 		.model_idx=BLOCK_MODEL_QUAD,
 		.collider_idx=BLOCK_COLLIDER_QUAD,
-		.rotation= (state % 2),
+		.rotation=state == 1,
 		.uv_lock=false
 	};
 }

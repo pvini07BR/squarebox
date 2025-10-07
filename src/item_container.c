@@ -1,6 +1,6 @@
 #include "item_container.h"
 #include "registries/item_registry.h"
-#include "texture_atlas.h"
+#include "registries/texture_atlas.h"
 #include "types.h"
 
 #include <stdlib.h>

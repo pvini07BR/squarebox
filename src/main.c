@@ -2,6 +2,7 @@
 #include "item_container.h"
 #include "world_manager.h"
 #include "chunk_manager.h"
+#include "texture_atlas.h"
 #include "game.h"
 
 #include <stdlib.h>
@@ -71,6 +72,8 @@ int main() {
     if (get_game_settings()->vsync) {
 		SetTargetFPS(GetMonitorRefreshRate(GetCurrentMonitor()));
 	}
+
+    texture_atlas_init();
 
     world_manager_init();
     

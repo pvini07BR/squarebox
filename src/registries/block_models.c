@@ -177,12 +177,12 @@ void bm_set_block_model(size_t* offsets, Mesh* mesh, Vector2u position, Color co
         vertexOffset = offsets[index];
     }
     BlockModel* model = &models[variant.model_idx];
-    Rectangle uvRect = texture_atlas_get_uv(variant.atlas_idx, flipUVH, flipUVV);
 
     for (size_t v = 0; v < model->vertexCount; v++) {
         Vertex2D vert = model->vertices[v];
         float vert_x = vert.x;
         float vert_y = vert.y;
+
         float vert_u = vert.u;
         float vert_v = vert.v;
 
@@ -226,8 +226,10 @@ void bm_set_block_model(size_t* offsets, Mesh* mesh, Vector2u position, Color co
         mesh->vertices[(v + vertexOffset) * 3 + 1] = vert_y + (position.y * TILE_SIZE);
         mesh->vertices[(v + vertexOffset) * 3 + 2] = 0.0f;
 
-        mesh->texcoords[(v + vertexOffset) * 2 + 0] = uvRect.x + vert_u * uvRect.width;
-        mesh->texcoords[(v + vertexOffset) * 2 + 1] = uvRect.y + vert_v * uvRect.height;
+		Vector2 p = texture_atlas_get_uv(variant.atlas_idx, variant.atlas_variant, (Vector2) { vert_u, vert_v }, flipUVH, flipUVV);
+
+		mesh->texcoords[(v + vertexOffset) * 2 + 0] = p.x;
+        mesh->texcoords[(v + vertexOffset) * 2 + 1] = p.y;
 
         if (colors) {
             if (variant.model_idx == BLOCK_MODEL_QUAD) {

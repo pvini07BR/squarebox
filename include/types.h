@@ -24,7 +24,7 @@ typedef enum {
 
 typedef enum {
 	ATLAS_GRASS_BLOCK,
-	ATLAS_DIRT_BLOCK,
+	ATLAS_DIRT,
 	ATLAS_SAND,
 	ATLAS_STONE,
 	ATLAS_COBBLESTONE,
@@ -55,14 +55,7 @@ typedef enum {
 	ATLAS_GRASS,
 	ATLAS_FLOWER,
 	ATLAS_PEBBLES,
-	ATLAS_FENCE,
-	ATLAS_FENCE_RIGHT,
-	ATLAS_FENCE_LEFT,
-	ATLAS_FENCE_BOTH,
-	ATLAS_FENCE_UP,
-	ATLAS_FENCE_UP_RIGHT,
-	ATLAS_FENCE_UP_LEFT,
-	ATLAS_FENCE_UP_BOTH,
+	ATLAS_WOODEN_FENCE,
 	ATLAS_LADDERS,
 	ATLAS_FRAME,
 	ATLAS_SLAB_FRAME,
@@ -70,7 +63,6 @@ typedef enum {
 	ATLAS_NUB_FRAME,
 	ATLAS_TRAPDOOR,
 	ATLAS_SIGN,
-	ATLAS_SIGN_WALL,
 	ATLAS_TORCH,
 	ATLAS_WATER_BUCKET,
 	ATLAS_COUNT
@@ -118,6 +110,9 @@ typedef struct {
 	// Index in the atlas texture to use.
 	// See texture_atlas.c.
 	TextureAtlasEnum atlas_idx;
+	// Variant of the specified atlas texture.
+	// set to 1 if there is only one variant.
+	uint8_t atlas_variant;
 	// Index of the model in the block models array.
 	// see block_models.c.
 	BlockModelEnum model_idx;

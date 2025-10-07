@@ -54,8 +54,6 @@ char debug_text[1024];
 void game_init() {
     place_mode_icon = LoadTexture(ASSETS_PATH "place_modes.png");
 
-    texture_atlas_load(ASSETS_PATH "atlas.png", 5, 11);
-
     block_models_init();
     block_colliders_init();
 

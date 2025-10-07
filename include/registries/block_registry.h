@@ -160,11 +160,12 @@ void block_registry_init();
 BlockRegistry* br_get_block_registry(size_t idx);
 void block_registry_free();
 
-#define QUICK_VARIANT(name, atlas, model, collider, rot, uvlock) \
+#define QUICK_VARIANT(name, atlas, atlas_var, model, collider, rot, uvlock) \
     static inline BlockVariant variant_##name(uint8_t state) { \
 		(void)state; \
 		return (BlockVariant) {\
 			.atlas_idx=(atlas), \
+			.atlas_variant=(atlas_var), \
 			.model_idx=(model), \
 			.collider_idx=(collider), \
 			.rotation=(rot), \
@@ -172,13 +173,10 @@ void block_registry_free();
 		}; \
 	}
 
-#define QUICK_BLOCK(name, atlas) QUICK_VARIANT(name, atlas, BLOCK_MODEL_QUAD, BLOCK_COLLIDER_QUAD, 0, false)
-#define QUICK_SLAB(name, atlas) QUICK_ROTATABLE_VARIANT(name, atlas, BLOCK_MODEL_SLAB, BLOCK_COLLIDER_SLAB, true)
-#define QUICK_STAIRS(name, atlas) QUICK_ROTATABLE_VARIANT(name, atlas, BLOCK_MODEL_STAIRS, BLOCK_COLLIDER_STAIRS, true)
-#define QUICK_NUB(name, atlas) QUICK_ROTATABLE_VARIANT(name, atlas, BLOCK_MODEL_NUB, BLOCK_COLLIDER_NUB, true)
+#define QUICK_BLOCK(name, atlas) QUICK_VARIANT(name, atlas, 0, BLOCK_MODEL_QUAD, BLOCK_COLLIDER_QUAD, 0, false)
 
 QUICK_BLOCK(grass_block, ATLAS_GRASS_BLOCK)
-QUICK_BLOCK(dirt, ATLAS_DIRT_BLOCK)
+QUICK_BLOCK(dirt, ATLAS_DIRT)
 QUICK_BLOCK(sand, ATLAS_SAND)
 QUICK_BLOCK(stone, ATLAS_STONE)
 QUICK_BLOCK(cobblestone, ATLAS_COBBLESTONE)
@@ -187,6 +185,7 @@ QUICK_BLOCK(wooden_planks, ATLAS_WOODEN_PLANKS)
 static inline BlockVariant variant_wood_log(uint8_t state) {
 	return (BlockVariant) {
 		.atlas_idx=ATLAS_WOOD_LOG,
+		.atlas_variant = 0,
 		.model_idx=BLOCK_MODEL_QUAD,
 		.collider_idx=BLOCK_COLLIDER_QUAD,
 		.rotation= (state % 2),
@@ -221,11 +220,9 @@ QUICK_BLOCK(flower, ATLAS_FLOWER)
 QUICK_BLOCK(pebbles, ATLAS_PEBBLES)
 
 static inline BlockVariant variant_wooden_fence(uint8_t state) {
-	TextureAtlasEnum tex = ATLAS_FENCE;
-	tex += state;
-
 	return (BlockVariant) {
-		.atlas_idx=tex,
+		.atlas_idx=ATLAS_WOODEN_FENCE,
+		.atlas_variant=state,
 		.model_idx=BLOCK_MODEL_QUAD,
 		.collider_idx=BLOCK_COLLIDER_QUAD,
 		.rotation=0,
@@ -240,6 +237,7 @@ static inline BlockVariant variant_trapdoor(uint8_t state) {
 
 	return (BlockVariant) {
 		.atlas_idx = ATLAS_TRAPDOOR,
+		.atlas_variant = 0,
 		.model_idx = BLOCK_MODEL_QUAD,
 		.collider_idx = BLOCK_COLLIDER_TRAPDOOR,
 		.rotation = trapState->rotation + trapState->open,
@@ -249,7 +247,8 @@ static inline BlockVariant variant_trapdoor(uint8_t state) {
 
 static inline BlockVariant variant_sign(uint8_t state) {
 	return (BlockVariant) {
-		.atlas_idx=ATLAS_SIGN + (state % 2),
+		.atlas_idx=ATLAS_SIGN,
+		.atlas_variant = state % 2,
 		.model_idx=BLOCK_MODEL_QUAD,
 		.collider_idx=BLOCK_COLLIDER_QUAD,
 		.rotation=0,
@@ -277,6 +276,7 @@ static inline BlockVariant variant_slab_frame(uint8_t state) {
 
 	return (BlockVariant) {
 		.atlas_idx = atlas,
+		.atlas_variant = 0,
 		.model_idx = BLOCK_MODEL_SLAB,
 		.collider_idx = BLOCK_COLLIDER_SLAB,
 		.rotation = s->rotation,
@@ -294,6 +294,7 @@ static inline BlockVariant variant_stairs_frame(uint8_t state) {
 
 	return (BlockVariant) {
 		.atlas_idx = atlas,
+		.atlas_variant = 0,
 		.model_idx = BLOCK_MODEL_STAIRS,
 		.collider_idx = BLOCK_COLLIDER_STAIRS,
 		.rotation = s->rotation,
@@ -311,6 +312,7 @@ static inline BlockVariant variant_nub_frame(uint8_t state) {
 
 	return (BlockVariant) {
 		.atlas_idx = atlas,
+		.atlas_variant = 0,
 		.model_idx = BLOCK_MODEL_NUB,
 		.collider_idx = BLOCK_COLLIDER_NUB,
 		.rotation = s->rotation,

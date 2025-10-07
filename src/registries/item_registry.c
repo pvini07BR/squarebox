@@ -30,7 +30,7 @@ void item_registry_init() {
 
 	itemRegistry[ITEM_DIRT_BLOCK] = (ItemRegistry){
 		.name = "Dirt Block",
-		.atlas_idx = ATLAS_DIRT_BLOCK,
+		.atlas_idx = ATLAS_DIRT,
 		.model_idx = BLOCK_MODEL_QUAD,
 		.blockId = BLOCK_DIRT
 	};
@@ -247,7 +247,7 @@ void item_registry_init() {
 
 	itemRegistry[ITEM_WOODEN_FENCE] = (ItemRegistry){
 		.name = "Wooden Fence",
-		.atlas_idx = ATLAS_FENCE,
+		.atlas_idx = ATLAS_WOODEN_FENCE,
 		.model_idx = BLOCK_MODEL_QUAD,
 		.blockId = BLOCK_WOODEN_FENCE
 	};
@@ -312,7 +312,14 @@ void item_registry_init() {
 	for (int i = 0; i < ITEM_COUNT; i++) {
 		ItemRegistry* irg = &itemRegistry[i];
 		irg->mesh = (Mesh){ 0 };
-		block_models_build_mesh(&irg->mesh, (BlockVariant) { .atlas_idx = irg->atlas_idx, irg->model_idx });
+		block_models_build_mesh(
+			&irg->mesh,
+			(BlockVariant) {
+				.atlas_idx = irg->atlas_idx,
+				.atlas_variant = 0,
+				.model_idx = irg->model_idx 
+			}
+		);
 	}
 }
 

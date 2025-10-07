@@ -1,71 +1,280 @@
 #include "texture_atlas.h"
 
-static Texture2D textureAtlas;
+#include "thirdparty/stb_image.h"
+
+#include <raymath.h>
+
+static AtlasEntry entries[ATLAS_COUNT];
+static Texture2D generatedAtlas;
 static Material material;
-static size_t rows;
-static size_t columns;
 
-void texture_atlas_load(const char* path, size_t r, size_t c) {
-    rows = r;
-    columns = c;
+void texture_atlas_init() {
+    entries[ATLAS_GRASS_BLOCK] = (AtlasEntry){
+        .fileName = "grass_block.png",
+        .variantCount = 1
+    };
 
-	textureAtlas = LoadTexture(path);
-	SetTextureWrap(textureAtlas, TEXTURE_WRAP_CLAMP);
+    entries[ATLAS_DIRT] = (AtlasEntry){
+        .fileName = "dirt.png",
+        .variantCount = 1
+    };
+
+    entries[ATLAS_SAND] = (AtlasEntry){
+        .fileName = "sand.png",
+        .variantCount = 1
+    };
+
+    entries[ATLAS_STONE] = (AtlasEntry){
+        .fileName = "stone.png",
+        .variantCount = 1
+    };
+
+    entries[ATLAS_COBBLESTONE] = (AtlasEntry){
+        .fileName = "cobblestone.png",
+        .variantCount = 1
+    };
+
+    entries[ATLAS_WOODEN_PLANKS] = (AtlasEntry){
+        .fileName = "wooden_planks.png",
+        .variantCount = 1
+    };
+
+    entries[ATLAS_WOOD_LOG] = (AtlasEntry){
+        .fileName = "wood_log.png",
+        .variantCount = 1
+    };
+
+    entries[ATLAS_LEAVES] = (AtlasEntry){
+        .fileName = "leaves.png",
+        .variantCount = 1
+    };
+
+    entries[ATLAS_GLASS] = (AtlasEntry){
+        .fileName = "glass.png",
+        .variantCount = 1
+    };
+
+    entries[ATLAS_LAMP] = (AtlasEntry){
+        .fileName = "lamp.png",
+        .variantCount = 1
+    };
+
+    entries[ATLAS_CHEST] = (AtlasEntry){
+        .fileName = "chest.png",
+        .variantCount = 1
+    };
+
+    entries[ATLAS_BOUNCY_BLOCK] = (AtlasEntry){
+        .fileName = "bouncy_block.png",
+        .variantCount = 1
+    };
+
+    entries[ATLAS_ICE] = (AtlasEntry){
+        .fileName = "ice.png",
+        .variantCount = 1
+    };
+
+    entries[ATLAS_WOOL] = (AtlasEntry){
+        .fileName = "wool.png",
+        .variantCount = 1
+    };
+
+    entries[ATLAS_ORANGE_WOOL] = (AtlasEntry){
+        .fileName = "orange_wool.png",
+        .variantCount = 1
+    };
+
+    entries[ATLAS_MAGENTA_WOOL] = (AtlasEntry){
+        .fileName = "magenta_wool.png",
+        .variantCount = 1
+    };
+
+    entries[ATLAS_LIGHT_BLUE_WOOL] = (AtlasEntry){
+        .fileName = "light_blue_wool.png",
+        .variantCount = 1
+    };
+
+    entries[ATLAS_YELLOW_WOOL] = (AtlasEntry){
+        .fileName = "yellow_wool.png",
+        .variantCount = 1
+    };
+
+    entries[ATLAS_LIME_WOOL] = (AtlasEntry){
+        .fileName = "lime_wool.png",
+        .variantCount = 1
+    };
+
+    entries[ATLAS_PINK_WOOL] = (AtlasEntry){
+        .fileName = "pink_wool.png",
+        .variantCount = 1
+    };
+
+    entries[ATLAS_GRAY_WOOL] = (AtlasEntry){
+        .fileName = "gray_wool.png",
+        .variantCount = 1
+    };
+
+    entries[ATLAS_LIGHT_GRAY_WOOL] = (AtlasEntry){
+        .fileName = "light_gray_wool.png",
+        .variantCount = 1
+    };
+
+    entries[ATLAS_CYAN_WOOL] = (AtlasEntry){
+        .fileName = "cyan_wool.png",
+        .variantCount = 1
+    };
+
+    entries[ATLAS_PURPLE_WOOL] = (AtlasEntry){
+        .fileName = "purple_wool.png",
+        .variantCount = 1
+    };
+
+    entries[ATLAS_BLUE_WOOL] = (AtlasEntry){
+        .fileName = "blue_wool.png",
+        .variantCount = 1
+    };
+
+    entries[ATLAS_BROWN_WOOL] = (AtlasEntry){
+        .fileName = "brown_wool.png",
+        .variantCount = 1
+    };
+
+    entries[ATLAS_GREEN_WOOL] = (AtlasEntry){
+        .fileName = "green_wool.png",
+        .variantCount = 1
+    };
+
+    entries[ATLAS_RED_WOOL] = (AtlasEntry){
+        .fileName = "red_wool.png",
+        .variantCount = 1
+    };
+
+    entries[ATLAS_BLACK_WOOL] = (AtlasEntry){
+        .fileName = "black_wool.png",
+        .variantCount = 1
+    };
+
+    entries[ATLAS_GRASS] = (AtlasEntry){
+        .fileName = "grass.png",
+        .variantCount = 1
+    };
+
+    entries[ATLAS_FLOWER] = (AtlasEntry){
+        .fileName = "flower.png",
+        .variantCount = 1
+    };
+
+    entries[ATLAS_PEBBLES] = (AtlasEntry){
+        .fileName = "pebbles.png",
+        .variantCount = 1
+    };
+
+    entries[ATLAS_WOODEN_FENCE] = (AtlasEntry){
+        .fileName = "wooden_fence.png",
+        .variantCount = 8
+    };
+
+    entries[ATLAS_LADDERS] = (AtlasEntry){
+        .fileName = "ladders.png",
+        .variantCount = 1
+    };
+
+    entries[ATLAS_FRAME] = (AtlasEntry){
+        .fileName = "frame.png",
+        .variantCount = 1
+    };
+
+    entries[ATLAS_SLAB_FRAME] = (AtlasEntry){
+        .fileName = "slab_frame.png",
+        .variantCount = 1
+    };
+
+    entries[ATLAS_STAIRS_FRAME] = (AtlasEntry){
+        .fileName = "stairs_frame.png",
+        .variantCount = 1
+    };
+
+    entries[ATLAS_NUB_FRAME] = (AtlasEntry){
+        .fileName = "nub_frame.png",
+        .variantCount = 1
+    };
+
+    entries[ATLAS_TRAPDOOR] = (AtlasEntry){
+        .fileName = "trapdoor.png",
+        .variantCount = 1
+    };
+
+    entries[ATLAS_SIGN] = (AtlasEntry){
+        .fileName = "sign.png",
+        .variantCount = 2
+    };
+
+    entries[ATLAS_TORCH] = (AtlasEntry){
+        .fileName = "torch.png",
+        .variantCount = 1
+    };
+
+    entries[ATLAS_WATER_BUCKET] = (AtlasEntry){
+        .fileName = "water_bucket.png",
+        .variantCount = 1
+    };
+
+    Image generated = GenImageColor(1, TILE_SIZE, (Color) { 0, 0, 0, 0 });
+    Rectangle cursor = { 0, 0, 0, 0 };
+    uint8_t offset = 0;
+
+    for (int i = 0; i < ATLAS_COUNT; i++) {
+        entries[i].offset = offset;
+
+        Image img = LoadImage(TextFormat(ASSETS_PATH "blocks/%s", entries[i].fileName));
+        cursor.width = img.width;
+        cursor.height = img.height;
+
+        ImageResizeCanvas(&generated, generated.width + img.width, generated.height, 0, 0, (Color) { 0, 0, 0, 0 });
+
+        ImageDraw(&generated, img, (Rectangle) { 0, 0, img.width, img.height }, cursor, WHITE);
+
+        cursor.x += img.width;
+        offset += entries[i].variantCount;
+
+        UnloadImage(img);
+    }
+
+    ImageResizeCanvas(&generated, generated.width - 1, generated.height, 0, 0, (Color) { 0, 0, 0, 0 });
+
+    generatedAtlas = LoadTextureFromImage(generated);
+    SetTextureWrap(generatedAtlas, TEXTURE_WRAP_CLAMP);
 
     material = LoadMaterialDefault();
     LoadMaterialDefault();
-    SetMaterialTexture(&material, MATERIAL_MAP_ALBEDO, textureAtlas);
+    SetMaterialTexture(&material, MATERIAL_MAP_ALBEDO, generatedAtlas);
+
+    UnloadImage(generated);
 }
 
-Texture2D texture_atlas_get() { return textureAtlas; }
+Texture2D texture_atlas_get() { return generatedAtlas; }
 
-Rectangle texture_atlas_get_rect(size_t idx, bool flipH, bool flipV)
-{
-    size_t col = idx % columns;
-    size_t row = idx / columns;
-
-    size_t tileWidth = (float)textureAtlas.width / columns;
-    size_t tileHeight = (float)textureAtlas.height / rows;
-
-    float x = (float)(col * tileWidth);
-    float y = (float)(row * tileHeight);
-
-    float width = (float)tileWidth * (flipH ? -1.0f : 1.0f);
-    float height = (float)tileHeight * (flipV ? -1.0f : 1.0f);
-
+Rectangle texture_atlas_get_rect(TextureAtlasEnum atlas, uint8_t variantIdx) {
     return (Rectangle) {
-        .x = x,
-        .y = y,
-        .width = width,
-        .height = height
+        .x = (entries[atlas].offset + variantIdx) * TILE_SIZE,
+        .y = 0.0f,
+        .width = TILE_SIZE,
+        .height = TILE_SIZE
     };
 }
 
-Rectangle texture_atlas_get_uv(size_t idx, bool flipH, bool flipV)
-{
-    size_t col = idx % columns;
-    size_t row = idx / columns;
+Vector2 texture_atlas_get_uv(TextureAtlasEnum atlas, uint8_t variantIdx, Vector2 relativePoint, bool flipH, bool flipV) {
+    float atlas_unit = 1.0f / generatedAtlas.width;
+    float unit = atlas_unit * TILE_SIZE;
+    int idx = entries[atlas].offset + variantIdx;
+    float p = idx * unit;
 
-    float uv_unit_x = 1.0f / columns;
-    float uv_unit_y = 1.0f / rows;
+    if (flipH) relativePoint.x = 1.0f - relativePoint.x;
+    if (flipV) relativePoint.y = 1.0f - relativePoint.y;
 
-    float u0 = uv_unit_x * col;
-    float u1 = u0 + uv_unit_x;
-    float v0 = uv_unit_y * row;
-    float v1 = v0 + uv_unit_y;
-
-    if (flipH) {
-        float tmp = u0; u0 = u1; u1 = tmp;
-    }
-    if (flipV) {
-        float tmp = v0; v0 = v1; v1 = tmp;
-    }
-
-    return (Rectangle) {
-        .x = u0,
-        .y = v0,
-        .width = u1 - u0,
-        .height = v1 - v0
+    return (Vector2) {
+        .x = Lerp(p + (atlas_unit * 0.01f), p + unit, relativePoint.x),
+        .y = Lerp(0.0f, 1.0f, relativePoint.y)
     };
 }
 
@@ -77,5 +286,5 @@ Material texture_atlas_get_material()
 void texture_atlas_free()
 {
     UnloadMaterial(material);
-	UnloadTexture(textureAtlas);
+    UnloadTexture(generatedAtlas);
 }

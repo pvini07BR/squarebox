@@ -462,11 +462,9 @@ void chunk_manager_set_block_safe(Vector2i position, BlockInstance blockValue, C
             }
 
             if (layer == CHUNK_LAYER_FOREGROUND) {
-                BlockRegistry* br = br_get_block_registry(chunk_get_block(chunk, relPos, CHUNK_LAYER_BACKGROUND).id);
-                if (br->flags & BLOCK_FLAG_SOLID) canPlace = true;
+                if (chunk_get_block(chunk, relPos, CHUNK_LAYER_BACKGROUND).id > 0) canPlace = true;
             } else {
-                BlockRegistry* br = br_get_block_registry(chunk_get_block(chunk, relPos, CHUNK_LAYER_FOREGROUND).id);
-                if (br->flags & BLOCK_FLAG_SOLID) canPlace = true;
+                if (chunk_get_block(chunk, relPos, CHUNK_LAYER_FOREGROUND).id > 0) canPlace = true;
             }
 
             if (canPlace) {

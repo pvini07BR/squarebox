@@ -373,9 +373,21 @@ void chunk_tick(Chunk* chunk, uint8_t tick_value) {
             .idx = entry.position.x + (entry.position.y * CHUNK_WIDTH)
         };
 
+        ChunkLayerEnum otherLayer = entry.layer == CHUNK_LAYER_BACKGROUND ? CHUNK_LAYER_FOREGROUND : CHUNK_LAYER_BACKGROUND;
+        BlockInstance* other_inst = chunk_get_block_ptr(chunk, entry.position, otherLayer);
+        BlockRegistry* other_br = br_get_block_registry(other_inst->id);
+
+        BlockExtraResult other = {
+            .block = other_inst,
+            .reg = other_br,
+            .chunk = chunk,
+            .position = entry.position,
+            .idx = entry.position.x + (entry.position.y * CHUNK_WIDTH)
+        };
+
         uint8_t mod = tick_value % brg->tick_speed;
         if (mod == (brg->tick_speed-1)) {
-            bool did_change = brg->tick_callback(result, neighbors, entry.layer);
+            bool did_change = brg->tick_callback(result, other, neighbors, entry.layer);
             if (changed == false) changed = did_change;
         }
     }
@@ -448,6 +460,59 @@ void chunk_fill_light(Chunk* chunk, Vector2u startPoint, uint8_t newLightValue) 
         }
 
         if (nextChunk) chunk_fill_light(nextChunk, (Vector2u) { neighPos.x, neighPos.y }, newLightValue - decayAmount);
+    }
+}
+
+void chunk_propagate_power_wire(Chunk* chunk, Vector2u startPoint, ChunkLayerEnum layer, uint8_t newPowerValue) {
+    if (!chunk) return;
+    if (newPowerValue < 1 || newPowerValue > 15) return;
+    if (startPoint.x >= CHUNK_WIDTH) return;
+    if (startPoint.y >= CHUNK_WIDTH) return;
+
+    int i = startPoint.x + startPoint.y * CHUNK_WIDTH;
+
+    BlockInstance* bptr = &chunk->layers[layer].blocks[i];
+    if (bptr->id != BLOCK_POWER_WIRE) return;
+
+    PowerWireState* s = (PowerWireState*)&bptr->state;
+    uint8_t current = s->power;
+    if (current >= newPowerValue) return;
+
+    s->power = newPowerValue;
+    chunk_manager_update_lighting();
+
+    Vector2i neighbors[] = {
+        { -1, 0 }, { 1, 0 }, { 0, 1 }, { 0, -1 }
+    };
+
+    for (int i = 0; i < 4; i++) {
+        Chunk* nextChunk = chunk;
+
+        Vector2i neighPos = {
+            .x = startPoint.x + neighbors[i].x,
+            .y = startPoint.y + neighbors[i].y
+        };
+
+        if (neighPos.x < 0) {
+            nextChunk = chunk->neighbors.left;
+            neighPos.x = posmod(neighPos.x, CHUNK_WIDTH);
+        }
+        else if (neighPos.x >= CHUNK_WIDTH) {
+            nextChunk = chunk->neighbors.right;
+            neighPos.x = posmod(neighPos.x, CHUNK_WIDTH);
+        }
+        if (neighPos.y < 0) {
+            nextChunk = chunk->neighbors.up;
+            neighPos.y = posmod(neighPos.y, CHUNK_WIDTH);
+        }
+        else if (neighPos.y >= CHUNK_WIDTH) {
+            nextChunk = chunk->neighbors.down;
+            neighPos.y = posmod(neighPos.y, CHUNK_WIDTH);
+        }
+
+        if (nextChunk) chunk_propagate_power_wire(nextChunk, (Vector2u) { neighPos.x, neighPos.y }, layer, newPowerValue - 1);
+        ChunkLayerEnum otherLayer = layer == CHUNK_LAYER_BACKGROUND ? CHUNK_LAYER_FOREGROUND : CHUNK_LAYER_BACKGROUND;
+        chunk_propagate_power_wire(chunk, startPoint, otherLayer, newPowerValue - 1);
     }
 }
 
@@ -590,6 +655,9 @@ void chunk_set_block(Chunk* chunk, Vector2u position, BlockInstance blockValue, 
     BlockRegistry* new_br = br_get_block_registry(blockValue.id);
     if (!new_br) return;
 
+    BlockExtraResult neighbors[4];
+    chunk_get_block_neighbors_extra(chunk, position, layer, neighbors);
+
     BlockExtraResult self = {
         .block = &blockValue,
         .reg = new_br,
@@ -638,7 +706,10 @@ void chunk_set_block(Chunk* chunk, Vector2u position, BlockInstance blockValue, 
                     .position = position,
                     .idx = position.x + (position.y * CHUNK_WIDTH)
                 };
-                old_br->destroy_callback(res);
+                old_br->destroy_callback(res, other, neighbors, layer);
+            }
+            if (old_br->free_data) {
+                old_br->free_data(ptr->data);
             }
         }
     }
@@ -647,8 +718,6 @@ void chunk_set_block(Chunk* chunk, Vector2u position, BlockInstance blockValue, 
     *ptr = blockValue;
 
     // Resolve state for neighboring blocks
-    BlockExtraResult neighbors[4];
-    chunk_get_block_neighbors_extra(chunk, position, layer, neighbors);
     BlockExtraResult otherNeighbors[4];
     chunk_get_block_neighbors_extra(chunk, position, otherLayer, otherNeighbors);
 

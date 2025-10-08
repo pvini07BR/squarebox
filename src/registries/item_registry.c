@@ -309,6 +309,13 @@ void item_registry_init() {
 		.blockId = BLOCK_NUB_FRAME
 	};
 
+	itemRegistry[ITEM_POWER_WIRE] = (ItemRegistry){
+		.name = "Power Wire",
+		.atlas_idx = ATLAS_POWER_WIRE,
+		.model_idx = BLOCK_MODEL_QUAD,
+		.blockId = BLOCK_POWER_WIRE
+	};
+
 	for (int i = 0; i < ITEM_COUNT; i++) {
 		ItemRegistry* irg = &itemRegistry[i];
 		irg->mesh = (Mesh){ 0 };

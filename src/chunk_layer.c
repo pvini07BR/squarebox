@@ -212,10 +212,8 @@ void chunk_layer_free(ChunkLayer* layer) {
         BlockInstance* block = &layer->blocks[i];
         if (!block->data) continue;
         BlockRegistry* rg = br_get_block_registry(block->id);
-        if (rg->destroy_callback) {
-            BlockExtraResult result;
-            result.block = block;
-            rg->destroy_callback(result);
+        if (rg->free_data) {
+            rg->free_data(block->data);
         }
     }
 

@@ -13,6 +13,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <raymath.h>
+
 bool grounded_block_resolver(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], ChunkLayerEnum layer) {
     BlockRegistry* reg = neighbors[NEIGHBOR_BOTTOM].reg;
     if (reg) {
@@ -93,14 +95,6 @@ bool on_chest_interact(BlockExtraResult result, ItemSlot holdingItem) {
     return false;
 }
 
-void on_chest_destroy(BlockExtraResult result) {
-    if (result.block->data != NULL) {
-        item_container_free(result.block->data);
-        free(result.block->data);
-        result.block->data = NULL;
-    }
-}
-
 bool sign_solver(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], ChunkLayerEnum layer) {
     bool valid = false;
 
@@ -137,17 +131,79 @@ bool sign_solver(BlockExtraResult result, BlockExtraResult other, BlockExtraResu
     return valid;
 }
 
-void on_sign_destroy(BlockExtraResult result) {
-    if (result.block->data != NULL) {
-        free(result.block->data);
-        result.block->data = NULL;
-    }
-}
-
 bool trapdoor_interact(BlockExtraResult result, ItemSlot holdingItem) {
     TrapdoorState* state = (TrapdoorState*) & result.block->state;
     state->open = !state->open;
     return true;
+}
+
+bool power_wire_solver(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], ChunkLayerEnum layer) {
+    PowerWireState* s = (PowerWireState*)&result.block->state;
+
+    s->right = neighbors[NEIGHBOR_RIGHT].block->id == result.block->id;
+    s->up = neighbors[NEIGHBOR_TOP].block->id == result.block->id;
+    s->left = neighbors[NEIGHBOR_LEFT].block->id == result.block->id;
+    s->down = neighbors[NEIGHBOR_BOTTOM].block->id == result.block->id;
+
+    int max_power = 0;
+
+    for (int i = 0; i < 4; i++) {
+        BlockExtraResult nb = neighbors[i];
+        BlockRegistry* nrg = (BlockRegistry*)neighbors[i].reg;
+        if (!nrg) continue;
+
+        if (nrg->state_resolver == power_source_solver) {
+            max_power = 15;
+            break;
+        }
+
+        if (nb.block->id == result.block->id) {
+            PowerWireState* ns = (PowerWireState*)&nb.block->state;
+            int neighbor_power = (int)ns->power;
+            if (neighbor_power > 0) {
+                int candidate = neighbor_power - 1;
+                if (candidate > max_power) max_power = candidate;
+            }
+        }
+    }
+
+    BlockRegistry* otherRg = (BlockRegistry*)other.reg;
+    if (otherRg) {
+        if (otherRg->state_resolver == power_source_solver) {
+            max_power = 15;
+        }
+        else if (other.block->id == result.block->id) {
+            PowerWireState* otherState = (PowerWireState*)&other.block->state;
+            int other_power = (int)otherState->power;
+            if (other_power > 0) {
+                int candidate = other_power - 1;
+                if (candidate > max_power) max_power = candidate;
+            }
+        }
+    }
+
+    max_power = Clamp(max_power, 0, 15);
+    
+    s->power = max_power;
+
+    return true;
+}
+
+bool power_source_solver(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], ChunkLayerEnum layer) {
+    for (int i = 0; i < 4; i++) {
+        if (neighbors[i].block->id == BLOCK_POWER_WIRE) {
+            chunk_propagate_power_wire(result.chunk, neighbors[i].position, layer, 15);
+        }
+    }
+
+    ChunkLayerEnum otherLayer = layer == CHUNK_LAYER_BACKGROUND ? CHUNK_LAYER_FOREGROUND : CHUNK_LAYER_BACKGROUND;
+    chunk_propagate_power_wire(result.chunk, other.position, otherLayer, 15);
+
+    return true;
+}
+
+void on_power_source_destroy(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], ChunkLayerEnum layer) {
+
 }
 
 bool sign_interact(BlockExtraResult result, ItemSlot holdingItem) {
@@ -174,7 +230,7 @@ bool frame_block_interact(BlockExtraResult result, ItemSlot holdingItem) {
     return false;
 }
 
-bool falling_block_tick(BlockExtraResult result, BlockExtraResult neighbors[4], ChunkLayerEnum layer) {
+bool falling_block_tick(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], ChunkLayerEnum layer) {
     BlockRegistry* brg = neighbors[NEIGHBOR_BOTTOM].reg;
     if (!brg) return false;
     if (brg->flags & BLOCK_FLAG_REPLACEABLE) {
@@ -232,7 +288,7 @@ bool flow_to_sides(BlockExtraResult neighbors[4], int startLevel) {
     return placed;
 }
 
-bool water_source_tick(BlockExtraResult result, BlockExtraResult neighbors[4], ChunkLayerEnum layer) {
+bool water_source_tick(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], ChunkLayerEnum layer) {
     if (layer != CHUNK_LAYER_FOREGROUND) return false;
 
     // Flowing to the bottom
@@ -245,7 +301,7 @@ bool water_source_tick(BlockExtraResult result, BlockExtraResult neighbors[4], C
     return flow_to_sides(neighbors, 7);
 }
 
-bool water_flowing_tick(BlockExtraResult result, BlockExtraResult neighbors[4], ChunkLayerEnum layer) {
+bool water_flowing_tick(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], ChunkLayerEnum layer) {
     if (layer != CHUNK_LAYER_FOREGROUND) return false;
 
     FlowingLiquidState* curState = (FlowingLiquidState*)&result.block->state;
@@ -382,5 +438,20 @@ void sign_text_draw(void* data, Vector2 position, uint8_t state) {
 
             textPos.y += fontSize + 1.0f;
         }
+    }
+}
+
+void chest_free_data(void* data) {
+    if (data != NULL) {
+        item_container_free(data);
+        free(data);
+        data = NULL;
+    }
+}
+
+void sign_free_data(void* data) {
+    if (data != NULL) {
+        free(data);
+        data = NULL;
     }
 }

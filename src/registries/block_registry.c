@@ -1,5 +1,6 @@
 #include "registries/block_registry.h"
 #include "block_functions.h"
+#include "block_variants.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -51,9 +52,9 @@ void block_registry_init() {
 
     blockRegistry[BLOCK_COBBLESTONE] = (BlockRegistry){
         .variant_generator = variant_cobblestone,
+        .state_resolver = power_source_solver,
         .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FULL_BLOCK,
-        .lightLevel = BLOCK_LIGHT_NONE,
-        .state_resolver = NULL
+        .lightLevel = BLOCK_LIGHT_NONE
     };
 
     blockRegistry[BLOCK_WOODEN_PLANKS] = (BlockRegistry){
@@ -99,7 +100,7 @@ void block_registry_init() {
         .lightLevel = BLOCK_LIGHT_NONE,
         .interact_callback = on_chest_interact,
         .state_resolver = chest_solver,
-        .destroy_callback = on_chest_destroy
+        .free_data = chest_free_data
     };
 
     blockRegistry[BLOCK_BOUNCY_BLOCK] = (BlockRegistry){
@@ -263,7 +264,7 @@ void block_registry_init() {
         .flags = 0,
         .lightLevel = BLOCK_LIGHT_NONE,
         .state_resolver = sign_solver,
-        .destroy_callback = on_sign_destroy,
+        .free_data = sign_free_data,
         .overlay_draw = sign_text_draw,
         .interact_callback = sign_interact
     };
@@ -331,6 +332,12 @@ void block_registry_init() {
         .flags = BLOCK_FLAG_SOLID,
         .lightLevel = BLOCK_LIGHT_NONE,
         .interact_callback = frame_block_interact
+    };
+
+    blockRegistry[BLOCK_POWER_WIRE] = (BlockRegistry){
+        .variant_generator = variant_power_wire,
+        .state_resolver = power_wire_solver,
+        .lightLevel = BLOCK_LIGHT_NONE
     };
 }
 

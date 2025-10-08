@@ -43,6 +43,7 @@ bool trapdoor_interact(BlockExtraResult result, ItemSlot holdingItem);
 bool sign_interact(BlockExtraResult result, ItemSlot holdingItem);
 bool frame_block_interact(BlockExtraResult result, ItemSlot holdingItem);
 
+void on_power_wire_destroy(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], ChunkLayerEnum layer);
 void on_power_source_destroy(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], ChunkLayerEnum layer);
 
 bool falling_block_tick(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], ChunkLayerEnum layer);

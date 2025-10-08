@@ -186,24 +186,51 @@ bool power_wire_solver(BlockExtraResult result, BlockExtraResult other, BlockExt
     
     s->power = max_power;
 
+    for (int i = 0; i < 4; i++) {
+        BlockExtraResult nb = neighbors[i];
+        if (nb.block->id == result.block->id) {
+            chunk_propagate_power_wire(nb.chunk, nb.position, layer, s->power - 1);
+        }
+    }
+
     return true;
 }
 
 bool power_source_solver(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], ChunkLayerEnum layer) {
     for (int i = 0; i < 4; i++) {
         if (neighbors[i].block->id == BLOCK_POWER_WIRE) {
-            chunk_propagate_power_wire(result.chunk, neighbors[i].position, layer, 15);
+            chunk_propagate_power_wire(neighbors[i].chunk, neighbors[i].position, layer, 15);
         }
     }
 
     ChunkLayerEnum otherLayer = layer == CHUNK_LAYER_BACKGROUND ? CHUNK_LAYER_FOREGROUND : CHUNK_LAYER_BACKGROUND;
-    chunk_propagate_power_wire(result.chunk, other.position, otherLayer, 15);
+    chunk_propagate_power_wire(other.chunk, other.position, otherLayer, 15);
 
     return true;
 }
 
-void on_power_source_destroy(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], ChunkLayerEnum layer) {
+void on_power_wire_destroy(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], ChunkLayerEnum layer) {
+    PowerWireState* s = (PowerWireState*)&result.block->state;
+    for (int i = 0; i < 4; i++) {
+        BlockExtraResult nb = neighbors[i];
+        if (!nb.chunk) continue;
+        if (nb.block->id != result.block->id) continue;
 
+        PowerWireState* ns = (PowerWireState*)&nb.block->state;
+        if (ns->power < s->power)
+            chunk_propagate_remove_power_wire(nb.chunk, nb.position, layer);
+    }
+}
+
+void on_power_source_destroy(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], ChunkLayerEnum layer) {
+    for (int i = 0; i < 4; i++) {
+        if (!neighbors[i].block || !neighbors[i].reg) continue;
+        if (neighbors[i].block->id == BLOCK_POWER_WIRE) {
+            if (neighbors[i].chunk) {
+                chunk_propagate_remove_power_wire(neighbors[i].chunk, neighbors[i].position, layer);
+            }
+        }
+    }
 }
 
 bool sign_interact(BlockExtraResult result, ItemSlot holdingItem) {

@@ -78,6 +78,7 @@ void chunk_free(Chunk* chunk);
 
 void chunk_fill_light(Chunk* chunk, Vector2u startPoint, uint8_t newLightValue);
 void chunk_propagate_power_wire(Chunk* chunk, Vector2u startPoint, ChunkLayerEnum layer, uint8_t newPowerValue);
+void chunk_propagate_remove_power_wire(Chunk* chunk, Vector2u point, ChunkLayerEnum layer);
 
 // This function will project downards from a starting point until it finds a replaceable block (like grass or air).
 // The returned value is a struct that contains pointers to the replaceable block, and the block below it.

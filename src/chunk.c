@@ -465,9 +465,13 @@ void chunk_fill_light(Chunk* chunk, Vector2u startPoint, uint8_t newLightValue) 
 
 void chunk_propagate_power_wire(Chunk* chunk, Vector2u startPoint, ChunkLayerEnum layer, uint8_t newPowerValue) {
     if (!chunk) return;
-    if (newPowerValue < 1 || newPowerValue > 15) return;
-    if (startPoint.x >= CHUNK_WIDTH) return;
-    if (startPoint.y >= CHUNK_WIDTH) return;
+    if (startPoint.x >= CHUNK_WIDTH || startPoint.y >= CHUNK_WIDTH) return;
+
+    if (newPowerValue > 15) return;
+    if (newPowerValue < 1) {
+        chunk_genmesh(chunk);
+        return;
+    }
 
     int i = startPoint.x + startPoint.y * CHUNK_WIDTH;
 
@@ -479,40 +483,67 @@ void chunk_propagate_power_wire(Chunk* chunk, Vector2u startPoint, ChunkLayerEnu
     if (current >= newPowerValue) return;
 
     s->power = newPowerValue;
-    chunk_manager_update_lighting();
 
-    Vector2i neighbors[] = {
-        { -1, 0 }, { 1, 0 }, { 0, 1 }, { 0, -1 }
-    };
+    BlockExtraResult neighbors[4];
+    chunk_get_block_neighbors_extra(chunk, startPoint, layer, neighbors);
 
     for (int i = 0; i < 4; i++) {
-        Chunk* nextChunk = chunk;
+        if (neighbors[i].chunk) {
+            chunk_propagate_power_wire(neighbors[i].chunk, neighbors[i].position, layer, newPowerValue - 1);
+        }
+    }
 
-        Vector2i neighPos = {
-            .x = startPoint.x + neighbors[i].x,
-            .y = startPoint.y + neighbors[i].y
-        };
+    ChunkLayerEnum otherLayer = layer == CHUNK_LAYER_BACKGROUND ? CHUNK_LAYER_FOREGROUND : CHUNK_LAYER_BACKGROUND;
+    chunk_propagate_power_wire(chunk, startPoint, otherLayer, newPowerValue - 1);
+}
 
-        if (neighPos.x < 0) {
-            nextChunk = chunk->neighbors.left;
-            neighPos.x = posmod(neighPos.x, CHUNK_WIDTH);
-        }
-        else if (neighPos.x >= CHUNK_WIDTH) {
-            nextChunk = chunk->neighbors.right;
-            neighPos.x = posmod(neighPos.x, CHUNK_WIDTH);
-        }
-        if (neighPos.y < 0) {
-            nextChunk = chunk->neighbors.up;
-            neighPos.y = posmod(neighPos.y, CHUNK_WIDTH);
-        }
-        else if (neighPos.y >= CHUNK_WIDTH) {
-            nextChunk = chunk->neighbors.down;
-            neighPos.y = posmod(neighPos.y, CHUNK_WIDTH);
-        }
+void chunk_propagate_remove_power_wire(Chunk* chunk, Vector2u point, ChunkLayerEnum layer) {
+    if (!chunk) return;
+    if (point.x >= CHUNK_WIDTH) return;
+    if (point.y >= CHUNK_WIDTH) return;
 
-        if (nextChunk) chunk_propagate_power_wire(nextChunk, (Vector2u) { neighPos.x, neighPos.y }, layer, newPowerValue - 1);
-        ChunkLayerEnum otherLayer = layer == CHUNK_LAYER_BACKGROUND ? CHUNK_LAYER_FOREGROUND : CHUNK_LAYER_BACKGROUND;
-        chunk_propagate_power_wire(chunk, startPoint, otherLayer, newPowerValue - 1);
+    int idx = (int)point.x + (int)point.y * CHUNK_WIDTH;
+
+    BlockInstance* bptr = &chunk->layers[layer].blocks[idx];
+    if (bptr->id != BLOCK_POWER_WIRE) return;
+
+    PowerWireState* s = (PowerWireState*)&bptr->state;
+    uint8_t old_power = s->power;
+    if (old_power == 0) {
+        chunk_genmesh(chunk);
+        return;
+    }
+
+    uint8_t max_power = 0;
+
+    BlockExtraResult neighbors[4];
+    chunk_get_block_neighbors_extra(chunk, point, layer, neighbors);
+
+    for (int i = 0; i < 4; i++) {
+        BlockExtraResult neigh = neighbors[i];
+        if (!neigh.block || !neigh.reg) continue;
+
+        if (neigh.block->id == BLOCK_POWER_WIRE) {
+            PowerWireState* ns = (PowerWireState*)&neigh.block->state;
+            if (ns->power > 0) {
+                uint8_t cand = ns->power - 1;
+                if (cand > max_power) max_power = cand;
+            }
+        }
+    }
+
+    if (max_power < old_power) {
+        s->power = max_power;
+
+        for (int j = 0; j < 4; j++) {
+            BlockExtraResult neigh = neighbors[j];
+            if (!neigh.block || !neigh.reg) continue;
+            if (neigh.block->id != BLOCK_POWER_WIRE) continue;
+
+            if (neigh.chunk) {
+                chunk_propagate_remove_power_wire(neigh.chunk, neigh.position, layer);
+            }
+        }
     }
 }
 

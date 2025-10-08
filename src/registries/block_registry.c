@@ -53,6 +53,7 @@ void block_registry_init() {
     blockRegistry[BLOCK_COBBLESTONE] = (BlockRegistry){
         .variant_generator = variant_cobblestone,
         .state_resolver = power_source_solver,
+        .destroy_callback = on_power_source_destroy,
         .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FULL_BLOCK,
         .lightLevel = BLOCK_LIGHT_NONE
     };
@@ -337,6 +338,7 @@ void block_registry_init() {
     blockRegistry[BLOCK_POWER_WIRE] = (BlockRegistry){
         .variant_generator = variant_power_wire,
         .state_resolver = power_wire_solver,
+        .destroy_callback = on_power_wire_destroy,
         .lightLevel = BLOCK_LIGHT_NONE
     };
 }

@@ -210,15 +210,12 @@ bool power_source_solver(BlockExtraResult result, BlockExtraResult other, BlockE
 }
 
 void on_power_wire_destroy(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], ChunkLayerEnum layer) {
-    PowerWireState* s = (PowerWireState*)&result.block->state;
     for (int i = 0; i < 4; i++) {
         BlockExtraResult nb = neighbors[i];
-        if (!nb.chunk) continue;
+        if (!nb.chunk || !nb.block) continue;
         if (nb.block->id != result.block->id) continue;
 
-        PowerWireState* ns = (PowerWireState*)&nb.block->state;
-        if (ns->power < s->power)
-            chunk_propagate_remove_power_wire(nb.chunk, nb.position, layer);
+        chunk_propagate_remove_power_wire(nb.chunk, nb.position, layer);
     }
 }
 

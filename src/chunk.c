@@ -499,50 +499,46 @@ void chunk_propagate_power_wire(Chunk* chunk, Vector2u startPoint, ChunkLayerEnu
 
 void chunk_propagate_remove_power_wire(Chunk* chunk, Vector2u point, ChunkLayerEnum layer) {
     if (!chunk) return;
-    if (point.x >= CHUNK_WIDTH) return;
-    if (point.y >= CHUNK_WIDTH) return;
+    if (point.x >= CHUNK_WIDTH || point.y >= CHUNK_WIDTH) return;
 
     int idx = (int)point.x + (int)point.y * CHUNK_WIDTH;
-
     BlockInstance* bptr = &chunk->layers[layer].blocks[idx];
+
     if (bptr->id != BLOCK_POWER_WIRE) return;
 
     PowerWireState* s = (PowerWireState*)&bptr->state;
     uint8_t old_power = s->power;
-    if (old_power == 0) {
-        chunk_genmesh(chunk);
-        return;
-    }
-
-    uint8_t max_power = 0;
+    if (old_power == 0) return;
 
     BlockExtraResult neighbors[4];
     chunk_get_block_neighbors_extra(chunk, point, layer, neighbors);
 
-    for (int i = 0; i < 4; i++) {
-        BlockExtraResult neigh = neighbors[i];
-        if (!neigh.block || !neigh.reg) continue;
+    uint8_t maxp = 0;
+    for (int i = 0; i < 4; ++i) {
+        BlockExtraResult n = neighbors[i];
+        if (!n.block || !n.reg) continue;
 
-        if (neigh.block->id == BLOCK_POWER_WIRE) {
-            PowerWireState* ns = (PowerWireState*)&neigh.block->state;
+        if (n.block->id == BLOCK_POWER_WIRE) {
+            PowerWireState* ns = (PowerWireState*)&n.block->state;
             if (ns->power > 0) {
                 uint8_t cand = ns->power - 1;
-                if (cand > max_power) max_power = cand;
+                if (cand > maxp) maxp = cand;
             }
         }
     }
 
-    if (max_power < old_power) {
-        s->power = max_power;
+    if (maxp < old_power) {
+        s->power = maxp;
 
-        for (int j = 0; j < 4; j++) {
-            BlockExtraResult neigh = neighbors[j];
-            if (!neigh.block || !neigh.reg) continue;
-            if (neigh.block->id != BLOCK_POWER_WIRE) continue;
+        chunk_genmesh(chunk);
 
-            if (neigh.chunk) {
-                chunk_propagate_remove_power_wire(neigh.chunk, neigh.position, layer);
-            }
+        for (int i = 0; i < 4; ++i) {
+            BlockExtraResult n = neighbors[i];
+            if (!n.block || !n.reg) continue;
+            if (n.block->id != BLOCK_POWER_WIRE) continue;
+            if (!n.chunk) continue;
+
+            chunk_propagate_remove_power_wire(n.chunk, n.position, layer);
         }
     }
 }

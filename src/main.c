@@ -64,7 +64,7 @@ int main() {
 
     mu_Context* ctx = malloc(sizeof(mu_Context));
     mu_init(ctx);
-    
+
     Font font = LoadFontEx(ASSETS_PATH "nokiafc22.ttf", 20, NULL, 0);
     murl_setup_font_ex(ctx, &font);
 
@@ -76,7 +76,7 @@ int main() {
     texture_atlas_init();
 
     world_manager_init();
-    
+
     game_init();
 
     #ifdef LOAD_WORLD
@@ -113,7 +113,7 @@ int main() {
                 game_tick();
                 accumulator -= TICK_DELTA;
             }
-    
+
             game_update(GetFrameTime());
         }
 

@@ -10,6 +10,7 @@
 #include "types.h"
 
 #include <math.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -79,27 +80,27 @@ void chunk_regenerate(Chunk* chunk) {
         terrainNoise.frequency = 0.008f;
         terrainNoise.noise_type = FNL_NOISE_OPENSIMPLEX2;
         terrainNoise.fractal_type = FNL_FRACTAL_FBM;
-    
+
         fnl_state detailNoise = fnlCreateState();
         detailNoise.seed = get_world_info()->seed + 1337;
         detailNoise.frequency = 0.025f;
         detailNoise.noise_type = FNL_NOISE_OPENSIMPLEX2;
         detailNoise.fractal_type = FNL_FRACTAL_FBM;
-    
+
         for (int w = 0; w < 2; w++) {
             for (int x = 0; x < CHUNK_WIDTH; x++) {
                 int gx = chunk->position.x * CHUNK_WIDTH + x;
-    
+
                 float base = fnlGetNoise2D(&terrainNoise, gx * 0.5f, 0.0f);
                 float detail = fnlGetNoise2D(&detailNoise, gx, 0.0f);
                 int surfaceY = (int)roundf(base * 32.0f + detail * 8.0f);
-    
+
                 for (int y = 0; y < CHUNK_WIDTH; y++) {
                     int i = x + y * CHUNK_WIDTH;
                     int gy = chunk->position.y * CHUNK_WIDTH + y;
-    
+
                     BlockInstance newInst = { 0, 0, NULL };
-    
+
                     if (gy == (surfaceY - 1)) {
                         if (chance_at(FNL_NOISE_VALUE, 32.0f, gx, gy, 0.0f, w)) {
                             newInst.id = BLOCK_GRASS;
@@ -120,7 +121,7 @@ void chunk_regenerate(Chunk* chunk) {
                     else if (gy > surfaceY + 4) {
                         newInst.id = BLOCK_STONE;
                     }
-    
+
                     if (w == 0) chunk->layers[CHUNK_LAYER_FOREGROUND].blocks[i] = newInst;
                     else chunk->layers[CHUNK_LAYER_BACKGROUND].blocks[i] = newInst;
                 }
@@ -133,9 +134,9 @@ void chunk_regenerate(Chunk* chunk) {
             for (int y = 0; y < CHUNK_WIDTH; y++) {
                 for (int x = 0; x < CHUNK_WIDTH; x++) {
                     BlockInstance newInst = { 0, 0, NULL };
-                    
+
                     int gy = chunk->position.y * CHUNK_WIDTH + y;
-                    
+
                     if (gy == CHUNK_WIDTH / 2) {
                         newInst.id = BLOCK_GRASS_BLOCK;
                     } else if (gy > (CHUNK_WIDTH / 2) && gy <= (CHUNK_WIDTH / 2) + 10) {
@@ -145,7 +146,7 @@ void chunk_regenerate(Chunk* chunk) {
                     }
 
                     int i = x + y * CHUNK_WIDTH;
-                    
+
                     if (w == 0) chunk->layers[CHUNK_LAYER_FOREGROUND].blocks[i] = newInst;
                     else chunk->layers[CHUNK_LAYER_BACKGROUND].blocks[i] = newInst;
                 }
@@ -573,7 +574,7 @@ DownProjectionResult chunk_get_block_projected_downwards(Chunk* chunk, Vector2u 
         }
         else { continue; }
     }
-    
+
     if (goToNeighbor) {
         return chunk_get_block_projected_downwards(chunk->neighbors.down, (Vector2u) { startPoint.x, 0 }, layer, goToNeighbor);
     }
@@ -672,52 +673,57 @@ LightExtraResult chunk_get_light_extrapolating_ptr(Chunk* chunk, Vector2i positi
     }
 }
 
+bool chunk_solve_block(Chunk* chunk, Vector2u position, ChunkLayerEnum layer) {
+    BlockInstance* inst = chunk_get_block_ptr(chunk, position, layer);
+    if (!inst) return false;
+    BlockRegistry* br = br_get_block_registry(inst->id);
+    if (!br) return false;
+
+    bool can_place = true;
+
+    if (br->state_resolver != NULL) {
+        BlockExtraResult neighbors[4];
+        chunk_get_block_neighbors_extra(chunk, position, layer, neighbors);
+
+        BlockExtraResult self = {
+            .block = inst,
+            .reg = br,
+            .chunk = chunk,
+            .position = position,
+            .idx = position.x + (position.y * CHUNK_WIDTH)
+        };
+
+        ChunkLayerEnum otherLayer = layer == CHUNK_LAYER_FOREGROUND ? CHUNK_LAYER_BACKGROUND : CHUNK_LAYER_FOREGROUND;
+
+        BlockInstance* other_inst = chunk_get_block_ptr(chunk, position, otherLayer);
+        if (!other_inst) return false;
+        BlockRegistry* other_br = br_get_block_registry(other_inst->id);
+        if (!other_br) return false;
+
+        BlockExtraResult other = {
+            .block = other_inst,
+            .reg = other_br,
+            .chunk = chunk,
+            .position = position,
+            .idx = position.x + (position.y * CHUNK_WIDTH)
+        };
+
+        can_place = br->state_resolver(self, other, neighbors, layer);
+    }
+
+    if (!can_place) {
+        *inst = (BlockInstance) { 0, 0, NULL };
+    }
+
+    return can_place;
+}
+
 void chunk_set_block(Chunk* chunk, Vector2u position, BlockInstance blockValue, ChunkLayerEnum layer, bool update_lighting) {
     BlockInstance* ptr = chunk_get_block_ptr(chunk, position, layer);
     if (!ptr) return;
     if (ptr->id == blockValue.id && ptr->state == blockValue.state) return;
 
-    bool can_place = true;
-
-    BlockRegistry* new_br = br_get_block_registry(blockValue.id);
-    if (!new_br) return;
-
-    BlockExtraResult neighbors[4];
-    chunk_get_block_neighbors_extra(chunk, position, layer, neighbors);
-
-    BlockExtraResult self = {
-        .block = &blockValue,
-        .reg = new_br,
-        .chunk = chunk,
-        .position = position,
-        .idx = position.x + (position.y * CHUNK_WIDTH)
-    };
-
-    ChunkLayerEnum otherLayer = layer == CHUNK_LAYER_FOREGROUND ? CHUNK_LAYER_BACKGROUND : CHUNK_LAYER_FOREGROUND;
-
-    BlockInstance* other_inst = chunk_get_block_ptr(chunk, position, otherLayer);
-    if (!other_inst) return;
-    BlockRegistry* other_br = br_get_block_registry(other_inst->id);
-    if (!other_br) return;
-
-    BlockExtraResult other = {
-        .block = other_inst,
-        .reg = other_br,
-        .chunk = chunk,
-        .position = position,
-        .idx = position.x + (position.y * CHUNK_WIDTH)
-    };
-
-    // Resolve state for new block before placing
-    if (new_br->state_resolver != NULL) {
-        BlockExtraResult neighbors[4];
-        chunk_get_block_neighbors_extra(chunk, position, layer, neighbors);
-
-        can_place = new_br->state_resolver(self, other, neighbors, layer);
-    }
-    if (!can_place) return;
-
-    // Handle previous block (destroy)
+    // Handle destruction of the previous block
     if (ptr->id > 0) {
         BlockRegistry* old_br = br_get_block_registry(ptr->id);
         if (old_br) {
@@ -733,7 +739,7 @@ void chunk_set_block(Chunk* chunk, Vector2u position, BlockInstance blockValue, 
                     .position = position,
                     .idx = position.x + (position.y * CHUNK_WIDTH)
                 };
-                old_br->destroy_callback(res, other, neighbors, layer);
+                old_br->destroy_callback(res, layer);
             }
             if (old_br->free_data) {
                 old_br->free_data(ptr->data);
@@ -744,34 +750,29 @@ void chunk_set_block(Chunk* chunk, Vector2u position, BlockInstance blockValue, 
     // Set the block
     *ptr = blockValue;
 
+    // Resolve the state of the new placed block
+    bool ret = chunk_solve_block(chunk, position, layer);
+    if (!ret) return;
+
     // Resolve state for neighboring blocks
-    BlockExtraResult otherNeighbors[4];
-    chunk_get_block_neighbors_extra(chunk, position, otherLayer, otherNeighbors);
-
+    BlockExtraResult neighbors[4];
+    chunk_get_block_neighbors_extra(chunk, position, layer, neighbors);
     for (int i = 0; i < 4; i++) {
-        if (neighbors[i].block == NULL) continue;
-        BlockRegistry* nbr_br = neighbors[i].reg;
-        if (!nbr_br || nbr_br->state_resolver == NULL) continue;
-
-        BlockExtraResult neighbors2[4];
-        chunk_get_block_neighbors_extra(neighbors[i].chunk, neighbors[i].position, layer, neighbors2);
-
-        if (nbr_br->state_resolver) {
-            bool r = nbr_br->state_resolver(neighbors[i], otherNeighbors[i], neighbors2, layer);
-            if (!r) *neighbors[i].block = (BlockInstance){ 0, 0, NULL };
-        }
+        BlockExtraResult neighbor = neighbors[i];
+        chunk_solve_block(neighbor.chunk, neighbor.position, layer);
     }
 
-    // Resolve state for the other block (wall or block)
-    if (other_br->state_resolver) {
-        bool r = other_br->state_resolver(other, self, otherNeighbors, otherLayer);
-        if (!r) *other.block = (BlockInstance){ 0, 0, NULL };
-    }
+    // Resolve state for the block in the opposing layer
+    ChunkLayerEnum otherLayer = layer == CHUNK_LAYER_FOREGROUND ? CHUNK_LAYER_BACKGROUND : CHUNK_LAYER_FOREGROUND;
+    chunk_solve_block(chunk, position, otherLayer);
 
     if (update_lighting) chunk_manager_update_lighting();
 
     // Add tick for new block if applicable
-    if (new_br->tick_callback != NULL) {
+    BlockRegistry* br = br_get_block_registry(blockValue.id);
+    if (!br) return;
+
+    if (br->tick_callback != NULL) {
         if (!block_tick_list_contains(&chunk->blockTickList, (BlockTickListEntry){ position, layer })) {
             block_tick_list_add(&chunk->blockTickList, (BlockTickListEntry){ position, layer });
         }

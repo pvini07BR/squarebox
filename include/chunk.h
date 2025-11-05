@@ -77,6 +77,7 @@ void chunk_tick(Chunk* chunk, uint8_t tick_value);
 void chunk_free(Chunk* chunk);
 
 void chunk_fill_light(Chunk* chunk, Vector2u startPoint, uint8_t newLightValue);
+bool chunk_solve_block(Chunk* chunk, Vector2u position, ChunkLayerEnum layer);
 void chunk_propagate_power_wire(Chunk* chunk, Vector2u startPoint, ChunkLayerEnum layer, uint8_t newPowerValue);
 void chunk_propagate_remove_power_wire(Chunk* chunk, Vector2u point, ChunkLayerEnum layer);
 

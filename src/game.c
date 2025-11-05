@@ -242,10 +242,10 @@ void game_update(float deltaTime) {
 
     if (player) player->disable_input = game_is_ui_open();
     entity_list_update(GetFrameTime());
-        
+
     if (player) {
         Vector2 newTarget = Vector2Add(player_get_position(player), Vector2Scale(player_get_size(player), 0.5f));
-        
+
         camera.target = Vector2Lerp(camera.target, newTarget, Clamp(25.0f * GetFrameTime(), 0.0f, 1.0f));
     }
 
@@ -253,7 +253,7 @@ void game_update(float deltaTime) {
         item_container_open(&creativeMenu);
     else if ((IsKeyPressed(KEY_E) || (IsKeyPressed(KEY_ESCAPE) && item_container_is_open())))
         item_container_close();
-    
+
     if (IsKeyPressed(KEY_ESCAPE) && sign_editor_is_open()) {
         sign_editor_close();
     }
@@ -285,7 +285,7 @@ void game_update(float deltaTime) {
                 loadedGhostMesh = false;
             }
         }
-        
+
         if (loadedGhostMesh == false) {
             BlockVariant bvar = heldBlockReg->variant_generator(blockState);
             block_models_build_mesh(&ghostBlockMesh, bvar);
@@ -304,7 +304,7 @@ void game_update(float deltaTime) {
 
 void game_draw() {
     camera.offset = (Vector2){
-        .x = GetScreenWidth() / 2.0f, 
+        .x = GetScreenWidth() / 2.0f,
         .y = GetScreenHeight() / 2.0f
     };
 
@@ -365,7 +365,7 @@ void game_draw() {
         EndMode2D();
         return;
     }
-    
+
     if (!game_is_ui_open() && draw_ui) {
         // Draw block model if it is rotatable
         if (loadedGhostMesh == true) {

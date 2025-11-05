@@ -98,7 +98,11 @@ typedef enum {
 
 	// Tells if the block is slippery.
 	// it will make entities have less friction.
-	BLOCK_FLAG_SLIPPERY = (1 << 10)
+	BLOCK_FLAG_SLIPPERY = (1 << 10),
+
+	// Tells if the block is a power source.
+	// Sets all neighboring wires to the maximum power value (15).
+	BLOCK_FLAG_POWER_SOURCE = (1 << 11)
 } BlockFlag;
 
 typedef enum {

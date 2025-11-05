@@ -18,7 +18,7 @@ typedef bool (*BlockInteractionCallback)(BlockExtraResult result, ItemSlot holdi
 // the "other" member variable is either a block or wall, depending on the value of the layer argument.
 typedef bool (*BlockStateResolver)(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], ChunkLayerEnum layer);
 // Function pointer to a function that will be called when the block is destroyed.
-typedef void (*BlockDestroyCallback)(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], ChunkLayerEnum layer);
+typedef void (*BlockDestroyCallback)(BlockExtraResult result, ChunkLayerEnum layer);
 // Function pointer to a function that will define the behavior for a block when it ticks.
 // the returned value determines if the tick result has changed anything or not. This is to prevent
 // unnecessary light and mesh updates.
@@ -36,15 +36,11 @@ bool fence_resolver(BlockExtraResult result, BlockExtraResult other, BlockExtraR
 bool chest_solver(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], ChunkLayerEnum layer);
 bool sign_solver(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], ChunkLayerEnum layer);
 bool power_wire_solver(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], ChunkLayerEnum layer);
-bool power_source_solver(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], ChunkLayerEnum layer);
 
 bool on_chest_interact(BlockExtraResult result, ItemSlot holdingItem);
 bool trapdoor_interact(BlockExtraResult result, ItemSlot holdingItem);
 bool sign_interact(BlockExtraResult result, ItemSlot holdingItem);
 bool frame_block_interact(BlockExtraResult result, ItemSlot holdingItem);
-
-void on_power_wire_destroy(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], ChunkLayerEnum layer);
-void on_power_source_destroy(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], ChunkLayerEnum layer);
 
 bool falling_block_tick(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], ChunkLayerEnum layer);
 bool water_source_tick(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], ChunkLayerEnum layer);

@@ -9,6 +9,7 @@
 #include "chunk.h"
 #include "types.h"
 
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -140,20 +141,28 @@ bool trapdoor_interact(BlockExtraResult result, ItemSlot holdingItem) {
 bool power_wire_solver(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], ChunkLayerEnum layer) {
     PowerWireState* s = (PowerWireState*)&result.block->state;
 
-    s->right = neighbors[NEIGHBOR_RIGHT].block->id == result.block->id;
-    s->up = neighbors[NEIGHBOR_TOP].block->id == result.block->id;
-    s->left = neighbors[NEIGHBOR_LEFT].block->id == result.block->id;
-    s->down = neighbors[NEIGHBOR_BOTTOM].block->id == result.block->id;
-
-    int max_power = 0;
-
+    BlockRegistry* reg[4];
     for (int i = 0; i < 4; i++) {
-        BlockExtraResult nb = neighbors[i];
-        BlockRegistry* nrg = (BlockRegistry*)neighbors[i].reg;
+        reg[i] = (BlockRegistry*)neighbors[i].reg;
+    }
+
+    s->right = neighbors[NEIGHBOR_RIGHT].block->id == result.block->id || reg[NEIGHBOR_RIGHT]->flags & BLOCK_FLAG_POWER_SOURCE;
+    s->up = neighbors[NEIGHBOR_TOP].block->id == result.block->id || reg[NEIGHBOR_TOP]->flags & BLOCK_FLAG_POWER_SOURCE;
+    s->left = neighbors[NEIGHBOR_LEFT].block->id == result.block->id || reg[NEIGHBOR_LEFT]->flags & BLOCK_FLAG_POWER_SOURCE;
+    s->down = neighbors[NEIGHBOR_BOTTOM].block->id == result.block->id || reg[NEIGHBOR_BOTTOM]->flags & BLOCK_FLAG_POWER_SOURCE;
+
+    int old_power = (int)s->power;
+    int new_power = 0;
+
+    BlockExtraResult checks[5] = { neighbors[NEIGHBOR_RIGHT], neighbors[NEIGHBOR_TOP], neighbors[NEIGHBOR_LEFT], neighbors[NEIGHBOR_BOTTOM], other };
+
+    for (int i = 0; i < 5; i++) {
+        BlockExtraResult nb = checks[i];
+        BlockRegistry* nrg = (BlockRegistry*)nb.reg;
         if (!nrg) continue;
 
-        if (nrg->state_resolver == power_source_solver) {
-            max_power = 15;
+        if (nrg->flags & BLOCK_FLAG_POWER_SOURCE) {
+            new_power = 15;
             break;
         }
 
@@ -162,72 +171,32 @@ bool power_wire_solver(BlockExtraResult result, BlockExtraResult other, BlockExt
             int neighbor_power = (int)ns->power;
             if (neighbor_power > 0) {
                 int candidate = neighbor_power - 1;
-                if (candidate > max_power) max_power = candidate;
+                if (candidate > new_power) new_power = candidate;
             }
         }
     }
 
-    BlockRegistry* otherRg = (BlockRegistry*)other.reg;
-    if (otherRg) {
-        if (otherRg->state_resolver == power_source_solver) {
-            max_power = 15;
-        }
-        else if (other.block->id == result.block->id) {
-            PowerWireState* otherState = (PowerWireState*)&other.block->state;
-            int other_power = (int)otherState->power;
-            if (other_power > 0) {
-                int candidate = other_power - 1;
-                if (candidate > max_power) max_power = candidate;
+    new_power = Clamp(new_power, 0, 15);
+
+    if (new_power != old_power) {
+        s->power = (uint8_t)new_power;
+
+        // Propagate power to neighbors
+        for (int i = 0; i < 4; i++) {
+            BlockExtraResult nb = neighbors[i];
+            if (nb.block->id == result.block->id) {
+                chunk_solve_block(nb.chunk, nb.position, layer);
             }
         }
-    }
 
-    max_power = Clamp(max_power, 0, 15);
-    
-    s->power = max_power;
-
-    for (int i = 0; i < 4; i++) {
-        BlockExtraResult nb = neighbors[i];
-        if (nb.block->id == result.block->id) {
-            chunk_propagate_power_wire(nb.chunk, nb.position, layer, s->power - 1);
+        // Also propagate to the wire in the opposite layer
+        if (other.block->id == result.block->id) {
+            ChunkLayerEnum otherLayer = layer == CHUNK_LAYER_FOREGROUND ? CHUNK_LAYER_BACKGROUND : CHUNK_LAYER_FOREGROUND;
+            chunk_solve_block(result.chunk, result.position, otherLayer);
         }
     }
 
     return true;
-}
-
-bool power_source_solver(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], ChunkLayerEnum layer) {
-    for (int i = 0; i < 4; i++) {
-        if (neighbors[i].block->id == BLOCK_POWER_WIRE) {
-            chunk_propagate_power_wire(neighbors[i].chunk, neighbors[i].position, layer, 15);
-        }
-    }
-
-    ChunkLayerEnum otherLayer = layer == CHUNK_LAYER_BACKGROUND ? CHUNK_LAYER_FOREGROUND : CHUNK_LAYER_BACKGROUND;
-    chunk_propagate_power_wire(other.chunk, other.position, otherLayer, 15);
-
-    return true;
-}
-
-void on_power_wire_destroy(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], ChunkLayerEnum layer) {
-    for (int i = 0; i < 4; i++) {
-        BlockExtraResult nb = neighbors[i];
-        if (!nb.chunk || !nb.block) continue;
-        if (nb.block->id != result.block->id) continue;
-
-        chunk_propagate_remove_power_wire(nb.chunk, nb.position, layer);
-    }
-}
-
-void on_power_source_destroy(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], ChunkLayerEnum layer) {
-    for (int i = 0; i < 4; i++) {
-        if (!neighbors[i].block || !neighbors[i].reg) continue;
-        if (neighbors[i].block->id == BLOCK_POWER_WIRE) {
-            if (neighbors[i].chunk) {
-                chunk_propagate_remove_power_wire(neighbors[i].chunk, neighbors[i].position, layer);
-            }
-        }
-    }
 }
 
 bool sign_interact(BlockExtraResult result, ItemSlot holdingItem) {

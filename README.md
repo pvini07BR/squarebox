@@ -33,11 +33,11 @@ But here is a list of all the features this game currently has, and what I plan 
 - ✅ Lighting system
 - ✅ World saving (beware that the world and chunk file formats may change)
 - 🟩 World generation (there's only a generic noise world gen and it does not have any trees yet)
+- 🟩 Some redstone-like circuit system (with logic gates, pistons, buttons, pressure plates, etc.)
 - ⬜ Particles
 - ⬜ Waterlogged blocks
 - ⬜ Structure generation
 - ⬜ Moving structures (so you can make elevators)
-- ⬜ Some redstone-like circuit system (with logic gates, pistons, buttons, pressure plates, etc.)
 - ⬜ Chat and Commands
 - ⬜ Proper coordinate system using fixed points
 - ⬜ Multiplayer

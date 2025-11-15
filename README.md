@@ -89,9 +89,9 @@ Gameplay:
 Inventory:
 - Press A on Xbox, Cross on PlayStation or B on Nintendo to pick up an item.
 
+## More warnings
 - Function keys behaviors are not implemented for the controller.
-
-**Warning²: Currently, there is no way of changing keybinds or remap the controller buttons. They are hardcoded.**
+- There is no way of changing keybinds or remap the controller buttons. They are hardcoded.
 
 # Known bugs
 

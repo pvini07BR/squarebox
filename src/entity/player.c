@@ -1,4 +1,5 @@
 #include "entity/player.h"
+#include "GLFW/glfw3.h"
 #include "chunk_manager.h"
 #include "types.h"
 
@@ -12,6 +13,8 @@
 #define SPEED 10.0f * TILE_SIZE
 #define JUMP_FORCE 16.0f * TILE_SIZE
 #define ROTATION_AMOUNT 549.57f
+
+#define GAMEPAD_STICK_DEADZONE 0.1f
 
 #define TO_BLOCK_COORDS(value) ((int)floorf((float)value / (float)TILE_SIZE))
 
@@ -79,8 +82,8 @@ void player_update(Entity* entity, float deltaTime) {
 
 	if (entity->on_liquid) speed /= 2.0f;
 
-	if (IsKeyDown(KEY_LEFT_SHIFT)) speed /= 4.0f;
-	else if (IsKeyDown(KEY_LEFT_CONTROL)) speed *= 2.5f;
+	if (IsKeyDown(KEY_LEFT_SHIFT) || IsGamepadButtonDown(0, GAMEPAD_BUTTON_RIGHT_THUMB)) speed /= 4.0f;
+	else if (IsKeyDown(KEY_LEFT_CONTROL) || IsGamepadButtonDown(0, GAMEPAD_BUTTON_LEFT_THUMB)) speed *= 2.5f;
 		
 	// If not gravity affected, then start floating
 	if (!entity->gravity_affected) {
@@ -88,9 +91,19 @@ void player_update(Entity* entity, float deltaTime) {
 		player->rotation = Lerp(player->rotation, nineties, Clamp(50.0f * deltaTime, 0.0f, 1.0f));
 
 		Vector2 dir = {
-			((IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_D)) - (IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_A))),
-			((IsKeyDown(KEY_DOWN) || IsKeyDown(KEY_S)) - (IsKeyDown(KEY_UP) || IsKeyDown(KEY_W)))
+			GetGamepadAxisMovement(0, GAMEPAD_AXIS_LEFT_X),
+			GetGamepadAxisMovement(0, GAMEPAD_AXIS_LEFT_Y)
 		};
+
+		if (fabsf(dir.x) < GAMEPAD_STICK_DEADZONE) dir.x = 0.0f;
+		if (fabsf(dir.y) < GAMEPAD_STICK_DEADZONE) dir.y = 0.0f;
+
+		if (dir.x == 0.0f && dir.y == 0.0f) {
+			dir = (Vector2) {
+				((IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_D)) - (IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_A))),
+				((IsKeyDown(KEY_DOWN) || IsKeyDown(KEY_S)) - (IsKeyDown(KEY_UP) || IsKeyDown(KEY_W)))
+			};
+		}
 		
 		if (dir.x != 0.0f || dir.y != 0.0f)
 			dir = Vector2Normalize(dir);
@@ -100,18 +113,25 @@ void player_update(Entity* entity, float deltaTime) {
 	// Otherwise behave like a platformer player controller
 	else {
 		// Horizontal movement
-		if (IsKeyDown(KEY_A) || IsKeyDown(KEY_LEFT)) {
-			player->entity.velocity.x = Lerp(player->entity.velocity.x, -speed, Clamp(frictionFactor * deltaTime, 0.0f, 1.0f));
-		}
-		else if (IsKeyDown(KEY_D) || IsKeyDown(KEY_RIGHT)) {
-			player->entity.velocity.x = Lerp(player->entity.velocity.x, speed, Clamp(frictionFactor * deltaTime, 0.0f, 1.0f));
-		}
-		else {
-			if (entity->grounded || !player->last_on_slippery) player->entity.velocity.x = Lerp(player->entity.velocity.x, 0.0f, Clamp(frictionFactor * deltaTime, 0.0f, 1.0f));
+		float stickMove = GetGamepadAxisMovement(0, GAMEPAD_AXIS_LEFT_X);
+		if (fabsf(stickMove) < GAMEPAD_STICK_DEADZONE) stickMove = 0.0f;
+
+		if (stickMove == 0.0f) {
+			if (IsKeyDown(KEY_A) || IsKeyDown(KEY_LEFT)) {
+				player->entity.velocity.x = Lerp(player->entity.velocity.x, -speed, Clamp(frictionFactor * deltaTime, 0.0f, 1.0f));
+			}
+			else if (IsKeyDown(KEY_D) || IsKeyDown(KEY_RIGHT)) {
+				player->entity.velocity.x = Lerp(player->entity.velocity.x, speed, Clamp(frictionFactor * deltaTime, 0.0f, 1.0f));
+			}
+			else {
+				if (entity->grounded || !player->last_on_slippery) player->entity.velocity.x = Lerp(player->entity.velocity.x, 0.0f, Clamp(frictionFactor * deltaTime, 0.0f, 1.0f));
+			}
+		} else {
+			player->entity.velocity.x = Lerp(player->entity.velocity.x, speed * stickMove, Clamp(frictionFactor * deltaTime, 0.0f, 1.0f));
 		}
 
 		// Jumping or swimming
-		if (IsKeyDown(KEY_W) || IsKeyDown(KEY_SPACE) || IsKeyDown(KEY_UP)) {
+		if (IsKeyDown(KEY_W) || IsKeyDown(KEY_SPACE) || IsKeyDown(KEY_UP) || IsGamepadButtonDown(0, GAMEPAD_BUTTON_RIGHT_FACE_DOWN)) {
 			if (entity->on_liquid || entity->on_climbable) {
 				float up_speed = -JUMP_FORCE;
 				if (entity->on_liquid) up_speed *= 0.5f;

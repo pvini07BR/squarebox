@@ -121,11 +121,11 @@ void game_update(float deltaTime) {
     blockPlacerRect.y = mouseBlockPos.y * TILE_SIZE;
 
     if (!game_is_ui_open()) {
-        if (IsKeyPressed(KEY_TAB)) sel_layer = sel_layer == CHUNK_LAYER_FOREGROUND ? CHUNK_LAYER_BACKGROUND : CHUNK_LAYER_FOREGROUND;
+        if (IsKeyPressed(KEY_TAB) || IsGamepadButtonPressed(0, GAMEPAD_BUTTON_MIDDLE_LEFT)) sel_layer = sel_layer == CHUNK_LAYER_FOREGROUND ? CHUNK_LAYER_BACKGROUND : CHUNK_LAYER_FOREGROUND;
 
-        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) || IsGamepadButtonPressed(0, GAMEPAD_BUTTON_RIGHT_TRIGGER_2))
             chunk_manager_set_block_safe(mouseBlockPos, (BlockInstance) { 0, 0, NULL }, sel_layer);
-        else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {
+        else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT) || IsGamepadButtonPressed(0, GAMEPAD_BUTTON_LEFT_TRIGGER_2)) {
             if (!chunk_manager_interact(mouseBlockPos, sel_layer, inventory_get_item(0, hotbarIdx))) {
                 ItemRegistry* itr = ir_get_item_registry(inventory_get_item(0, hotbarIdx).item_id);
                 if (itr->blockId > 0 && !(itr->placingFlags & (sel_layer == CHUNK_LAYER_BACKGROUND ? ITEM_PLACE_FLAG_NOT_WALL : ITEM_PLACE_FLAG_NOT_BLOCK))) {
@@ -159,7 +159,7 @@ void game_update(float deltaTime) {
             }
         }
 
-        if (IsKeyPressed(KEY_F)) player->entity.gravity_affected = !player->entity.gravity_affected;
+        if (IsKeyPressed(KEY_F) || IsGamepadButtonPressed(0, GAMEPAD_BUTTON_RIGHT_FACE_UP)) player->entity.gravity_affected = !player->entity.gravity_affected;
 
         if (IsKeyPressed(KEY_F1)) draw_ui = !draw_ui;
 		if (IsKeyPressed(KEY_F2)) TakeScreenshot("screenshot.png");
@@ -168,7 +168,7 @@ void game_update(float deltaTime) {
         // When pressing Q, the holding item will be dropped and launched at the direction of the mouse.
         // the force of throwing is determined by how far the mouse is from the player (in screen coordinates)
         ItemSlot item = inventory_get_item(0, hotbarIdx);
-        if (IsKeyPressed(KEY_Q) && item.item_id > 0) {
+        if ((IsKeyPressed(KEY_Q) || IsGamepadButtonPressed(0, GAMEPAD_BUTTON_RIGHT_FACE_RIGHT)) && item.item_id > 0) {
             Vector2 playerToScreen = GetWorldToScreen2D(entity_get_center(&player->entity), camera);
             Vector2 mouse_dir = Vector2Subtract(GetMousePosition(), playerToScreen);
             mouse_dir = Vector2Scale(mouse_dir, 2.0f);
@@ -213,19 +213,26 @@ void game_update(float deltaTime) {
             }
         }
 
-        int scroll = GetMouseWheelMoveV().y;
-        if (IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_LEFT_SHIFT)) {
-            if (scroll > 0) camera.zoom *= 1.1f;
-            if (scroll < 0) camera.zoom /= 1.1f;
+        if (IsGamepadButtonPressed(0, GAMEPAD_BUTTON_LEFT_FACE_DOWN) || IsGamepadButtonPressed(0, GAMEPAD_BUTTON_LEFT_FACE_UP)) {
+            if (IsGamepadButtonPressed(0, GAMEPAD_BUTTON_LEFT_FACE_UP)) camera.zoom *= 1.1f;
+            if (IsGamepadButtonPressed(0, GAMEPAD_BUTTON_LEFT_FACE_DOWN)) camera.zoom /= 1.1f;
 
             camera.zoom = Clamp(camera.zoom, 0.1f, 10.0f);
-        }
-        else {
-            if (scroll > 0) hotbarIdx--;
-            if (scroll < 0) hotbarIdx++;
-
-            if (hotbarIdx < 0) hotbarIdx = 9;
-            if (hotbarIdx > 9) hotbarIdx = 0;
+        } else {
+            int scroll = GetMouseWheelMoveV().y;
+            if (IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_LEFT_SHIFT)) {
+                if (scroll > 0) camera.zoom *= 1.1f;
+                if (scroll < 0) camera.zoom /= 1.1f;
+    
+                camera.zoom = Clamp(camera.zoom, 0.1f, 10.0f);
+            }
+            else {
+                if (scroll > 0 || IsGamepadButtonPressed(0, GAMEPAD_BUTTON_LEFT_TRIGGER_1)) hotbarIdx--;
+                if (scroll < 0 || IsGamepadButtonPressed(0, GAMEPAD_BUTTON_RIGHT_TRIGGER_1)) hotbarIdx++;
+    
+                if (hotbarIdx < 0) hotbarIdx = 9;
+                if (hotbarIdx > 9) hotbarIdx = 0;
+            }
         }
 
         if (IsKeyPressed(KEY_ONE)) hotbarIdx = 0;
@@ -249,12 +256,12 @@ void game_update(float deltaTime) {
         camera.target = Vector2Lerp(camera.target, newTarget, Clamp(25.0f * GetFrameTime(), 0.0f, 1.0f));
     }
 
-    if (IsKeyPressed(KEY_E) && !game_is_ui_open())
+    if ((IsKeyPressed(KEY_E) || IsGamepadButtonPressed(0, GAMEPAD_BUTTON_RIGHT_FACE_LEFT)) && !game_is_ui_open())
         item_container_open(&creativeMenu);
-    else if ((IsKeyPressed(KEY_E) || (IsKeyPressed(KEY_ESCAPE) && item_container_is_open())))
+    else if ((IsKeyPressed(KEY_E) || IsKeyPressed(KEY_ESCAPE) || IsGamepadButtonPressed(0, GAMEPAD_BUTTON_RIGHT_FACE_LEFT) || IsGamepadButtonPressed(0, GAMEPAD_BUTTON_RIGHT_FACE_RIGHT)) && item_container_is_open())
         item_container_close();
 
-    if (IsKeyPressed(KEY_ESCAPE) && sign_editor_is_open()) {
+    if ((IsKeyPressed(KEY_ESCAPE) || IsGamepadButtonPressed(0, GAMEPAD_BUTTON_RIGHT_FACE_RIGHT)) && sign_editor_is_open()) {
         sign_editor_close();
     }
 
@@ -266,9 +273,9 @@ void game_update(float deltaTime) {
 
         if (lastItemId != heldItem.item_id) reload = true;
 
-        if (IsKeyPressed(KEY_Z) || IsKeyPressed(KEY_X)) {
-            if (IsKeyPressed(KEY_Z)) blockStateIdx--;
-            if (IsKeyPressed(KEY_X)) blockStateIdx++;
+        if ((IsKeyPressed(KEY_Z) || IsGamepadButtonPressed(0, GAMEPAD_BUTTON_LEFT_FACE_LEFT)) || (IsKeyPressed(KEY_X) || IsGamepadButtonPressed(0, GAMEPAD_BUTTON_LEFT_FACE_RIGHT))) {
+            if (IsKeyPressed(KEY_Z) || IsGamepadButtonPressed(0, GAMEPAD_BUTTON_LEFT_FACE_LEFT)) blockStateIdx--;
+            if (IsKeyPressed(KEY_X) || IsGamepadButtonPressed(0, GAMEPAD_BUTTON_LEFT_FACE_RIGHT)) blockStateIdx++;
 
             if (blockStateIdx < 0) blockStateIdx = heldBlockReg->selectable_state_count - 1;
             if (blockStateIdx >= heldBlockReg->selectable_state_count) blockStateIdx = 0;

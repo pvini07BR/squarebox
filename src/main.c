@@ -1,3 +1,4 @@
+#include "GLFW/glfw3.h"
 #include "game_settings.h"
 #include "item_container.h"
 #include "world_manager.h"
@@ -11,6 +12,7 @@
 #include <raylib.h>
 #include <raymath.h>
 #include <rlgl.h>
+#include <string.h>
 
 #define TICK_DELTA (1.0f / 20.0f)
 
@@ -62,6 +64,12 @@ int main() {
     SetTraceLogLevel(LOG_WARNING);
     rlDisableBackfaceCulling();
 
+    // Add support for my own controller that is not available in the SDL controller database for whatever reason.
+    // I hope other controllers work as well.
+    if (strcmp(GetGamepadName(0), "8BitDo Ultimate 2C Wireless Controller") == 0) {
+        glfwUpdateGamepadMappings("03000000c82d00000a31000014010000,8BitDo Ultimate 2C Wireless Controller,a:b0,b:b1,x:b2,y:b3,back:b6,guide:b8,start:b7,leftstick:b9,rightstick:b10,leftshoulder:b4,rightshoulder:b5,dpup:h0.1,dpdown:h0.4,dpleft:h0.8,dpright:h0.2,leftx:a0,lefty:a1,rightx:a3,righty:a4,lefttrigger:a2,righttrigger:a5,platform:Linux,");
+    }
+
     mu_Context* ctx = malloc(sizeof(mu_Context));
     mu_init(ctx);
 
@@ -100,10 +108,17 @@ int main() {
     while (!WindowShouldClose() && !closeGame) {
         if (IsKeyPressed(KEY_F11)) ToggleBorderlessWindowed();
 
-        if (!game_is_ui_open() && IsKeyPressed(KEY_ESCAPE)) {
+        if (!game_is_ui_open() && (IsKeyPressed(KEY_ESCAPE) || IsGamepadButtonPressed(0, GAMEPAD_BUTTON_MIDDLE_RIGHT))) {
             if (!game_is_demo_mode() && menuState == MENU_STATE_PAUSED) {
                 game_set_draw_ui(paused);
                 paused = !paused;
+            }
+        }
+
+        if (!game_is_ui_open() && paused && IsGamepadButtonPressed(0, GAMEPAD_BUTTON_RIGHT_FACE_RIGHT)) {
+            if (!game_is_demo_mode() && menuState == MENU_STATE_PAUSED) {
+                game_set_draw_ui(paused);
+                paused = false;
             }
         }
 

@@ -47,14 +47,14 @@ But here is a list of all the features this game currently has, and what I plan 
 
 - WASD or Arrow keys to move.
 - Press W, Up Arrow key or Space to jump or swim.
-- Press F to toggle flying.
+- Press F to toggle flying mode.
 - Press Shift to move slower, and press Ctrl to move faster.
 - Press E to open the creative menu.
 - Press Q to drop an holding item to the ground.
 - Press Z or X to cycle between possible states for a block (like stairs and slabs).
 - Press Tab to change between foreground and background placing modes.
 
-- Mouse left click to destroy a block, and right click to place a block.
+- Mouse left click to destroy a block, and right click to place a block at the cursor location.
 - Scroll wheel to scroll through items in the hotbar.
 - Ctrl + Scroll wheel to zoom in or out.
 
@@ -62,6 +62,26 @@ But here is a list of all the features this game currently has, and what I plan 
 - Press F2 to take a screenshot (it will be saved as screenshot.png on the game's directory)
 - Press F3 to show/hide debug info.
 - Press F11 to toggle fullscreen mode (borderless window).
+
+## For controller/gamepad:
+
+**Warning: The current controller support implementation is very simple and might not work for your controller and/or operating system. There is also no virtual cursor to control with the gamepad yet, nor you can navigate through the UI with the gamepad.**
+
+- Left stick to move.
+- Right stick to move cursor (TODO)
+- Press A on Xbox, X on PlayStation or B on Nintendo to jump.
+- Press Y on Xbox, Triangle on PlayStation or X on Nintendo to toggle flying mode.
+- Press the left stick to move faster, and press the right stick to move slower.
+- Press X on Xbox, Square on PlayStation or Y on Nintendo to open the creative menu.
+- Press B on Xbox, Circle on PlayStation or A on Nintendo to drop the holding item to the ground.
+- Press Left or Right on the D-Pad to cycle between possible states for a block (like stairs and slabs).
+- Press Back/Change View on Xbox, Select/Touch Pad on PlayStation or Minus on Nintendo to change between foreground and background placing modes.
+
+- Press left trigger to place a block, and right trigger to destroy a block at the cursor location.
+- Press LB/RB on Xbox, L1/L2 on PlayStation or L/R on Nintendo to scroll through items on the hotbar.
+- Press Up or Down on the D-Pad to zoom in or out.
+
+- Function keys behaviors are not implemented for the controller.
 
 # Known bugs
 

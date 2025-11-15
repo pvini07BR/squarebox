@@ -9,6 +9,7 @@ typedef struct Entity Entity;
 typedef struct Entity {
 	Rectangle rect;
 	Vector2 velocity;
+	Vector2 bounceVelocity;
 	bool to_remove;
 
 	void* parent;

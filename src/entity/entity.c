@@ -5,6 +5,7 @@
 #include "chunk_manager.h"
 #include "types.h"
 
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
@@ -121,38 +122,32 @@ static bool entity_vs_rect(const Entity* entity, const Rectangle* staticRect, co
 }
 
 static bool resolve_entity_vs_rect(Entity* entity, Rectangle* staticRect, const float deltaTime, bool bounce) {
-	Vector2 contact_point, contact_normal;
-	float contact_time = 0.0f;
-	if (entity_vs_rect(entity, staticRect, deltaTime, &contact_point, &contact_normal, &contact_time)) {
-		if (contact_normal.y < 0.0f) {
-			entity->grounded = true;
-			if (bounce) entity->on_bouncy = true;
-		}
+    Vector2 contact_point, contact_normal;
+    float contact_time = 0.0f;
+    if (entity_vs_rect(entity, staticRect, deltaTime, &contact_point, &contact_normal, &contact_time)) {
+        if (contact_normal.y < 0.0f) {
+            entity->grounded = true;
+        }
 
-		if (entity->grounded && contact_normal.x != 0.0f) {
-			float y_diff = (entity->rect.y + entity->rect.height) - staticRect->y;
-			if (y_diff > 0.0f && y_diff < (entity->rect.height * 0.6f)) {
-				entity->rect.y = (staticRect->y - entity->rect.height) - 0.01f;
-			}
-		}
+		if (bounce) entity->on_bouncy = true;
 
-		Vector2 abs = (Vector2){ fabsf(entity->velocity.x), fabsf(entity->velocity.y) };
-		Vector2 norm = Vector2Multiply(contact_normal, abs);
-		Vector2 inv = Vector2Scale(norm, 1.0f - contact_time);
+        if (entity->grounded && contact_normal.x != 0.0f) {
+            float y_diff = (entity->rect.y + entity->rect.height) - staticRect->y;
+            if (y_diff > 0.0f && y_diff < (entity->rect.height * 0.6f)) {
+                entity->rect.y = (staticRect->y - entity->rect.height) - 0.01f;
+            }
+        }
 
-		float velBounceThreshold = (TILE_SIZE * 3.0f);
-		float velLength = Vector2Length(entity->velocity);
+        Vector2 abs = (Vector2){ fabsf(entity->velocity.x), fabsf(entity->velocity.y) };
+        Vector2 norm = Vector2Multiply(contact_normal, abs);
+        Vector2 inv = Vector2Scale(norm, 1.0f - contact_time);
 
-		if (bounce && ((entity->gravity_affected && entity->velocity.y > velBounceThreshold && contact_normal.y < 0.0f) || (!entity->gravity_affected && velLength > velBounceThreshold))) {
-			entity->velocity = Vector2Scale(Vector2Reflect(entity->velocity, contact_normal), 0.8f);
-		}
-		else {
-			entity->velocity = Vector2Add(entity->velocity, inv);
-		}
+		entity->bounceVelocity = Vector2Scale(Vector2Reflect(entity->velocity, contact_normal), 0.8f);
+		entity->velocity = Vector2Add(entity->velocity, inv);
 
-		return true;
-	}
-	return false;
+        return true;
+    }
+    return false;
 }
 
 static void resolve_solid_blocks(Entity* entity, float deltaTime) {
@@ -324,6 +319,19 @@ void entity_update(Entity* entity, float deltaTime) {
 	if (chunk_manager_get_chunk(chunkPos) != NULL) {
 		entity->rect.x = nextPos.x;
 		entity->rect.y = nextPos.y;
+
+		float vecLength = Vector2Length(entity->velocity);
+		const float VEL_BOUNCE_THRESHOLD = (TILE_SIZE / 8.0f);
+
+		if (entity->on_bouncy && vecLength > VEL_BOUNCE_THRESHOLD) {
+			if (entity->gravity_affected) {
+				if (entity->grounded) {
+					entity->velocity.y = -fabsf(entity->bounceVelocity.y);
+				}
+			} else {
+				entity->velocity = entity->bounceVelocity;
+			}
+		}
 	}
 }
 

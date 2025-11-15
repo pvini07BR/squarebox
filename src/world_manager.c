@@ -485,7 +485,7 @@ WorldListReturnType world_manager_draw_list(mu_Context* ctx) {
     WorldListReturnType returnType = WORLD_RETURN_NONE;
 
     if (!creatingWorld) {
-        if (IsKeyPressed(KEY_ESCAPE)) return WORLD_RETURN_CLOSE;
+        if (IsKeyPressed(KEY_ESCAPE) || IsGamepadButtonPressed(0, GAMEPAD_BUTTON_RIGHT_FACE_RIGHT)) return WORLD_RETURN_CLOSE;
 
         if (mu_begin_window_ex(ctx, "Select a World", mu_rect(0, 0, 500, 500), MU_OPT_NOSCROLL | MU_OPT_NOCLOSE)) {
             mu_Container* win = mu_get_current_container(ctx);
@@ -530,7 +530,7 @@ WorldListReturnType world_manager_draw_list(mu_Context* ctx) {
             mu_end_window(ctx);
         }
     } else {
-        if (IsKeyPressed(KEY_ESCAPE)) creatingWorld = false;
+        if (IsKeyPressed(KEY_ESCAPE) || IsGamepadButtonPressed(0, GAMEPAD_BUTTON_RIGHT_FACE_RIGHT)) creatingWorld = false;
 
         if (mu_begin_window_ex(ctx, "Create New World", mu_rect(0, 0, 400, 0), MU_OPT_NOSCROLL | MU_OPT_NOCLOSE)) {
             mu_Container* win = mu_get_current_container(ctx);

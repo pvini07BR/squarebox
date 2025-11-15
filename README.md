@@ -65,11 +65,16 @@ But here is a list of all the features this game currently has, and what I plan 
 
 ## For controller/gamepad:
 
-**Warning: The current controller support implementation is very simple and might not work for your controller and/or operating system. There is also no virtual cursor to control with the gamepad yet, nor you can navigate through the UI with the gamepad.**
+**Warning: The current controller support implementation is very simple and has not been tested intensively. Your controller and/or operating system might not be supported.**
 
-- Left stick to move.
-- Right stick to move cursor (TODO)
-- Press A on Xbox, X on PlayStation or B on Nintendo to jump.
+UI:
+- Tilt the right stick to move the virtual cursor.
+- Press A on Xbox, Cross on PlayStation or B on Nintendo to interact with an UI element.
+- Press B on Xbox, Circle on PlayStation or A on Nintendo to go back to previous menu.
+
+Gameplay:
+- Tilt the left stick to move.
+- Press A on Xbox, Cross on PlayStation or B on Nintendo to jump.
 - Press Y on Xbox, Triangle on PlayStation or X on Nintendo to toggle flying mode.
 - Press the left stick to move faster, and press the right stick to move slower.
 - Press X on Xbox, Square on PlayStation or Y on Nintendo to open the creative menu.
@@ -81,7 +86,12 @@ But here is a list of all the features this game currently has, and what I plan 
 - Press LB/RB on Xbox, L1/L2 on PlayStation or L/R on Nintendo to scroll through items on the hotbar.
 - Press Up or Down on the D-Pad to zoom in or out.
 
+Inventory:
+- Press A on Xbox, Cross on PlayStation or B on Nintendo to pick up an item.
+
 - Function keys behaviors are not implemented for the controller.
+
+**Warning²: Currently, there is no way of changing keybinds or remap the controller buttons. They are hardcoded.**
 
 # Known bugs
 

@@ -2,6 +2,7 @@
 #include "registries/item_registry.h"
 #include "registries/texture_atlas.h"
 #include "types.h"
+#include "virtual_cursor.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -302,13 +303,13 @@ void item_container_draw_specific(ItemContainer* ic, int x, int y) {
 		draw_item(ic->items[i], slotRect.x, slotRect.y, ((ITEM_SLOT_SIZE - TILE_SIZE) / 2.0f), 1.0f, true);
 
 		// Why continue if not being hovered?
-		if (!CheckCollisionPointRec(GetMousePosition(), slotRect)) continue;
+		if (!CheckCollisionPointRec(get_cursor(), slotRect)) continue;
 
 		DrawRectangleRec(slotRect, SLOT_HOVER_COLOR);
 
 		ItemSlot* curItem = &ic->items[i];
 
-		if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+		if (cursor_pressed()) {
 			if (!IsKeyDown(KEY_LEFT_SHIFT)) {
 				handleNormalClick(curItem, ic);
 			}
@@ -400,7 +401,7 @@ void item_container_draw_specific(ItemContainer* ic, int x, int y) {
 				.height = ITEM_SLOT_SIZE
 			};
 
-			bool isHovered = CheckCollisionPointRec(GetMousePosition(), slotRect);
+			bool isHovered = CheckCollisionPointRec(get_cursor(), slotRect);
 
 			ItemRegistry* ir = ir_get_item_registry(ic->items[i].item_id);
 
@@ -409,8 +410,8 @@ void item_container_draw_specific(ItemContainer* ic, int x, int y) {
 				Vector2 textSize = MeasureTextEx(GetFontDefault(), ir->name, 24.0f, 2.0f);
 
 				DrawRectangle(
-					GetMouseX(),
-					GetMouseY() - textSize.y - padding,
+					get_cursor().x,
+					get_cursor().y - textSize.y - padding,
 					textSize.x + (padding * 2),
 					textSize.y + (padding * 2),
 					(Color) { 0, 0, 0, 128 }
@@ -418,8 +419,8 @@ void item_container_draw_specific(ItemContainer* ic, int x, int y) {
 
 				DrawText(
 					ir->name,
-					GetMouseX() + padding,
-					GetMouseY() - textSize.y,
+					get_cursor().x + padding,
+					get_cursor().y - textSize.y,
 					24.0f,
 					WHITE
 				);
@@ -457,7 +458,7 @@ void item_container_draw() {
 	item_container_draw_specific(openedContainer, openContX, openContY);
 	item_container_draw_specific(&inventory, invX, invY);
 
-	draw_item(holdingItem, GetMouseX(), GetMouseY(), ((ITEM_SLOT_SIZE - TILE_SIZE) / 2.0f), 1.0f, true);
+	draw_item(holdingItem, get_cursor().x, get_cursor().y, ((ITEM_SLOT_SIZE - TILE_SIZE) / 2.0f), 1.0f, true);
 }
 
 void item_container_free(ItemContainer* ic)

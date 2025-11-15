@@ -1,5 +1,6 @@
 #include "game.h"
 
+#include "virtual_cursor.h"
 #include "world_manager.h"
 #include "game_settings.h"
 #include "entity/entity.h"
@@ -112,7 +113,7 @@ void game_update(float deltaTime) {
         return;
     }
 
-    mouseWorldPos = GetScreenToWorld2D(GetMousePosition(), camera);
+    mouseWorldPos = GetScreenToWorld2D(get_cursor(), camera);
     mouseBlockPos = (Vector2i){
         (int)floorf((float)mouseWorldPos.x / (float)TILE_SIZE),
         (int)floorf((float)mouseWorldPos.y / (float)TILE_SIZE)
@@ -170,7 +171,7 @@ void game_update(float deltaTime) {
         ItemSlot item = inventory_get_item(0, hotbarIdx);
         if ((IsKeyPressed(KEY_Q) || IsGamepadButtonPressed(0, GAMEPAD_BUTTON_RIGHT_FACE_RIGHT)) && item.item_id > 0) {
             Vector2 playerToScreen = GetWorldToScreen2D(entity_get_center(&player->entity), camera);
-            Vector2 mouse_dir = Vector2Subtract(GetMousePosition(), playerToScreen);
+            Vector2 mouse_dir = Vector2Subtract(get_cursor(), playerToScreen);
             mouse_dir = Vector2Scale(mouse_dir, 2.0f);
 
             Vector2 item_pos = Vector2SubtractValue(entity_get_center(&player->entity), TILE_SIZE * 0.25f);
@@ -392,7 +393,7 @@ void game_draw() {
 
     if (!game_is_ui_open() && draw_ui) {
         if (inventory_get_item(0, hotbarIdx).item_id > 0) {
-            draw_item(inventory_get_item(0, hotbarIdx), GetMouseX(), GetMouseY(), 0, 0.8f, false);
+            draw_item(inventory_get_item(0, hotbarIdx), get_cursor().x, get_cursor().y, 0, 0.8f, false);
         }
 
         DrawTexturePro(
@@ -404,8 +405,8 @@ void game_draw() {
                 .height = 8
             },
             (Rectangle) {
-                .x = GetMouseX() + (TILE_SIZE * 0.8f) - 8,
-                .y = GetMouseY() + (TILE_SIZE * 0.8f) - 8,
+                .x = get_cursor().x + (TILE_SIZE * 0.8f) - 8,
+                .y = get_cursor().y + (TILE_SIZE * 0.8f) - 8,
                 .width = 16,
                 .height = 16
             },

@@ -6,6 +6,8 @@
 #define CHUNK_WIDTH 16
 #define CHUNK_AREA CHUNK_WIDTH*CHUNK_WIDTH
 
+#define GAMEPAD_STICK_DEADZONE 0.1f
+
 #include <stdint.h>
 #include <stddef.h>
 

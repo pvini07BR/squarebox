@@ -1,5 +1,4 @@
 #include "entity/player.h"
-#include "GLFW/glfw3.h"
 #include "chunk_manager.h"
 #include "types.h"
 
@@ -13,8 +12,6 @@
 #define SPEED 10.0f * TILE_SIZE
 #define JUMP_FORCE 16.0f * TILE_SIZE
 #define ROTATION_AMOUNT 549.57f
-
-#define GAMEPAD_STICK_DEADZONE 0.1f
 
 #define TO_BLOCK_COORDS(value) ((int)floorf((float)value / (float)TILE_SIZE))
 
@@ -103,11 +100,11 @@ void player_update(Entity* entity, float deltaTime) {
 				((IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_D)) - (IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_A))),
 				((IsKeyDown(KEY_DOWN) || IsKeyDown(KEY_S)) - (IsKeyDown(KEY_UP) || IsKeyDown(KEY_W)))
 			};
+
+			if (dir.x != 0.0f || dir.y != 0.0f)
+				dir = Vector2Normalize(dir);
 		}
 		
-		if (dir.x != 0.0f || dir.y != 0.0f)
-			dir = Vector2Normalize(dir);
-
 		entity->velocity = Vector2Lerp(entity->velocity, Vector2Scale(dir, speed), Clamp(frictionFactor * deltaTime, 0.0f, 1.0f));
 	}
 	// Otherwise behave like a platformer player controller

@@ -108,7 +108,7 @@ bool load_game_settings() {
 bool game_settings_draw(mu_Context* ctx) {
 	bool backPressed = false;
 
-	if (IsKeyPressed(KEY_ESCAPE)) return true;
+	if (IsKeyPressed(KEY_ESCAPE) || IsGamepadButtonPressed(0, GAMEPAD_BUTTON_RIGHT_FACE_RIGHT)) return true;
 
 	if (mu_begin_window_ex(ctx, "Game Settings", mu_rect(0, 0, 500, 0), MU_OPT_NOSCROLL | MU_OPT_NOCLOSE)) {
 		mu_Container* win = mu_get_current_container(ctx);

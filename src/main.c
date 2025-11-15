@@ -1,6 +1,7 @@
 #include "GLFW/glfw3.h"
 #include "game_settings.h"
 #include "item_container.h"
+#include "virtual_cursor.h"
 #include "world_manager.h"
 #include "chunk_manager.h"
 #include "registries/texture_atlas.h"
@@ -64,6 +65,8 @@ int main() {
     SetTraceLogLevel(LOG_WARNING);
     rlDisableBackfaceCulling();
 
+    load_cursor_tex();
+
     // Add support for my own controller that is not available in the SDL controller database for whatever reason.
     // I hope other controllers work as well.
     if (strcmp(GetGamepadName(0), "8BitDo Ultimate 2C Wireless Controller") == 0) {
@@ -106,6 +109,8 @@ int main() {
     bool closeGame = false;
 
     while (!WindowShouldClose() && !closeGame) {
+        update_cursor();
+
         if (IsKeyPressed(KEY_F11)) ToggleBorderlessWindowed();
 
         if (!game_is_ui_open() && (IsKeyPressed(KEY_ESCAPE) || IsGamepadButtonPressed(0, GAMEPAD_BUTTON_MIDDLE_RIGHT))) {
@@ -266,6 +271,8 @@ int main() {
             sprintf(fpsBuf, "FPS: %d", GetFPS());
             DrawText(fpsBuf, 0, 0, 24.0f, WHITE);
         }
+
+        draw_cursor();
 
         EndDrawing();
     }

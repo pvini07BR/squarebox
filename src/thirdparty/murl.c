@@ -3,6 +3,7 @@
 #include <stdlib.h>
 
 #include "thirdparty/microui.h"
+#include "virtual_cursor.h"
 #include "thirdparty/murl.h"
 
 #define array_count(array) (sizeof(array)/sizeof(array[0]))
@@ -45,13 +46,21 @@ static struct murl__MouseButtonMap murl__mouse_buttons[] = {
 };
 
 void murl_handle_mouse_buttons_input_ex(mu_Context *ctx, int x, int y) {
-  size_t buttons_count = array_count(murl__mouse_buttons);
-  for (size_t index = 0; index < buttons_count; index++) {
-    struct murl__MouseButtonMap button = murl__mouse_buttons[index];
-    if (IsMouseButtonPressed(button.rl)) {
-      mu_input_mousedown(ctx, x, y, button.mu);
-    } else if (IsMouseButtonReleased(button.rl)) {
-      mu_input_mouseup(ctx, x, y, button.mu);
+  if (get_cursor_mode() == CURSOR_MODE_NORMAL) {
+    size_t buttons_count = array_count(murl__mouse_buttons);
+    for (size_t index = 0; index < buttons_count; index++) {
+      struct murl__MouseButtonMap button = murl__mouse_buttons[index];
+      if (IsMouseButtonPressed(button.rl)) {
+        mu_input_mousedown(ctx, x, y, button.mu);
+      } else if (IsMouseButtonReleased(button.rl)) {
+        mu_input_mouseup(ctx, x, y, button.mu);
+      }
+    }
+  } else {
+    if (cursor_pressed()) {
+      mu_input_mousedown(ctx, x, y, MU_MOUSE_LEFT);
+    } else if (cursor_released()) {
+      mu_input_mouseup(ctx, x, y, MU_MOUSE_LEFT);
     }
   }
 }
@@ -94,8 +103,8 @@ void murl_handle_text_input(mu_Context *ctx) {
 }
 
 void murl_handle_input(mu_Context *ctx) {
-  const int mouse_position_x = GetMouseX();
-  const int mouse_position_y = GetMouseY();
+  const int mouse_position_x = get_cursor().x;
+  const int mouse_position_y = get_cursor().y;
   mu_input_mousemove(ctx, mouse_position_x, mouse_position_y);
   murl_handle_mouse_scroll(ctx);
   murl_handle_mouse_buttons_input_ex(ctx, mouse_position_x, mouse_position_y);

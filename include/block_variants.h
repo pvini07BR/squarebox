@@ -1,6 +1,9 @@
 #ifndef BLOCK_VARIANTS_H
 #define BLOCK_VARIANTS_H
 
+#include "block_state_bitfields.h"
+#include "raylib.h"
+#include "registries/block_registry.h"
 #include "types.h"
 #include <raymath.h>
 
@@ -88,7 +91,8 @@ static inline BlockVariant variant_trapdoor(uint8_t state) {
 		.model_idx = BLOCK_MODEL_QUAD,
 		.collider_idx = BLOCK_COLLIDER_TRAPDOOR,
 		.rotation = trapState->rotation + trapState->open,
-		.uv_lock = false
+		.uv_lock = false,
+		.tint = WHITE,
 	};
 }
 

@@ -151,24 +151,22 @@ void set_power_wire_dir(NeighborDirection dir, PowerWireState* state, bool value
 bool power_wire_solver(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], ChunkLayerEnum layer) {
     PowerWireState* s = (PowerWireState*)&result.block->state;
 
-    BlockRegistry* reg[4];
     for (int i = 0; i < 4; i++) {
         uint8_t blockId = neighbors[i].block->id;
-        //reg[i] = (BlockRegistry*)neighbors[i].reg;
 
         switch (blockId) {
             case BLOCK_POWER_WIRE:
                 set_power_wire_dir(i, s, true);
                 break;
             case BLOCK_BATTERY: {
-                BatteryState batState = (BatteryState)neighbors[i].block->state;
-                if (batState == BATTERY_STATE_UP || batState == BATTERY_STATE_DOWN) {
+                LogLikeBlockState batState = (LogLikeBlockState)neighbors[i].block->state;
+                if (batState == LOGLIKE_BLOCK_STATE_VERTICAL) {
                     if (i == NEIGHBOR_BOTTOM) {
                         set_power_wire_dir(NEIGHBOR_BOTTOM, s, true);
                     } else if (i == NEIGHBOR_TOP) {
                         set_power_wire_dir(NEIGHBOR_TOP, s, true);
                     }
-                } else if (batState == BATTERY_STATE_LEFT || batState == BATTERY_STATE_RIGHT) {
+                } else if (batState == LOGLIKE_BLOCK_STATE_HORIZONTAL) {
                     if (i == NEIGHBOR_LEFT) {
                         set_power_wire_dir(NEIGHBOR_LEFT, s, true);
                     } else if (i == NEIGHBOR_RIGHT) {
@@ -203,8 +201,8 @@ bool power_wire_solver(BlockExtraResult result, BlockExtraResult other, BlockExt
         if (nb.block->id == BLOCK_BATTERY) {
             // Check if the battery is from the other layer
             if (nb.block == other.block) {
-                BatteryState batState = (BatteryState)nb.block->state;
-                if (batState == BATTERY_STATE_FORWARD) {
+                LogLikeBlockState batState = (LogLikeBlockState)nb.block->state;
+                if (batState == LOGLIKE_BLOCK_STATE_FORWARD) {
                     new_power = 15;
                     break;
                 }

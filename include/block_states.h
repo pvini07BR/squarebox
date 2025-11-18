@@ -29,12 +29,10 @@ typedef struct {
 } PowerWireState;
 
 typedef enum {
-	BATTERY_STATE_UP,
-	BATTERY_STATE_RIGHT,
-	BATTERY_STATE_DOWN,
-	BATTERY_STATE_LEFT,
-	BATTERY_STATE_FORWARD
-} BatteryState;
+	LOGLIKE_BLOCK_STATE_VERTICAL,
+	LOGLIKE_BLOCK_STATE_HORIZONTAL,
+	LOGLIKE_BLOCK_STATE_FORWARD
+} LogLikeBlockState;
 
 uint8_t get_flowing_liquid_state(uint8_t level, bool falling);
 uint8_t get_trapdoor_state(uint8_t rotation, bool open);

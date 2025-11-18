@@ -67,7 +67,11 @@ void block_registry_init() {
     blockRegistry[BLOCK_WOOD_LOG] = (BlockRegistry){
         .variant_generator = variant_wood_log,
         .selectable_state_count = 3,
-        .selectable_states = { 0, 1, 2 },
+        .selectable_states = {
+            LOGLIKE_BLOCK_STATE_VERTICAL,
+            LOGLIKE_BLOCK_STATE_HORIZONTAL,
+            LOGLIKE_BLOCK_STATE_FORWARD
+        },
         .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FULL_BLOCK,
         .lightLevel = BLOCK_LIGHT_NONE,
         .state_resolver = NULL
@@ -342,13 +346,11 @@ void block_registry_init() {
 
     blockRegistry[BLOCK_BATTERY] = (BlockRegistry) {
         .variant_generator = variant_battery,
-        .selectable_state_count = 5,
+        .selectable_state_count = 3,
         .selectable_states = {
-            BATTERY_STATE_UP,
-            BATTERY_STATE_RIGHT,
-            BATTERY_STATE_DOWN,
-            BATTERY_STATE_LEFT,
-            BATTERY_STATE_FORWARD
+            LOGLIKE_BLOCK_STATE_VERTICAL,
+            LOGLIKE_BLOCK_STATE_HORIZONTAL,
+            LOGLIKE_BLOCK_STATE_FORWARD
         },
         .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FULL_BLOCK,
         .state_resolver = NULL,

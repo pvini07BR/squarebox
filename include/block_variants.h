@@ -33,10 +33,10 @@ QUICK_BLOCK(wooden_planks, ATLAS_WOODEN_PLANKS)
 static inline BlockVariant variant_wood_log(uint8_t state) {
 	return (BlockVariant) {
 		.atlas_idx = ATLAS_WOOD_LOG,
-		.atlas_variant = state == 2,
+		.atlas_variant = state == LOGLIKE_BLOCK_STATE_FORWARD,
 		.model_idx = BLOCK_MODEL_QUAD,
 		.collider_idx = BLOCK_COLLIDER_QUAD,
-		.rotation = state == 1,
+		.rotation = state == LOGLIKE_BLOCK_STATE_HORIZONTAL,
 		.uv_lock = false,
 		.tint = WHITE
 	};
@@ -195,10 +195,10 @@ static inline BlockVariant variant_power_wire(uint8_t state) {
 static inline BlockVariant variant_battery(uint8_t state) {
 	return (BlockVariant) {
 		.atlas_idx = ATLAS_BATTERY,
-		.atlas_variant = state == BATTERY_STATE_FORWARD,
+		.atlas_variant = state == LOGLIKE_BLOCK_STATE_FORWARD,
 		.model_idx = BLOCK_MODEL_QUAD,
 		.collider_idx = BLOCK_COLLIDER_QUAD,
-		.rotation = state,
+		.rotation = state == LOGLIKE_BLOCK_STATE_HORIZONTAL,
 		.uv_lock = false,
 		.tint = WHITE
 	};

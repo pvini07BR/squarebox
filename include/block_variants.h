@@ -1,7 +1,7 @@
 #ifndef BLOCK_VARIANTS_H
 #define BLOCK_VARIANTS_H
 
-#include "block_state_bitfields.h"
+#include "block_states.h"
 #include "raylib.h"
 #include "registries/block_registry.h"
 #include "types.h"
@@ -189,6 +189,18 @@ static inline BlockVariant variant_power_wire(uint8_t state) {
 		.rotation = 0,
 		.uv_lock = false,
 		.tint = (Color) { Lerp(64, 255, fPower), 0, 0, 255}
+	};
+}
+
+static inline BlockVariant variant_battery(uint8_t state) {
+	return (BlockVariant) {
+		.atlas_idx = ATLAS_BATTERY,
+		.atlas_variant = state == BATTERY_STATE_FORWARD,
+		.model_idx = BLOCK_MODEL_QUAD,
+		.collider_idx = BLOCK_COLLIDER_QUAD,
+		.rotation = state,
+		.uv_lock = false,
+		.tint = WHITE
 	};
 }
 

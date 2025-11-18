@@ -7,8 +7,6 @@
 #include <raylib.h>
 
 #include "block_functions.h"
-#include "block_state_bitfields.h"
-#include "types.h"
 
 #define MAX_BLOCK_VARIANTS 8
 
@@ -57,6 +55,7 @@ typedef enum {
 	BLOCK_STAIRS_FRAME,
 	BLOCK_NUB_FRAME,
 	BLOCK_POWER_WIRE,
+	BLOCK_BATTERY,
 	BLOCK_COUNT
 } BlockEnum;
 
@@ -99,10 +98,6 @@ typedef enum {
 	// Tells if the block is slippery.
 	// it will make entities have less friction.
 	BLOCK_FLAG_SLIPPERY = (1 << 10),
-
-	// Tells if the block is a power source.
-	// Sets all neighboring wires to the maximum power value (15).
-	BLOCK_FLAG_POWER_SOURCE = (1 << 11)
 } BlockFlag;
 
 typedef enum {
@@ -159,7 +154,7 @@ typedef struct {
 	// it can be an array of numbers or an array of bitwise modified numbers.
 	// See block_state_bitfields to see how uint8_t numbers becomes states with multiple members.
 	uint8_t selectable_state_count;
-	uint8_t selectable_states[4];
+	uint8_t selectable_states[5];
 } BlockRegistry;
 
 void block_registry_init();

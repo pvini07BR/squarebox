@@ -1,7 +1,7 @@
 #include "entity/entity.h"
 #include "registries/block_registry.h"
 #include "registries/block_colliders.h"
-#include "block_state_bitfields.h"
+#include "block_states.h"
 #include "chunk_manager.h"
 #include "types.h"
 

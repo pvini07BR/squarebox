@@ -68,6 +68,7 @@ typedef enum {
 	ATLAS_TORCH,
 	ATLAS_WATER_BUCKET,
 	ATLAS_POWER_WIRE,
+	ATLAS_BATTERY,
 	ATLAS_COUNT
 } TextureAtlasEnum;
 

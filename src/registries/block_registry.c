@@ -1,5 +1,6 @@
 #include "registries/block_registry.h"
 #include "block_functions.h"
+#include "block_states.h"
 #include "block_variants.h"
 
 #include <stdlib.h>
@@ -52,7 +53,7 @@ void block_registry_init() {
 
     blockRegistry[BLOCK_COBBLESTONE] = (BlockRegistry){
         .variant_generator = variant_cobblestone,
-        .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FULL_BLOCK | BLOCK_FLAG_POWER_SOURCE,
+        .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FULL_BLOCK,
         .lightLevel = BLOCK_LIGHT_NONE
     };
 
@@ -336,6 +337,21 @@ void block_registry_init() {
     blockRegistry[BLOCK_POWER_WIRE] = (BlockRegistry){
         .variant_generator = variant_power_wire,
         .state_resolver = power_wire_solver,
+        .lightLevel = BLOCK_LIGHT_NONE
+    };
+
+    blockRegistry[BLOCK_BATTERY] = (BlockRegistry) {
+        .variant_generator = variant_battery,
+        .selectable_state_count = 5,
+        .selectable_states = {
+            BATTERY_STATE_UP,
+            BATTERY_STATE_RIGHT,
+            BATTERY_STATE_DOWN,
+            BATTERY_STATE_LEFT,
+            BATTERY_STATE_FORWARD
+        },
+        .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FULL_BLOCK,
+        .state_resolver = NULL,
         .lightLevel = BLOCK_LIGHT_NONE
     };
 }

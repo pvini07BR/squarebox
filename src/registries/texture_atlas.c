@@ -223,6 +223,11 @@ void texture_atlas_init() {
         .fileName = "power_wire.png",
         .variantCount = 16
     };
+    
+    entries[ATLAS_BATTERY] = (AtlasEntry) {
+        .fileName = "battery.png",
+        .variantCount = 2
+    };
 
     Image generated = GenImageColor(1, TILE_SIZE, (Color) { 0, 0, 0, 0 });
     Rectangle cursor = { 0, 0, 0, 0 };

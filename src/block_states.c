@@ -1,4 +1,4 @@
-#include "block_state_bitfields.h"
+#include "block_states.h"
 
 uint8_t get_flowing_liquid_state(uint8_t level, bool falling)
 {

@@ -1,6 +1,7 @@
 #include "registries/item_registry.h"
 #include "registries/block_registry.h"
 #include "registries/block_models.h"
+#include "types.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -314,6 +315,13 @@ void item_registry_init() {
 		.atlas_idx = ATLAS_POWER_WIRE,
 		.model_idx = BLOCK_MODEL_QUAD,
 		.blockId = BLOCK_POWER_WIRE
+	};
+
+	itemRegistry[ITEM_BATTERY] = (ItemRegistry) {
+		.name = "Battery",
+		.atlas_idx = ATLAS_BATTERY,
+		.model_idx = BLOCK_MODEL_QUAD,
+		.blockId = BLOCK_BATTERY
 	};
 
 	for (int i = 0; i < ITEM_COUNT; i++) {

@@ -1,5 +1,5 @@
-#ifndef BLOCK_STATE_BITFIELDS_H
-#define BLOCK_STATE_BITFIELDS_H
+#ifndef BLOCK_STATES_H
+#define BLOCK_STATES_H
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -27,6 +27,14 @@ typedef struct {
 	bool left : 1;
 	bool down : 1;
 } PowerWireState;
+
+typedef enum {
+	BATTERY_STATE_UP,
+	BATTERY_STATE_RIGHT,
+	BATTERY_STATE_DOWN,
+	BATTERY_STATE_LEFT,
+	BATTERY_STATE_FORWARD
+} BatteryState;
 
 uint8_t get_flowing_liquid_state(uint8_t level, bool falling);
 uint8_t get_trapdoor_state(uint8_t rotation, bool open);

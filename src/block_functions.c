@@ -5,7 +5,7 @@
 #include "raylib.h"
 #include "registries/block_registry.h"
 #include "registries/item_registry.h"
-#include "block_state_bitfields.h"
+#include "block_states.h"
 #include "chunk.h"
 #include "types.h"
 
@@ -138,36 +138,85 @@ bool trapdoor_interact(BlockExtraResult result, ItemSlot holdingItem) {
     return true;
 }
 
+void set_power_wire_dir(NeighborDirection dir, PowerWireState* state, bool value) {
+    switch (dir) {
+        case NEIGHBOR_TOP: state->up = value; break;
+        case NEIGHBOR_RIGHT: state->right = value; break;
+        case NEIGHBOR_BOTTOM: state->down = value; break;
+        case NEIGHBOR_LEFT: state->left = value; break;
+        default: break;
+    }
+}
+
 bool power_wire_solver(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], ChunkLayerEnum layer) {
     PowerWireState* s = (PowerWireState*)&result.block->state;
 
     BlockRegistry* reg[4];
     for (int i = 0; i < 4; i++) {
-        reg[i] = (BlockRegistry*)neighbors[i].reg;
-    }
+        uint8_t blockId = neighbors[i].block->id;
+        //reg[i] = (BlockRegistry*)neighbors[i].reg;
 
-    s->right = neighbors[NEIGHBOR_RIGHT].block->id == result.block->id || reg[NEIGHBOR_RIGHT]->flags & BLOCK_FLAG_POWER_SOURCE;
-    s->up = neighbors[NEIGHBOR_TOP].block->id == result.block->id || reg[NEIGHBOR_TOP]->flags & BLOCK_FLAG_POWER_SOURCE;
-    s->left = neighbors[NEIGHBOR_LEFT].block->id == result.block->id || reg[NEIGHBOR_LEFT]->flags & BLOCK_FLAG_POWER_SOURCE;
-    s->down = neighbors[NEIGHBOR_BOTTOM].block->id == result.block->id || reg[NEIGHBOR_BOTTOM]->flags & BLOCK_FLAG_POWER_SOURCE;
+        switch (blockId) {
+            case BLOCK_POWER_WIRE:
+                set_power_wire_dir(i, s, true);
+                break;
+            case BLOCK_BATTERY: {
+                BatteryState batState = (BatteryState)neighbors[i].block->state;
+                if (batState == BATTERY_STATE_UP || batState == BATTERY_STATE_DOWN) {
+                    if (i == NEIGHBOR_BOTTOM) {
+                        set_power_wire_dir(NEIGHBOR_BOTTOM, s, true);
+                    } else if (i == NEIGHBOR_TOP) {
+                        set_power_wire_dir(NEIGHBOR_TOP, s, true);
+                    }
+                } else if (batState == BATTERY_STATE_LEFT || batState == BATTERY_STATE_RIGHT) {
+                    if (i == NEIGHBOR_LEFT) {
+                        set_power_wire_dir(NEIGHBOR_LEFT, s, true);
+                    } else if (i == NEIGHBOR_RIGHT) {
+                        set_power_wire_dir(NEIGHBOR_RIGHT, s, true);
+                    }
+                }
+            } break;
+            default:
+                set_power_wire_dir(i, s, false);
+                break;
+        }
+    }
 
     int old_power = (int)s->power;
     int new_power = 0;
 
-    BlockExtraResult checks[5] = { neighbors[NEIGHBOR_RIGHT], neighbors[NEIGHBOR_TOP], neighbors[NEIGHBOR_LEFT], neighbors[NEIGHBOR_BOTTOM], other };
+    BlockExtraResult checks[5];
+    int count = 0;
 
-    for (int i = 0; i < 5; i++) {
+    if (s->up) checks[count++] = neighbors[NEIGHBOR_TOP];
+    if (s->right) checks[count++] = neighbors[NEIGHBOR_RIGHT];
+    if (s->down) checks[count++] = neighbors[NEIGHBOR_BOTTOM];
+    if (s->left) checks[count++] = neighbors[NEIGHBOR_LEFT];
+
+    checks[count++] = other;
+
+    for (int i = 0; i < count; i++) {
         BlockExtraResult nb = checks[i];
         BlockRegistry* nrg = (BlockRegistry*)nb.reg;
         if (!nrg) continue;
 
-        if (nrg->flags & BLOCK_FLAG_POWER_SOURCE) {
-            new_power = 15;
-            break;
+        if (nb.block->id == BLOCK_BATTERY) {
+            // Check if the battery is from the other layer
+            if (nb.block == other.block) {
+                BatteryState batState = (BatteryState)nb.block->state;
+                if (batState == BATTERY_STATE_FORWARD) {
+                    new_power = 15;
+                    break;
+                }
+            } else {
+                new_power = 15;
+                break;
+            }
         }
-
-        if (nb.block->id == result.block->id) {
+       
+        if (nb.block->id == BLOCK_POWER_WIRE) {
             PowerWireState* ns = (PowerWireState*)&nb.block->state;
+
             int neighbor_power = (int)ns->power;
             if (neighbor_power > 0) {
                 int candidate = neighbor_power - 1;
@@ -177,6 +226,10 @@ bool power_wire_solver(BlockExtraResult result, BlockExtraResult other, BlockExt
     }
 
     new_power = Clamp(new_power, 0, 15);
+
+    if (new_power != old_power) {
+        s->power = new_power;
+    }
 
     if (new_power != old_power) {
         s->power = (uint8_t)new_power;

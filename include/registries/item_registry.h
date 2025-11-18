@@ -6,8 +6,6 @@
 
 #include <raylib.h>
 
-#include "texture_atlas.h"
-#include "registries/block_models.h"
 #include "registries/block_registry.h"
 
 typedef enum {
@@ -54,6 +52,7 @@ typedef enum {
 	ITEM_STAIRS_FRAME,
 	ITEM_NUB_FRAME,
 	ITEM_POWER_WIRE,
+	ITEM_BATTERY,
 	ITEM_COUNT
 } ItemEnum;
 

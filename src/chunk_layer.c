@@ -205,7 +205,16 @@ void chunk_layer_draw(ChunkLayer* layer) {
     }
 }
 
-void chunk_layer_free(ChunkLayer* layer) {
+void chunk_layer_free_mesh(ChunkLayer *layer) {
+    if (!layer) return;
+
+    if (layer->initializedMesh) {
+        UnloadMesh(layer->mesh);
+        layer->initializedMesh = false;
+    }
+}
+
+void chunk_layer_free_block_data(ChunkLayer* layer) {
     if (!layer) return;
 
     for (int i = 0; i < CHUNK_AREA; i++) {
@@ -215,10 +224,5 @@ void chunk_layer_free(ChunkLayer* layer) {
         if (rg->free_data) {
             rg->free_data(block->data);
         }
-    }
-
-    if (layer->initializedMesh) {
-        UnloadMesh(layer->mesh);
-        layer->initializedMesh = false;
     }
 }

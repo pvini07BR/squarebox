@@ -1,8 +1,10 @@
 #include "world_manager.h"
+#include "chunk_layer.h"
 #include "registries/block_registry.h"
 #include "item_container.h"
 #include "sign_editor.h"
 #include "raylib.h"
+#include "types.h"
 
 #include <errno.h>
 
@@ -232,12 +234,12 @@ bool world_manager_load_world_info(const char* worldDir) {
     return true;
 }
 
-bool world_manager_save_chunk(Chunk* chunk) {
-    if (!chunk || !currentWorldDir) return false;
+bool world_manager_save_chunk(Vector2i position, ChunkLayer layers[CHUNK_LAYER_COUNT]) {
+    if (!currentWorldDir) return false;
     
-    FILE* fptr = fopen(TextFormat("%s/chunks/%d_%d.bin", currentWorldDir, chunk->position.x, chunk->position.y), "wb");
+    FILE* fptr = fopen(TextFormat("%s/chunks/%d_%d.bin", currentWorldDir, position.x, position.y), "wb");
     if (!fptr) {
-        TraceLog(LOG_ERROR, "Could not save chunk at position (%d, %d): %s", chunk->position.x, chunk->position.y, strerror(errno));
+        TraceLog(LOG_ERROR, "Could not save chunk at position (%d, %d): %s", position.x, position.y, strerror(errno));
         return false;
     }
 
@@ -250,18 +252,18 @@ bool world_manager_save_chunk(Chunk* chunk) {
 
     for (int l = 0; l < CHUNK_LAYER_COUNT; l++) {
         for (int b = 0; b < CHUNK_AREA; b++) {
-			fwrite(&chunk->layers[l].blocks[b].id, sizeof(uint8_t), 1, fptr);
-            fwrite(&chunk->layers[l].blocks[b].state, sizeof(uint8_t), 1, fptr);
+			fwrite(&layers[l].blocks[b].id, sizeof(uint8_t), 1, fptr);
+            fwrite(&layers[l].blocks[b].state, sizeof(uint8_t), 1, fptr);
 
-            if (chunk->layers[l].blocks[b].data) {
-                switch (chunk->layers[l].blocks[b].id) {
+            if (layers[l].blocks[b].data) {
+                switch (layers[l].blocks[b].id) {
                 case BLOCK_SIGN:
                     fwrite(&dataOffset, sizeof(uint32_t), 1, fptr);
                     dataOffset += sizeof(SignLines);
                     break;
                 case BLOCK_CHEST:
 					fwrite(&dataOffset, sizeof(uint32_t), 1, fptr);
-					dataOffset += item_container_serialized_size(chunk->layers[l].blocks[b].data);
+					dataOffset += item_container_serialized_size(layers[l].blocks[b].data);
                     break;
                 default:
                     fwrite(&zero, sizeof(uint32_t), 1, fptr);
@@ -276,15 +278,15 @@ bool world_manager_save_chunk(Chunk* chunk) {
 
     for (int l = 0; l < CHUNK_LAYER_COUNT; l++) {
         for (int b = 0; b < CHUNK_AREA; b++) {
-            if (chunk->layers[l].blocks[b].data) {
-                switch (chunk->layers[l].blocks[b].id) {
+            if (layers[l].blocks[b].data) {
+                switch (layers[l].blocks[b].id) {
                     case BLOCK_SIGN: {
-                        SignLines* lines = chunk->layers[l].blocks[b].data;
+                        SignLines* lines = layers[l].blocks[b].data;
                         fwrite(lines, sizeof(SignLines), 1, fptr);
                         break;
                     }
                     case BLOCK_CHEST: {
-						item_container_serialize(chunk->layers[l].blocks[b].data, fptr);
+						item_container_serialize(layers[l].blocks[b].data, fptr);
                         break;
                     }
                 }
@@ -297,13 +299,13 @@ bool world_manager_save_chunk(Chunk* chunk) {
     return true;
 }
 
-ChunkLoadStatus world_manager_load_chunk(Chunk* chunk) {
-    if (!chunk || !currentWorldDir) return false;
+ChunkLoadStatus world_manager_load_chunk(Vector2i position, ChunkLayer layers[CHUNK_LAYER_COUNT]) {
+    if (!currentWorldDir) return false;
 
-    FILE* fptr = fopen(TextFormat("%s/chunks/%d_%d.bin", currentWorldDir, chunk->position.x, chunk->position.y), "rb");
+    FILE* fptr = fopen(TextFormat("%s/chunks/%d_%d.bin", currentWorldDir, position.x, position.y), "rb");
     if (!fptr) {
         if (errno != ENOENT) {
-            TraceLog(LOG_ERROR, "Could not read chunk at position (%d, %d): %s", chunk->position.x, chunk->position.y, strerror(errno));
+            TraceLog(LOG_ERROR, "Could not read chunk at position (%d, %d): %s", position.x, position.y, strerror(errno));
             return CHUNK_LOAD_ERROR_FATAL;
         }
         return CHUNK_LOAD_ERROR_NOT_FOUND;
@@ -312,41 +314,41 @@ ChunkLoadStatus world_manager_load_chunk(Chunk* chunk) {
     uint8_t version;
     fread(&version, sizeof(uint8_t), 1, fptr);
     if (version != WORLD_VERSION) {
-        TraceLog(LOG_ERROR, "Refused to load chunk (%d, %d) because its saved in a different version.\nChunk version: %d\nCurrent version: %d", chunk->position.x, chunk->position.y, version, WORLD_VERSION);
+        TraceLog(LOG_ERROR, "Refused to load chunk (%d, %d) because its saved in a different version.\nChunk version: %d\nCurrent version: %d", position.x, position.y, version, WORLD_VERSION);
         return CHUNK_LOAD_ERROR_FATAL;
     }
 
     for (int l = 0; l < CHUNK_LAYER_COUNT; l++) {
         for (int b = 0; b < CHUNK_AREA; b++) {
-			fread(&chunk->layers[l].blocks[b].id, sizeof(uint8_t), 1, fptr);
-            fread(&chunk->layers[l].blocks[b].state, sizeof(uint8_t), 1, fptr);
+			fread(&layers[l].blocks[b].id, sizeof(uint8_t), 1, fptr);
+            fread(&layers[l].blocks[b].state, sizeof(uint8_t), 1, fptr);
             uint32_t dataOffset = 0;
             fread(&dataOffset, sizeof(uint32_t), 1, fptr);
             if (dataOffset != 0) {
                 long currentPos = ftell(fptr);
                 fseek(fptr, dataOffset, SEEK_SET);
-                switch (chunk->layers[l].blocks[b].id) {
+                switch (layers[l].blocks[b].id) {
                 case BLOCK_SIGN:
-                    chunk->layers[l].blocks[b].data = malloc(sizeof(SignLines));
-                    if (chunk->layers[l].blocks[b].data) {
-                        fread(chunk->layers[l].blocks[b].data, sizeof(SignLines), 1, fptr);
+                    layers[l].blocks[b].data = malloc(sizeof(SignLines));
+                    if (layers[l].blocks[b].data) {
+                        fread(layers[l].blocks[b].data, sizeof(SignLines), 1, fptr);
                     } else {
-                        TraceLog(LOG_ERROR, "Could not allocate memory for sign data in chunk at (%d, %d)", chunk->position.x, chunk->position.y);
+                        TraceLog(LOG_ERROR, "Could not allocate memory for sign data in chunk at (%d, %d)", position.x, position.y);
                     }
                     break;
 				case BLOCK_CHEST:
-					chunk->layers[l].blocks[b].data = malloc(sizeof(ItemContainer));
-                    if (chunk->layers[l].blocks[b].data) {
-                        item_container_deserialize(chunk->layers[l].blocks[b].data, fptr);
+					layers[l].blocks[b].data = malloc(sizeof(ItemContainer));
+                    if (layers[l].blocks[b].data) {
+                        item_container_deserialize(layers[l].blocks[b].data, fptr);
                     }
                     else {
-                        TraceLog(LOG_ERROR, "Could not allocate memory for chest data in chunk at (%d, %d)", chunk->position.x, chunk->position.y);
+                        TraceLog(LOG_ERROR, "Could not allocate memory for chest data in chunk at (%d, %d)", position.x, position.y);
                     }
                     break;
                 }
                 fseek(fptr, currentPos, SEEK_SET);
             } else {
-                chunk->layers[l].blocks[b].data = NULL;
+                layers[l].blocks[b].data = NULL;
 			}
         }
     }

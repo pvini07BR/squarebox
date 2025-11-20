@@ -16,6 +16,8 @@
 #include <rlgl.h>
 #include <raymath.h>
 
+#include "thirdparty/uthash.h"
+
 static bool initialized = false;
 
 static uint8_t chunk_view_width = 5;
@@ -26,6 +28,14 @@ static Chunk* chunks = NULL;
 static Vector2i currentChunkPos = { 0, 0 };
 
 static unsigned int tick_counter = 0;
+
+typedef struct {
+    Vector2i key;
+    ChunkLayer layers[CHUNK_LAYER_COUNT];
+    UT_hash_handle hh;
+} ChunkCacheEntry;
+
+static ChunkCacheEntry* chunkCache = NULL;
 
 void chunk_manager_init(Vector2i center, uint8_t cvw, uint8_t cvh) {
     chunk_view_width = cvw;
@@ -43,6 +53,57 @@ void chunk_manager_init(Vector2i center, uint8_t cvw, uint8_t cvh) {
     initialized = true;
 
 	chunk_manager_relocate(center);
+}
+
+void move_chunk_to_cache(Chunk* chunk) {
+    if (chunk->initialized) {
+        if (!game_is_demo_mode()) {
+            ChunkCacheEntry* cacheEntry;
+            HASH_FIND(hh, chunkCache, &chunk->position, sizeof(Vector2i), cacheEntry);
+            if (cacheEntry == NULL) {
+                cacheEntry = malloc(sizeof(ChunkCacheEntry));
+                memset(cacheEntry, 0, sizeof(ChunkCacheEntry));
+                cacheEntry->key = chunk->position;
+                for (int i = 0; i < CHUNK_LAYER_COUNT; i++) {
+                    memcpy(cacheEntry->layers[i].blocks, chunk->layers[i].blocks, sizeof(BlockInstance) * CHUNK_AREA);
+                }
+                HASH_ADD(hh, chunkCache, key, sizeof(Vector2i), cacheEntry);
+            } else {
+                for (int i = 0; i < CHUNK_LAYER_COUNT; i++) {
+                    memcpy(cacheEntry->layers[i].blocks, chunk->layers[i].blocks, sizeof(BlockInstance) * CHUNK_AREA);
+                }
+            }
+        } else {
+            chunk_free_block_data(chunk);
+        }
+        chunk_free_meshes(chunk);
+    }
+}
+
+void load_chunk_or_generate(Chunk* chunk) {
+    // Check if the chunk is already on the cache
+    ChunkCacheEntry* cacheEntry;
+    HASH_FIND(hh, chunkCache, &chunk->position, sizeof(Vector2i), cacheEntry);
+    if (cacheEntry) {
+        for (int l = 0; l < CHUNK_LAYER_COUNT; l++) {
+            memcpy(chunk->layers[l].blocks, cacheEntry->layers[l].blocks, sizeof(BlockInstance) * CHUNK_AREA);
+        }
+        HASH_DEL(chunkCache, cacheEntry);
+        free(cacheEntry);
+    } else {
+        // Otherwise load from the disk
+        ChunkLoadStatus status = world_manager_load_chunk(
+            chunk->position,
+            chunk->layers
+        );
+        // If not on the disk then generate it
+        if (status == CHUNK_LOAD_ERROR_NOT_FOUND) {
+            chunk_regenerate(chunk);
+        } else if (status == CHUNK_LOAD_ERROR_FATAL) {
+            chunk_free_block_data(chunk);
+            chunk_free_meshes(chunk);
+        }
+    }
 }
 
 void chunk_manager_relocate(Vector2i newCenter) {
@@ -95,11 +156,7 @@ void chunk_manager_relocate(Vector2i newCenter) {
     }
 
     for (size_t i = 0; i < count; i++) {
-        Chunk* old = &chunks[i];
-        if (old->initialized) {
-            if (!game_is_demo_mode()) world_manager_save_chunk(old);
-            chunk_free(old);
-        }
+        move_chunk_to_cache(&chunks[i]);
     }
 
     for (size_t i = 0; i < count; i++) {
@@ -114,12 +171,7 @@ void chunk_manager_relocate(Vector2i newCenter) {
             if (game_is_demo_mode()) {
                 chunk_regenerate(&new_chunks[i]);
             } else {
-                ChunkLoadStatus status = world_manager_load_chunk(&new_chunks[i]);
-                if (status == CHUNK_LOAD_ERROR_NOT_FOUND) {
-                    chunk_regenerate(&new_chunks[i]);
-                } else if (status == CHUNK_LOAD_ERROR_FATAL) {
-                    chunk_free(&new_chunks[i]);
-                }
+                load_chunk_or_generate(&new_chunks[i]);
             }
 			chunk_update_tick_list(&new_chunks[i]);
             occupied[i] = true;
@@ -205,12 +257,7 @@ void chunk_manager_set_view(uint8_t new_view_width, uint8_t new_view_height) {
     }
 
     for (size_t i = 0; i < old_count; i++) {
-        Chunk* old = &chunks[i];
-        if (old->initialized) {
-            if (!game_is_demo_mode()) world_manager_save_chunk(old);
-            chunk_free(old);
-            old->initialized = false;
-        }
+        move_chunk_to_cache(&chunks[i]);
     }
 
     for (size_t i = 0; i < new_count; i++) {
@@ -225,12 +272,7 @@ void chunk_manager_set_view(uint8_t new_view_width, uint8_t new_view_height) {
             if (game_is_demo_mode()) {
                 chunk_regenerate(&new_chunks[i]);
             } else {
-                ChunkLoadStatus status = world_manager_load_chunk(&new_chunks[i]);
-                if (status == CHUNK_LOAD_ERROR_NOT_FOUND) {
-                    chunk_regenerate(&new_chunks[i]);
-                } else if (status == CHUNK_LOAD_ERROR_FATAL) {
-                    chunk_free(&new_chunks[i]);
-                }
+                load_chunk_or_generate(&new_chunks[i]);
             }
 			chunk_update_tick_list(&new_chunks[i]);
             occupied[i] = true;
@@ -345,27 +387,37 @@ void chunk_manager_tick() {
 
 void chunk_manager_clear(bool saveChunks) {
     if (!initialized) return;
+
     for (size_t c = 0; c < chunk_count; c++) {
         if (chunks[c].initialized) {
-            if (saveChunks) world_manager_save_chunk(&chunks[c]);
-            chunk_free(&chunks[c]);
+            if (saveChunks) {
+                world_manager_save_chunk(
+                    chunks[c].position,
+                    chunks[c].layers
+                );
+            }
+            chunk_free_meshes(&chunks[c]);
+            chunk_free_block_data(&chunks[c]);
         }
 	}
+
+    ChunkCacheEntry *cacheEntry, *tmp;
+    HASH_ITER(hh, chunkCache, cacheEntry, tmp) {
+        if (saveChunks) {
+            world_manager_save_chunk(
+                cacheEntry->key,
+                cacheEntry->layers
+            );
+        }
+        HASH_DEL(chunkCache, cacheEntry);
+        free(cacheEntry);
+    }
 }
 
 void chunk_manager_free() {
     if (!initialized) return;
 
-    if (chunks) {
-        for (size_t c = 0; c < chunk_count; c++) {
-            if (chunks[c].initialized) {
-                if (!game_is_demo_mode()) world_manager_save_chunk(&chunks[c]);
-                chunk_free(&chunks[c]);
-            }
-        }
-        free(chunks);
-        chunks = NULL;
-    }
+    chunk_manager_clear(!game_is_demo_mode());
 
     initialized = false;
 }
@@ -378,6 +430,10 @@ uint8_t chunk_manager_get_view_width()
 uint8_t chunk_manager_get_view_height()
 {
     return chunk_view_height;
+}
+
+int chunk_manager_get_cached_chunk_count() {
+    return HASH_COUNT(chunkCache);
 }
 
 bool chunk_manager_interact(Vector2i position, ChunkLayerEnum layer, ItemSlot holdingItem) {

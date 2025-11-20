@@ -7,6 +7,7 @@
 #include <raylib.h>
 
 #include "thirdparty/microui.h"
+#include "types.h"
 
 #define WORLD_NAME_LENGTH 32
 #define WORLD_VERSION 0
@@ -58,8 +59,8 @@ void world_manager_free();
 WorldInfo* get_world_info();
 bool world_manager_is_world_loaded();
 
-bool world_manager_save_chunk(Chunk* chunk);
-ChunkLoadStatus world_manager_load_chunk(Chunk* chunk);
+bool world_manager_save_chunk(Vector2i position, ChunkLayer layers[CHUNK_LAYER_COUNT]);
+ChunkLoadStatus world_manager_load_chunk(Vector2i position, ChunkLayer layers[CHUNK_LAYER_COUNT]);
 
 bool world_manager_load_world_list();
 WorldListReturnType world_manager_draw_list(mu_Context* ctx);

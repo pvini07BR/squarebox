@@ -23,6 +23,7 @@ void chunk_manager_free();
 
 uint8_t chunk_manager_get_view_width();
 uint8_t chunk_manager_get_view_height();
+int chunk_manager_get_cached_chunk_count();
 
 // Returns true when a interaction occurred, false when not.
 bool chunk_manager_interact(Vector2i position, ChunkLayerEnum layer, ItemSlot holdingItem);

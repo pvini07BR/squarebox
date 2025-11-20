@@ -455,14 +455,15 @@ void game_draw() {
         sprintf(debug_text,
             "FPS: %d\n"
             "Loaded chunk area: %ux%u\n"
+            "Cached chunk count: %d\n"
             "Camera chunk position: (%d, %d)\n"
             "Camera Zoom: %f\n"
             "Player position: (%f, %f)\n"
             "Holding item: %s\n",
 
             GetFPS(),
-            chunk_manager_get_view_width(),
-            chunk_manager_get_view_height(),
+            chunk_manager_get_view_width(), chunk_manager_get_view_height(),
+            chunk_manager_get_cached_chunk_count(),
 			currentChunkPos.x, currentChunkPos.y,
             camera.zoom,
             player->entity.rect.x, player->entity.rect.y,

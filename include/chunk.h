@@ -74,7 +74,9 @@ void chunk_update_tick_list(Chunk* chunk);
 void chunk_draw(Chunk* chunk);
 void chunk_draw_liquids(Chunk* chunk);
 void chunk_tick(Chunk* chunk, uint8_t tick_value);
-void chunk_free(Chunk* chunk);
+
+void chunk_free_meshes(Chunk* chunk);
+void chunk_free_block_data(Chunk* chunk);
 
 void chunk_fill_light(Chunk* chunk, Vector2u startPoint, uint8_t newLightValue);
 bool chunk_solve_block(Chunk* chunk, Vector2u position, ChunkLayerEnum layer);

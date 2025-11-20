@@ -398,17 +398,25 @@ void chunk_tick(Chunk* chunk, uint8_t tick_value) {
     }
 }
 
-void chunk_free(Chunk* chunk)
-{
+
+void chunk_free_meshes(Chunk* chunk) {
     if (!chunk) return;
 
     for (int i = 0; i < CHUNK_LAYER_COUNT; i++) {
-        chunk_layer_free(&chunk->layers[i]);
+        chunk_layer_free_mesh(&chunk->layers[i]);
     }
 
     UnloadMesh(chunk->liquidMesh);
 
     chunk->initialized = false;
+}
+
+void chunk_free_block_data(Chunk* chunk) {
+    if (!chunk) return;
+
+    for (int i = 0; i < CHUNK_LAYER_COUNT; i++) {
+        chunk_layer_free_block_data(&chunk->layers[i]);
+    }
 }
 
 void chunk_fill_light(Chunk* chunk, Vector2u startPoint, uint8_t newLightValue) {

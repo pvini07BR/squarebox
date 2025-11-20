@@ -6,36 +6,36 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-static BlockRegistry* blockRegistry = NULL;
+static BlockRegistry* reg = NULL;
 
 void block_registry_init() {
-    blockRegistry = calloc(BLOCK_COUNT, sizeof(BlockRegistry));
-    if (blockRegistry == NULL) {
+    reg = calloc(BLOCK_COUNT, sizeof(BlockRegistry));
+    if (reg == NULL) {
         TraceLog(LOG_ERROR, "Could not allocate memory for the block registry.");
         return;
     };
 
-    blockRegistry[BLOCK_AIR] = (BlockRegistry){
+    reg[BLOCK_AIR] = (BlockRegistry){
         .variant_generator = variant_grass_block,
         .flags = BLOCK_FLAG_REPLACEABLE,
         .lightLevel = BLOCK_LIGHT_TRANSPARENT,
         .state_resolver = NULL
     };
 
-    blockRegistry[BLOCK_GRASS_BLOCK] = (BlockRegistry){
+    reg[BLOCK_GRASS_BLOCK] = (BlockRegistry){
         .variant_generator = variant_grass_block,        .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FLIP_H | BLOCK_FLAG_FULL_BLOCK | BLOCK_FLAG_PLANTABLE,
         .lightLevel = BLOCK_LIGHT_NONE,
         .state_resolver = NULL
     };
 
-    blockRegistry[BLOCK_DIRT] = (BlockRegistry){
+    reg[BLOCK_DIRT] = (BlockRegistry){
         .variant_generator = variant_dirt,
         .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FLIP_H | BLOCK_FLAG_FLIP_V | BLOCK_FLAG_FULL_BLOCK | BLOCK_FLAG_PLANTABLE,
         .lightLevel = BLOCK_LIGHT_NONE,
         .state_resolver = NULL
     };
 
-    blockRegistry[BLOCK_SAND] = (BlockRegistry){
+    reg[BLOCK_SAND] = (BlockRegistry){
         .variant_generator = variant_sand,
         .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FLIP_H | BLOCK_FLAG_FLIP_V | BLOCK_FLAG_FULL_BLOCK | BLOCK_FLAG_GRAVITY_AFFECTED,
         .lightLevel = BLOCK_LIGHT_NONE,
@@ -44,27 +44,27 @@ void block_registry_init() {
         .tick_speed = 1
     };
 
-    blockRegistry[BLOCK_STONE] = (BlockRegistry){
+    reg[BLOCK_STONE] = (BlockRegistry){
         .variant_generator = variant_stone,
         .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FLIP_H | BLOCK_FLAG_FULL_BLOCK,
         .lightLevel = BLOCK_LIGHT_NONE,
         .state_resolver = NULL
     };
 
-    blockRegistry[BLOCK_COBBLESTONE] = (BlockRegistry){
+    reg[BLOCK_COBBLESTONE] = (BlockRegistry){
         .variant_generator = variant_cobblestone,
         .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FULL_BLOCK,
         .lightLevel = BLOCK_LIGHT_NONE
     };
 
-    blockRegistry[BLOCK_WOODEN_PLANKS] = (BlockRegistry){
+    reg[BLOCK_WOODEN_PLANKS] = (BlockRegistry){
         .variant_generator = variant_wooden_planks,
         .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FULL_BLOCK,
         .lightLevel = BLOCK_LIGHT_NONE,
         .state_resolver = NULL
     };
 
-    blockRegistry[BLOCK_WOOD_LOG] = (BlockRegistry){
+    reg[BLOCK_WOOD_LOG] = (BlockRegistry){
         .variant_generator = variant_wood_log,
         .selectable_state_count = 3,
         .selectable_states = {
@@ -77,28 +77,28 @@ void block_registry_init() {
         .state_resolver = NULL
     };
 
-    blockRegistry[BLOCK_LEAVES] = (BlockRegistry){
+    reg[BLOCK_LEAVES] = (BlockRegistry){
         .variant_generator = variant_leaves,
         .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FLIP_H | BLOCK_FLAG_FLIP_V | BLOCK_FLAG_FULL_BLOCK,
         .lightLevel = BLOCK_LIGHT_TRANSPARENT,
         .state_resolver = NULL
     };
 
-    blockRegistry[BLOCK_GLASS] = (BlockRegistry){
+    reg[BLOCK_GLASS] = (BlockRegistry){
         .variant_generator = variant_glass,
         .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FULL_BLOCK,
         .lightLevel = BLOCK_LIGHT_TRANSPARENT,
         .state_resolver = NULL
     };
 
-    blockRegistry[BLOCK_LAMP] = (BlockRegistry){
+    reg[BLOCK_LAMP] = (BlockRegistry){
         .variant_generator = variant_lamp,
         .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FULL_BLOCK,
         .lightLevel = BLOCK_LIGHT_15,
         .state_resolver = NULL
     };
 
-    blockRegistry[BLOCK_CHEST] = (BlockRegistry){
+    reg[BLOCK_CHEST] = (BlockRegistry){
         .variant_generator = variant_chest,
         .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FULL_BLOCK,
         .lightLevel = BLOCK_LIGHT_NONE,
@@ -107,149 +107,149 @@ void block_registry_init() {
         .free_data = chest_free_data
     };
 
-    blockRegistry[BLOCK_BOUNCY_BLOCK] = (BlockRegistry){
+    reg[BLOCK_BOUNCY_BLOCK] = (BlockRegistry){
         .variant_generator = variant_bouncy_block,
         .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FULL_BLOCK | BLOCK_FLAG_BOUNCY,
         .lightLevel = BLOCK_LIGHT_NONE
     };
 
-    blockRegistry[BLOCK_ICE] = (BlockRegistry){
+    reg[BLOCK_ICE] = (BlockRegistry){
         .variant_generator = variant_ice,
         .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FULL_BLOCK | BLOCK_FLAG_SLIPPERY,
         .lightLevel = BLOCK_LIGHT_TRANSPARENT
     };
 
-    blockRegistry[BLOCK_WOOL] = (BlockRegistry){
+    reg[BLOCK_WOOL] = (BlockRegistry){
         .variant_generator = variant_wool,
         .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FULL_BLOCK,
         .lightLevel = BLOCK_LIGHT_NONE
     };
 
-    blockRegistry[BLOCK_ORANGE_WOOL] = (BlockRegistry){
+    reg[BLOCK_ORANGE_WOOL] = (BlockRegistry){
         .variant_generator = variant_orange_wool,
         .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FULL_BLOCK,
         .lightLevel = BLOCK_LIGHT_NONE
     };
 
-    blockRegistry[BLOCK_MAGENTA_WOOL] = (BlockRegistry){
+    reg[BLOCK_MAGENTA_WOOL] = (BlockRegistry){
         .variant_generator = variant_magenta_wool,
         .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FULL_BLOCK,
         .lightLevel = BLOCK_LIGHT_NONE
     };
 
-    blockRegistry[BLOCK_LIGHT_BLUE_WOOL] = (BlockRegistry){
+    reg[BLOCK_LIGHT_BLUE_WOOL] = (BlockRegistry){
         .variant_generator = variant_light_blue_wool,
         .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FULL_BLOCK,
         .lightLevel = BLOCK_LIGHT_NONE
     };
 
-    blockRegistry[BLOCK_YELLOW_WOOL] = (BlockRegistry){
+    reg[BLOCK_YELLOW_WOOL] = (BlockRegistry){
         .variant_generator = variant_yellow_wool,
         .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FULL_BLOCK,
         .lightLevel = BLOCK_LIGHT_NONE
     };
 
-    blockRegistry[BLOCK_LIME_WOOL] = (BlockRegistry){
+    reg[BLOCK_LIME_WOOL] = (BlockRegistry){
         .variant_generator = variant_lime_wool,
         .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FULL_BLOCK,
         .lightLevel = BLOCK_LIGHT_NONE
     };
 
-    blockRegistry[BLOCK_PINK_WOOL] = (BlockRegistry){
+    reg[BLOCK_PINK_WOOL] = (BlockRegistry){
         .variant_generator = variant_pink_wool,
         .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FULL_BLOCK,
         .lightLevel = BLOCK_LIGHT_NONE
     };
 
-    blockRegistry[BLOCK_GRAY_WOOL] = (BlockRegistry){
+    reg[BLOCK_GRAY_WOOL] = (BlockRegistry){
         .variant_generator = variant_gray_wool,
         .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FULL_BLOCK,
         .lightLevel = BLOCK_LIGHT_NONE
     };
 
-    blockRegistry[BLOCK_LIGHT_GRAY_WOOL] = (BlockRegistry){
+    reg[BLOCK_LIGHT_GRAY_WOOL] = (BlockRegistry){
         .variant_generator = variant_light_gray_wool,
         .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FULL_BLOCK,
         .lightLevel = BLOCK_LIGHT_NONE
     };
 
-    blockRegistry[BLOCK_CYAN_WOOL] = (BlockRegistry){
+    reg[BLOCK_CYAN_WOOL] = (BlockRegistry){
         .variant_generator = variant_cyan_wool,
         .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FULL_BLOCK,
         .lightLevel = BLOCK_LIGHT_NONE
     };
 
-    blockRegistry[BLOCK_PURPLE_WOOL] = (BlockRegistry){
+    reg[BLOCK_PURPLE_WOOL] = (BlockRegistry){
         .variant_generator = variant_purple_wool,
         .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FULL_BLOCK,
         .lightLevel = BLOCK_LIGHT_NONE
     };
 
-    blockRegistry[BLOCK_BLUE_WOOL] = (BlockRegistry){
+    reg[BLOCK_BLUE_WOOL] = (BlockRegistry){
         .variant_generator = variant_blue_wool,
         .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FULL_BLOCK,
         .lightLevel = BLOCK_LIGHT_NONE
     };
 
-    blockRegistry[BLOCK_BROWN_WOOL] = (BlockRegistry){
+    reg[BLOCK_BROWN_WOOL] = (BlockRegistry){
         .variant_generator = variant_brown_wool,
         .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FULL_BLOCK,
         .lightLevel = BLOCK_LIGHT_NONE
     };
 
-    blockRegistry[BLOCK_GREEN_WOOL] = (BlockRegistry){
+    reg[BLOCK_GREEN_WOOL] = (BlockRegistry){
         .variant_generator = variant_green_wool,
         .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FULL_BLOCK,
         .lightLevel = BLOCK_LIGHT_NONE
     };
 
-    blockRegistry[BLOCK_RED_WOOL] = (BlockRegistry){
+    reg[BLOCK_RED_WOOL] = (BlockRegistry){
         .variant_generator = variant_red_wool,
         .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FULL_BLOCK,
         .lightLevel = BLOCK_LIGHT_NONE
     };
 
-    blockRegistry[BLOCK_BLACK_WOOL] = (BlockRegistry){
+    reg[BLOCK_BLACK_WOOL] = (BlockRegistry){
         .variant_generator = variant_black_wool,
         .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FULL_BLOCK,
         .lightLevel = BLOCK_LIGHT_NONE
     };
 
-    blockRegistry[BLOCK_GRASS] = (BlockRegistry){
+    reg[BLOCK_GRASS] = (BlockRegistry){
         .variant_generator = variant_grass,
         .flags = BLOCK_FLAG_REPLACEABLE | BLOCK_FLAG_FLIP_H,
         .lightLevel = BLOCK_LIGHT_TRANSPARENT,
 		.state_resolver = plant_block_resolver
     };
 
-    blockRegistry[BLOCK_FLOWER] = (BlockRegistry){
+    reg[BLOCK_FLOWER] = (BlockRegistry){
         .variant_generator = variant_flower,
         .flags = BLOCK_FLAG_REPLACEABLE,
         .lightLevel = BLOCK_LIGHT_TRANSPARENT,
         .state_resolver = plant_block_resolver
     };
 
-    blockRegistry[BLOCK_PEBBLES] = (BlockRegistry){
+    reg[BLOCK_PEBBLES] = (BlockRegistry){
         .variant_generator = variant_pebbles,
         .flags = BLOCK_FLAG_REPLACEABLE,
         .lightLevel = BLOCK_LIGHT_TRANSPARENT,
         .state_resolver = grounded_block_resolver
     };
 
-    blockRegistry[BLOCK_WOODEN_FENCE] = (BlockRegistry){
+    reg[BLOCK_WOODEN_FENCE] = (BlockRegistry){
         .variant_generator = variant_wooden_fence,
         .flags = 0,
         .lightLevel = BLOCK_LIGHT_TRANSPARENT,
         .state_resolver = fence_resolver
     };
 
-    blockRegistry[BLOCK_LADDERS] = (BlockRegistry){
+    reg[BLOCK_LADDERS] = (BlockRegistry){
         .variant_generator = variant_ladders,
         .flags = BLOCK_FLAG_CLIMBABLE,
         .lightLevel = BLOCK_LIGHT_TRANSPARENT,
     };
 
-    blockRegistry[BLOCK_TRAPDOOR] = (BlockRegistry){
+    reg[BLOCK_TRAPDOOR] = (BlockRegistry){
         .variant_generator = variant_trapdoor,
         .selectable_state_count = 4,
         .selectable_states = {
@@ -263,7 +263,7 @@ void block_registry_init() {
         .interact_callback = trapdoor_interact
     };
 
-    blockRegistry[BLOCK_SIGN] = (BlockRegistry){
+    reg[BLOCK_SIGN] = (BlockRegistry){
         .variant_generator = variant_sign,
         .flags = 0,
         .lightLevel = BLOCK_LIGHT_NONE,
@@ -273,14 +273,14 @@ void block_registry_init() {
         .interact_callback = sign_interact
     };
 
-    blockRegistry[BLOCK_TORCH] = (BlockRegistry){
+    reg[BLOCK_TORCH] = (BlockRegistry){
         .variant_generator = variant_torch,
         .flags = 0,
         .lightLevel = BLOCK_LIGHT_15,
         .state_resolver = torch_state_resolver
     };
 
-    blockRegistry[BLOCK_WATER_SOURCE] = (BlockRegistry){
+    reg[BLOCK_WATER_SOURCE] = (BlockRegistry){
         .variant_generator = variant_grass_block,
         .flags = BLOCK_FLAG_REPLACEABLE | BLOCK_FLAG_LIQUID,
         .lightLevel = BLOCK_LIGHT_TRANSPARENT,
@@ -288,7 +288,7 @@ void block_registry_init() {
         .tick_speed = 3
     };
 
-    blockRegistry[BLOCK_WATER_FLOWING] = (BlockRegistry){
+    reg[BLOCK_WATER_FLOWING] = (BlockRegistry){
         .variant_generator = variant_grass_block,
         .flags = BLOCK_FLAG_REPLACEABLE | BLOCK_FLAG_LIQUID,
         .lightLevel = BLOCK_LIGHT_TRANSPARENT,
@@ -296,7 +296,7 @@ void block_registry_init() {
         .tick_speed = 3
     };
 
-    blockRegistry[BLOCK_SLAB_FRAME] = (BlockRegistry){
+    reg[BLOCK_SLAB_FRAME] = (BlockRegistry){
         .variant_generator = variant_slab_frame,
         .selectable_state_count = 4,
         .selectable_states = {
@@ -310,7 +310,7 @@ void block_registry_init() {
         .interact_callback = frame_block_interact
     };
 
-    blockRegistry[BLOCK_STAIRS_FRAME] = (BlockRegistry){
+    reg[BLOCK_STAIRS_FRAME] = (BlockRegistry){
         .variant_generator = variant_stairs_frame,
         .selectable_state_count = 4,
         .selectable_states = {
@@ -324,7 +324,7 @@ void block_registry_init() {
         .interact_callback = frame_block_interact
     };
 
-    blockRegistry[BLOCK_NUB_FRAME] = (BlockRegistry){
+    reg[BLOCK_NUB_FRAME] = (BlockRegistry){
         .variant_generator = variant_nub_frame,
         .selectable_state_count = 4,
         .selectable_states = {
@@ -338,13 +338,14 @@ void block_registry_init() {
         .interact_callback = frame_block_interact
     };
 
-    blockRegistry[BLOCK_POWER_WIRE] = (BlockRegistry){
+    reg[BLOCK_POWER_WIRE] = (BlockRegistry){
+        .flags = BLOCK_FLAG_POWER_TRIGGERED,
         .variant_generator = variant_power_wire,
         .state_resolver = power_wire_solver,
         .lightLevel = BLOCK_LIGHT_NONE
     };
 
-    blockRegistry[BLOCK_BATTERY] = (BlockRegistry) {
+    reg[BLOCK_BATTERY] = (BlockRegistry) {
         .variant_generator = variant_battery,
         .selectable_state_count = 3,
         .selectable_states = {
@@ -356,13 +357,33 @@ void block_registry_init() {
         .state_resolver = NULL,
         .lightLevel = BLOCK_LIGHT_NONE
     };
+
+    reg[BLOCK_POWER_REPEATER] = (BlockRegistry) {
+        .variant_generator = variant_power_repeater,
+        .state_resolver = power_repeater_solver,
+        .flags = BLOCK_FLAG_POWER_TRIGGERED,
+        .selectable_state_count = 4,
+        .selectable_states = {
+            get_power_repeater_state(0, false),
+            get_power_repeater_state(1, false),
+            get_power_repeater_state(2, false),
+            get_power_repeater_state(3, false),
+        }
+    };
+
+    reg[BLOCK_POWERED_LAMP] = (BlockRegistry){
+        .variant_generator = variant_powered_lamp,
+        .flags = BLOCK_FLAG_SOLID | BLOCK_FLAG_FULL_BLOCK | BLOCK_FLAG_POWER_TRIGGERED,
+        .lightLevel = BLOCK_LIGHT_NONE,
+        .state_resolver = powered_lamp_solver
+    };
 }
 
 BlockRegistry* br_get_block_registry(size_t idx) {
     if (idx > BLOCK_COUNT - 1) return NULL;
-    return &blockRegistry[idx];
+    return &reg[idx];
 }
 
 void block_registry_free() {
-	if (blockRegistry) free(blockRegistry);
+	if (reg) free(reg);
 }

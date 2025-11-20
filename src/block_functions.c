@@ -151,57 +151,74 @@ void set_power_wire_dir(NeighborDirection dir, PowerWireState* state, bool value
 bool power_wire_solver(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], ChunkLayerEnum layer) {
     PowerWireState* s = (PowerWireState*)&result.block->state;
 
-    for (int i = 0; i < 4; i++) {
-        uint8_t blockId = neighbors[i].block->id;
-
-        switch (blockId) {
-            case BLOCK_POWER_WIRE:
-                set_power_wire_dir(i, s, true);
-                break;
-            case BLOCK_BATTERY: {
-                LogLikeBlockState batState = (LogLikeBlockState)neighbors[i].block->state;
-                if (batState == LOGLIKE_BLOCK_STATE_VERTICAL) {
-                    if (i == NEIGHBOR_BOTTOM) {
-                        set_power_wire_dir(NEIGHBOR_BOTTOM, s, true);
-                    } else if (i == NEIGHBOR_TOP) {
-                        set_power_wire_dir(NEIGHBOR_TOP, s, true);
-                    }
-                } else if (batState == LOGLIKE_BLOCK_STATE_HORIZONTAL) {
-                    if (i == NEIGHBOR_LEFT) {
-                        set_power_wire_dir(NEIGHBOR_LEFT, s, true);
-                    } else if (i == NEIGHBOR_RIGHT) {
-                        set_power_wire_dir(NEIGHBOR_RIGHT, s, true);
-                    }
-                }
-            } break;
-            default:
-                set_power_wire_dir(i, s, false);
-                break;
-        }
-    }
-
     int old_power = (int)s->power;
     int new_power = 0;
 
-    BlockExtraResult checks[5];
-    int count = 0;
+    // First calculate the directions the wire should be connected
+    for (int i = 0; i < 4; i++) {
+        uint8_t blockId = neighbors[i].block->id;
 
-    if (s->up) checks[count++] = neighbors[NEIGHBOR_TOP];
-    if (s->right) checks[count++] = neighbors[NEIGHBOR_RIGHT];
-    if (s->down) checks[count++] = neighbors[NEIGHBOR_BOTTOM];
-    if (s->left) checks[count++] = neighbors[NEIGHBOR_LEFT];
+        if (blockId == BLOCK_POWER_WIRE || blockId == BLOCK_POWERED_LAMP) {
+            set_power_wire_dir(i, s, true);
+        } else if (blockId == BLOCK_BATTERY) {
+            LogLikeBlockState batState = (LogLikeBlockState)neighbors[i].block->state;
+            if (batState == LOGLIKE_BLOCK_STATE_VERTICAL) {
+                if (i == NEIGHBOR_BOTTOM) set_power_wire_dir(i, s, true);
+                if (i == NEIGHBOR_TOP) set_power_wire_dir(i, s, true);
+            } else if (batState == LOGLIKE_BLOCK_STATE_HORIZONTAL) {
+                if (i == NEIGHBOR_LEFT) set_power_wire_dir(i, s, true);
+                if (i == NEIGHBOR_RIGHT) set_power_wire_dir(i, s, true);
+            }
+        } else if (blockId == BLOCK_POWER_REPEATER) {
+            PowerRepeaterState* repState = (PowerRepeaterState*)&neighbors[i].block->state;
+            if (repState->rotation % 2 == 0) {
+                if (i == NEIGHBOR_LEFT) set_power_wire_dir(i, s, true);
+                if (i == NEIGHBOR_RIGHT) set_power_wire_dir(i, s, true);
+            } else {
+                if (i == NEIGHBOR_TOP) set_power_wire_dir(i, s, true);
+                if (i == NEIGHBOR_BOTTOM) set_power_wire_dir(i, s, true);
+            }
+        } else {
+            set_power_wire_dir(i, s, false);
+        }
+    }
 
-    checks[count++] = other;
+    // Now make it so only the connected neighbors will get checked
 
-    for (int i = 0; i < count; i++) {
-        BlockExtraResult nb = checks[i];
-        BlockRegistry* nrg = (BlockRegistry*)nb.reg;
+    BlockExtraResult* checks[5];
+
+    if (s->up)
+        checks[NEIGHBOR_TOP] = &neighbors[NEIGHBOR_TOP];
+    else
+        checks[NEIGHBOR_TOP] = NULL;
+
+    if (s->right)
+        checks[NEIGHBOR_RIGHT] = &neighbors[NEIGHBOR_RIGHT];    
+    else
+        checks[NEIGHBOR_RIGHT] = NULL;
+
+    if (s->down)
+        checks[NEIGHBOR_BOTTOM] = &neighbors[NEIGHBOR_BOTTOM];
+    else
+        checks[NEIGHBOR_BOTTOM] = NULL;
+
+    if (s->left)
+        checks[NEIGHBOR_LEFT] = &neighbors[NEIGHBOR_LEFT];
+    else
+        checks[NEIGHBOR_LEFT] = NULL;
+
+    checks[4] = &other;
+
+    for (int i = 0; i < 5; i++) {
+        if (!checks[i]) continue;
+        BlockExtraResult* nb = checks[i];
+        BlockRegistry* nrg = (BlockRegistry*)nb->reg;
         if (!nrg) continue;
 
-        if (nb.block->id == BLOCK_BATTERY) {
+        if (nb->block->id == BLOCK_BATTERY) {
             // Check if the battery is from the other layer
-            if (nb.block == other.block) {
-                LogLikeBlockState batState = (LogLikeBlockState)nb.block->state;
+            if (nb->block == other.block) {
+                LogLikeBlockState batState = (LogLikeBlockState)nb->block->state;
                 if (batState == LOGLIKE_BLOCK_STATE_FORWARD) {
                     new_power = 15;
                     break;
@@ -210,10 +227,23 @@ bool power_wire_solver(BlockExtraResult result, BlockExtraResult other, BlockExt
                 new_power = 15;
                 break;
             }
+        } else if (nb->block->id == BLOCK_POWER_REPEATER && i < 4) {
+            PowerRepeaterState* repState = (PowerRepeaterState*)&nb->block->state;
+            if (repState->powered && 
+                (
+                    (repState->rotation == 0 && i == NEIGHBOR_LEFT) ||
+                    (repState->rotation == 1 && i == NEIGHBOR_TOP) ||
+                    (repState->rotation == 2 && i == NEIGHBOR_RIGHT) ||
+                    (repState->rotation == 3 && i == NEIGHBOR_BOTTOM)
+                )
+            ) {
+                new_power = 15;
+                break;
+            }
         }
        
-        if (nb.block->id == BLOCK_POWER_WIRE) {
-            PowerWireState* ns = (PowerWireState*)&nb.block->state;
+        if (nb->block->id == BLOCK_POWER_WIRE) {
+            PowerWireState* ns = (PowerWireState*)&nb->block->state;
 
             int neighbor_power = (int)ns->power;
             if (neighbor_power > 0) {
@@ -235,18 +265,94 @@ bool power_wire_solver(BlockExtraResult result, BlockExtraResult other, BlockExt
         // Propagate power to neighbors
         for (int i = 0; i < 4; i++) {
             BlockExtraResult nb = neighbors[i];
-            if (nb.block->id == result.block->id) {
+            BlockRegistry* reg = (BlockRegistry*)nb.reg;
+            if (!reg) continue;
+
+            if (reg->flags & BLOCK_FLAG_POWER_TRIGGERED) {
                 chunk_solve_block(nb.chunk, nb.position, layer);
             }
         }
 
         // Also propagate to the wire in the opposite layer
-        if (other.block->id == result.block->id) {
-            ChunkLayerEnum otherLayer = layer == CHUNK_LAYER_FOREGROUND ? CHUNK_LAYER_BACKGROUND : CHUNK_LAYER_FOREGROUND;
-            chunk_solve_block(result.chunk, result.position, otherLayer);
+        BlockRegistry* other_reg = (BlockRegistry*)other.reg;
+        if (other_reg) {
+            if (other_reg->flags & BLOCK_FLAG_POWER_TRIGGERED) {
+                ChunkLayerEnum otherLayer = layer == CHUNK_LAYER_FOREGROUND ? CHUNK_LAYER_BACKGROUND : CHUNK_LAYER_FOREGROUND;
+                chunk_solve_block(result.chunk, result.position, otherLayer);
+            }
         }
     }
 
+    return true;
+}
+
+bool power_repeater_solver(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], ChunkLayerEnum layer) {
+    PowerRepeaterState* s = (PowerRepeaterState*)&result.block->state;
+    s->powered = false;
+
+    PowerWireState* input = NULL;
+    PowerWireState* output = NULL;
+
+    for (int i = 0; i < 4; i++) {
+        if (neighbors[i].block->id != BLOCK_POWER_WIRE) continue;
+        PowerWireState* wireState = (PowerWireState*)&neighbors[i].block->state;
+
+        if (s->rotation == 0) {
+            if (i == NEIGHBOR_LEFT) {
+                input = wireState;
+            } else if (i == NEIGHBOR_RIGHT) {
+                output = wireState;
+            }
+        } else if (s->rotation == 1) {
+            if (i == NEIGHBOR_TOP) {
+                input = wireState;
+            } else if (i == NEIGHBOR_BOTTOM) {
+                output = wireState;
+            }
+        } else if (s->rotation == 2) {
+            if (i == NEIGHBOR_LEFT) {
+                output = wireState;
+            } else if (i == NEIGHBOR_RIGHT) {
+                input = wireState;
+            }
+        } else if (s->rotation == 3) {
+            if (i == NEIGHBOR_TOP) {
+                output = wireState;
+            } else if (i == NEIGHBOR_BOTTOM) {
+                input = wireState;
+            }
+        }
+    }
+
+    if (input) {
+        if (input->power > 0) {
+            s->powered = true;
+        }
+    }
+    
+    return true;
+}
+
+bool powered_lamp_solver(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], ChunkLayerEnum layer) {
+    result.block->state = 0;
+    
+    for (int i = 0; i < 4; i++) {
+        if (neighbors[i].block->id == BLOCK_POWER_WIRE) {
+            PowerWireState* s = (PowerWireState*)&neighbors[i].block->state;
+            if (s->power > 0) {
+                result.block->state = 1;
+                break;
+            }
+        }
+    }
+
+    if (other.block->id == BLOCK_POWER_WIRE) {
+        PowerWireState* s = (PowerWireState*)&other.block->state;
+        if (s->power > 0) {
+            result.block->state = 1;
+        }
+    }
+    
     return true;
 }
 

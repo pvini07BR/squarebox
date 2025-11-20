@@ -229,6 +229,16 @@ void texture_atlas_init() {
         .variantCount = 2
     };
 
+    entries[ATLAS_POWER_REPEATER] = (AtlasEntry) {
+        .fileName = "power_repeater.png",
+        .variantCount = 2
+    };
+
+    entries[ATLAS_POWERED_LAMP] = (AtlasEntry) {
+        .fileName = "powered_lamp.png",
+        .variantCount = 2
+    };
+
     Image generated = GenImageColor(1, TILE_SIZE, (Color) { 0, 0, 0, 0 });
     Rectangle cursor = { 0, 0, 0, 0 };
     uint8_t offset = 0;

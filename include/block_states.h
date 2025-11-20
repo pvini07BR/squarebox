@@ -5,6 +5,12 @@
 #include <stddef.h>
 #include <stdint.h>
 
+typedef enum {
+	LOGLIKE_BLOCK_STATE_VERTICAL,
+	LOGLIKE_BLOCK_STATE_HORIZONTAL,
+	LOGLIKE_BLOCK_STATE_FORWARD
+} LogLikeBlockState;
+
 typedef struct {
 	uint8_t level : 3;
 	bool falling : 1;
@@ -28,14 +34,14 @@ typedef struct {
 	bool down : 1;
 } PowerWireState;
 
-typedef enum {
-	LOGLIKE_BLOCK_STATE_VERTICAL,
-	LOGLIKE_BLOCK_STATE_HORIZONTAL,
-	LOGLIKE_BLOCK_STATE_FORWARD
-} LogLikeBlockState;
+typedef struct {
+	uint8_t rotation : 3;
+	bool powered : 1;
+} PowerRepeaterState;
 
 uint8_t get_flowing_liquid_state(uint8_t level, bool falling);
 uint8_t get_trapdoor_state(uint8_t rotation, bool open);
 uint8_t get_frame_block_state(uint8_t rotation, uint8_t blockIdx);
+uint8_t get_power_repeater_state(uint8_t rotation, bool powered);
 
 #endif

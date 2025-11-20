@@ -204,4 +204,30 @@ static inline BlockVariant variant_battery(uint8_t state) {
 	};
 }
 
+static inline BlockVariant variant_power_repeater(uint8_t state) {
+	PowerRepeaterState* s = (PowerRepeaterState*)&state;
+
+	return (BlockVariant) {
+		.atlas_idx = ATLAS_POWER_REPEATER,
+		.atlas_variant = s->powered,
+		.model_idx = BLOCK_MODEL_QUAD,
+		.collider_idx = BLOCK_COLLIDER_QUAD,
+		.rotation = s->rotation,
+		.uv_lock = false,
+		.tint = WHITE
+	};
+}
+
+static inline BlockVariant variant_powered_lamp(uint8_t state) {
+	return (BlockVariant) {
+		.atlas_idx = ATLAS_POWERED_LAMP,
+		.atlas_variant = state % 2,
+		.model_idx = BLOCK_MODEL_QUAD,
+		.collider_idx = BLOCK_COLLIDER_QUAD,
+		.rotation = 0,
+		.uv_lock = false,
+		.tint = WHITE
+	};
+}
+
 #endif

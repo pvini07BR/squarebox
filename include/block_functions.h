@@ -36,6 +36,8 @@ bool fence_resolver(BlockExtraResult result, BlockExtraResult other, BlockExtraR
 bool chest_solver(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], ChunkLayerEnum layer);
 bool sign_solver(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], ChunkLayerEnum layer);
 bool power_wire_solver(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], ChunkLayerEnum layer);
+bool power_repeater_solver(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], ChunkLayerEnum layer);
+bool powered_lamp_solver(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], ChunkLayerEnum layer);
 
 bool on_chest_interact(BlockExtraResult result, ItemSlot holdingItem);
 bool trapdoor_interact(BlockExtraResult result, ItemSlot holdingItem);

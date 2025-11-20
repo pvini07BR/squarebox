@@ -56,6 +56,8 @@ typedef enum {
 	BLOCK_NUB_FRAME,
 	BLOCK_POWER_WIRE,
 	BLOCK_BATTERY,
+	BLOCK_POWER_REPEATER,
+	BLOCK_POWERED_LAMP,
 	BLOCK_COUNT
 } BlockEnum;
 
@@ -98,6 +100,10 @@ typedef enum {
 	// Tells if the block is slippery.
 	// it will make entities have less friction.
 	BLOCK_FLAG_SLIPPERY = (1 << 10),
+
+	// Tells if the block will be triggered a block update
+	// when there is a power update nearby.
+	BLOCK_FLAG_POWER_TRIGGERED = (1 << 1),
 } BlockFlag;
 
 typedef enum {

@@ -24,3 +24,11 @@ uint8_t get_frame_block_state(uint8_t rotation, uint8_t blockIdx) {
 	s->blockIdx = blockIdx;
 	return value;
 }
+
+uint8_t get_power_repeater_state(uint8_t rotation, bool powered) {
+	uint8_t value = 0;
+	PowerRepeaterState* s = (PowerRepeaterState*)&value;
+	s->rotation = rotation;
+	s->powered = powered;
+	return value;
+}

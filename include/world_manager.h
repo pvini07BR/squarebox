@@ -2,7 +2,7 @@
 #define WORLD_MANAGER_H
 
 #include "item_container.h"
-#include "chunk.h"
+#include "chunk_layer.h"
 
 #include <raylib.h>
 

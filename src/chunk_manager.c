@@ -409,6 +409,11 @@ void chunk_manager_clear(bool saveChunks) {
                 cacheEntry->layers
             );
         }
+
+        for (int i = 0; i < CHUNK_LAYER_COUNT; i++) {
+            chunk_layer_free_block_data(&cacheEntry->layers[i]);
+        }
+
         HASH_DEL(chunkCache, cacheEntry);
         free(cacheEntry);
     }

@@ -143,6 +143,10 @@ typedef struct {
 	BlockOverlayRender overlay_draw;
 	BlockFreeData free_data;
 
+	BlockDataSize data_size;
+	BlockSerializeData data_serializer;
+	BlockDeserializeData data_deserializer;
+
 	// Bit flags that will tell if the block is transaprent, solid, etc.
 	// see the BlockFlag enum.
 	int flags;

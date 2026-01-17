@@ -15,6 +15,7 @@
 #include <string.h>
 
 #include <raymath.h>
+#include <unistd.h>
 
 bool grounded_block_resolver(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], ChunkLayerEnum layer) {
     BlockRegistry* reg = neighbors[NEIGHBOR_BOTTOM].reg;
@@ -604,4 +605,42 @@ void sign_free_data(void* data) {
         free(data);
         data = NULL;
     }
+}
+
+uint32_t chest_data_size(void* data) {
+    return item_container_serialized_size(data);
+}
+
+uint32_t sign_data_size(void* data) {
+    return sizeof(SignLines);
+}
+
+void chest_serialize_data(void* data, FILE* fptr) {
+    item_container_serialize(data, fptr);
+}
+
+void sign_serialize_data(void* data, FILE* fptr) {
+    fwrite(data, sizeof(SignLines), 1, fptr);
+}
+
+void* chest_deserialize_data(FILE* fptr) {
+    ItemContainer* data = malloc(sizeof(ItemContainer));
+    if (data) {
+        item_container_deserialize(data, fptr);
+    }
+    else {
+        TraceLog(LOG_ERROR, "Could not allocate memory for chest data.");
+    }
+
+    return data;
+}
+
+void* sign_deserialize_data(FILE* fptr) {
+    SignLines* data = malloc(sizeof(SignLines));
+    if (data) {
+        fread(data, sizeof(SignLines), 1, fptr);
+    } else {
+        TraceLog(LOG_ERROR, "Could not allocate memory for sign data.");
+    }
+    return data;
 }

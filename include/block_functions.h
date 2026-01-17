@@ -28,6 +28,12 @@ typedef bool (*BlockTickCallback)(BlockExtraResult result, BlockExtraResult othe
 typedef void (*BlockOverlayRender)(void* data, Vector2 position, uint8_t state);
 // Function for freeing up any block data.
 typedef void (*BlockFreeData)(void* data);
+// Function that returns the current data size.
+typedef uint32_t (*BlockDataSize)(void* data);
+// Function for serializing data (eg. to a file).
+typedef void (*BlockSerializeData)(void* data, FILE* fptr);
+// Function for deserializing data (eg. from a file). Returns a pointer to the newly allocated serialized data.
+typedef void* (*BlockDeserializeData)(FILE* fptr);
 
 bool grounded_block_resolver(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], ChunkLayerEnum layer);
 bool plant_block_resolver(BlockExtraResult result, BlockExtraResult other, BlockExtraResult neighbors[4], ChunkLayerEnum layer);
@@ -52,5 +58,14 @@ void sign_text_draw(void* data, Vector2 position, uint8_t state);
 
 void chest_free_data(void* data);
 void sign_free_data(void* data);
+
+uint32_t chest_data_size(void* data);
+uint32_t sign_data_size(void* data);
+
+void chest_serialize_data(void* data, FILE* fptr);
+void sign_serialize_data(void* data, FILE* fptr);
+
+void* chest_deserialize_data(FILE* fptr);
+void* sign_deserialize_data(FILE* fptr);
 
 #endif

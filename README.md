@@ -48,7 +48,7 @@ But here is a list of all the features this game currently has, and what I plan 
 - WASD or Arrow keys to move.
 - Press W, Up Arrow key or Space to jump or swim.
 - Press F to toggle flying mode.
-- Press Shift to move slower, and press Ctrl to move faster.
+- Press Ctrl to move slower, and press Shift to move faster.
 - Press E to open the creative menu.
 - Press Q to drop an holding item to the ground.
 - Press Z or X to cycle between possible states for a block (like stairs and slabs).

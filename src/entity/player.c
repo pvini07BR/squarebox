@@ -79,8 +79,8 @@ void player_update(Entity* entity, float deltaTime) {
 
 	if (entity->on_liquid) speed /= 2.0f;
 
-	if (IsKeyDown(KEY_LEFT_SHIFT) || IsGamepadButtonDown(0, GAMEPAD_BUTTON_RIGHT_THUMB)) speed /= 4.0f;
-	else if (IsKeyDown(KEY_LEFT_CONTROL) || IsGamepadButtonDown(0, GAMEPAD_BUTTON_LEFT_THUMB)) speed *= 2.5f;
+	if (IsKeyDown(KEY_LEFT_CONTROL) || IsGamepadButtonDown(0, GAMEPAD_BUTTON_RIGHT_THUMB)) speed /= 4.0f;
+	else if (IsKeyDown(KEY_LEFT_SHIFT) || IsGamepadButtonDown(0, GAMEPAD_BUTTON_LEFT_THUMB)) speed *= 2.5f;
 		
 	// If not gravity affected, then start floating
 	if (!entity->gravity_affected) {

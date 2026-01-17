@@ -256,18 +256,12 @@ bool world_manager_save_chunk(Vector2i position, ChunkLayer layers[CHUNK_LAYER_C
             fwrite(&layers[l].blocks[b].state, sizeof(uint8_t), 1, fptr);
 
             if (layers[l].blocks[b].data) {
-                switch (layers[l].blocks[b].id) {
-                case BLOCK_SIGN:
+                BlockRegistry* reg = br_get_block_registry(layers[l].blocks[b].id);
+                if (reg && reg->data_size) {
                     fwrite(&dataOffset, sizeof(uint32_t), 1, fptr);
-                    dataOffset += sizeof(SignLines);
-                    break;
-                case BLOCK_CHEST:
-					fwrite(&dataOffset, sizeof(uint32_t), 1, fptr);
-					dataOffset += item_container_serialized_size(layers[l].blocks[b].data);
-                    break;
-                default:
+                    dataOffset += reg->data_size(layers[l].blocks[b].data);
+                } else {
                     fwrite(&zero, sizeof(uint32_t), 1, fptr);
-                    break;
                 }
             }
             else {
@@ -279,16 +273,9 @@ bool world_manager_save_chunk(Vector2i position, ChunkLayer layers[CHUNK_LAYER_C
     for (int l = 0; l < CHUNK_LAYER_COUNT; l++) {
         for (int b = 0; b < CHUNK_AREA; b++) {
             if (layers[l].blocks[b].data) {
-                switch (layers[l].blocks[b].id) {
-                    case BLOCK_SIGN: {
-                        SignLines* lines = layers[l].blocks[b].data;
-                        fwrite(lines, sizeof(SignLines), 1, fptr);
-                        break;
-                    }
-                    case BLOCK_CHEST: {
-						item_container_serialize(layers[l].blocks[b].data, fptr);
-                        break;
-                    }
+                BlockRegistry* reg = br_get_block_registry(layers[l].blocks[b].id);
+                if (reg && reg->data_serializer) {
+                    reg->data_serializer(layers[l].blocks[b].data, fptr);
                 }
             }
         }
@@ -327,24 +314,9 @@ ChunkLoadStatus world_manager_load_chunk(Vector2i position, ChunkLayer layers[CH
             if (dataOffset != 0) {
                 long currentPos = ftell(fptr);
                 fseek(fptr, dataOffset, SEEK_SET);
-                switch (layers[l].blocks[b].id) {
-                case BLOCK_SIGN:
-                    layers[l].blocks[b].data = malloc(sizeof(SignLines));
-                    if (layers[l].blocks[b].data) {
-                        fread(layers[l].blocks[b].data, sizeof(SignLines), 1, fptr);
-                    } else {
-                        TraceLog(LOG_ERROR, "Could not allocate memory for sign data in chunk at (%d, %d)", position.x, position.y);
-                    }
-                    break;
-				case BLOCK_CHEST:
-					layers[l].blocks[b].data = malloc(sizeof(ItemContainer));
-                    if (layers[l].blocks[b].data) {
-                        item_container_deserialize(layers[l].blocks[b].data, fptr);
-                    }
-                    else {
-                        TraceLog(LOG_ERROR, "Could not allocate memory for chest data in chunk at (%d, %d)", position.x, position.y);
-                    }
-                    break;
+                BlockRegistry* reg = br_get_block_registry(layers[l].blocks[b].id);
+                if (reg && reg->data_deserializer) {
+                    layers[l].blocks[b].data = reg->data_deserializer(fptr);
                 }
                 fseek(fptr, currentPos, SEEK_SET);
             } else {

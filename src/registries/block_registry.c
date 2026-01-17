@@ -104,7 +104,10 @@ void block_registry_init() {
         .lightLevel = BLOCK_LIGHT_NONE,
         .interact_callback = on_chest_interact,
         .state_resolver = chest_solver,
-        .free_data = chest_free_data
+        .free_data = chest_free_data,
+        .data_size = chest_data_size,
+        .data_serializer = chest_serialize_data,
+        .data_deserializer = chest_deserialize_data
     };
 
     reg[BLOCK_BOUNCY_BLOCK] = (BlockRegistry){
@@ -268,9 +271,12 @@ void block_registry_init() {
         .flags = 0,
         .lightLevel = BLOCK_LIGHT_NONE,
         .state_resolver = sign_solver,
-        .free_data = sign_free_data,
         .overlay_draw = sign_text_draw,
-        .interact_callback = sign_interact
+        .interact_callback = sign_interact,
+        .free_data = sign_free_data,
+        .data_size = sign_data_size,
+        .data_serializer = sign_serialize_data,
+        .data_deserializer = sign_deserialize_data
     };
 
     reg[BLOCK_TORCH] = (BlockRegistry){
